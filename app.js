@@ -25802,6 +25802,156 @@ var require_lib3 = __commonJS({
   }
 });
 
+// server/seo.ts
+var seo_exports = {};
+__export(seo_exports, {
+  generateSitemapXml: () => generateSitemapXml,
+  pingGoogleAfterUpdate: () => pingGoogleAfterUpdate,
+  pingSitemapToSearchEngines: () => pingSitemapToSearchEngines,
+  registerSeoRoutes: () => registerSeoRoutes,
+  submitIndexNow: () => submitIndexNow
+});
+function generateSitemapXml() {
+  const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+  const urls = SITE_PAGES.map((p) => `
+  <url>
+    <loc>${DOMAIN}${p.url}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${p.changefreq}</changefreq>
+    <priority>${p.priority}</priority>
+  </url>`).join("");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>`;
+}
+function httpGet(url) {
+  return new Promise((resolve) => {
+    const mod = url.startsWith("https") ? https : http;
+    const req = mod.get(url, (res) => {
+      resolve(res.statusCode || 0);
+    });
+    req.on("error", () => resolve(0));
+    req.setTimeout(1e4, () => {
+      req.destroy();
+      resolve(0);
+    });
+  });
+}
+function httpPost(url, body, contentType = "application/json") {
+  return new Promise((resolve) => {
+    const parsed = new URL(url);
+    const options = {
+      hostname: parsed.hostname,
+      path: parsed.pathname + parsed.search,
+      method: "POST",
+      headers: {
+        "Content-Type": contentType,
+        "Content-Length": Buffer.byteLength(body)
+      }
+    };
+    const req = https.request(options, (res) => {
+      resolve(res.statusCode || 0);
+    });
+    req.on("error", () => resolve(0));
+    req.setTimeout(1e4, () => {
+      req.destroy();
+      resolve(0);
+    });
+    req.write(body);
+    req.end();
+  });
+}
+async function pingSitemapToSearchEngines() {
+  const sitemapUrl = encodeURIComponent(`${DOMAIN}/sitemap.xml`);
+  const pings = [
+    { name: "Google", url: `https://www.google.com/ping?sitemap=${sitemapUrl}` },
+    { name: "Bing", url: `https://www.bing.com/ping?sitemap=${sitemapUrl}` }
+  ];
+  for (const ping of pings) {
+    try {
+      const status = await httpGet(ping.url);
+      console.log(`[SEO] ${ping.name} sitemap ping \u2192 HTTP ${status}`);
+    } catch (err) {
+      console.warn(`[SEO] ${ping.name} ping failed:`, err);
+    }
+  }
+}
+async function submitIndexNow() {
+  const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "parlayking-indexnow-key";
+  const urlList = SITE_PAGES.map((p) => `${DOMAIN}${p.url}`);
+  const body = JSON.stringify({
+    host: "soccernbaparlayking.vip",
+    key: INDEXNOW_KEY,
+    keyLocation: `${DOMAIN}/${INDEXNOW_KEY}.txt`,
+    urlList
+  });
+  try {
+    const status = await httpPost("https://api.indexnow.org/indexnow", body);
+    console.log(`[SEO] IndexNow submission \u2192 HTTP ${status} (${urlList.length} URLs)`);
+  } catch (err) {
+    console.warn("[SEO] IndexNow submission failed:", err);
+  }
+}
+async function pingGoogleAfterUpdate(reason = "daily-picks-update") {
+  console.log(`[SEO] Running full Google/Bing ping \u2014 reason: ${reason}`);
+  try {
+    await Promise.allSettled([
+      pingSitemapToSearchEngines(),
+      submitIndexNow()
+    ]);
+    console.log("[SEO] All search engine pings complete");
+  } catch (err) {
+    console.warn("[SEO] Ping error:", err);
+  }
+}
+function registerSeoRoutes(app) {
+  app.get("/sitemap.xml", (_req, res) => {
+    const xml = generateSitemapXml();
+    res.setHeader("Content-Type", "application/xml");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(xml);
+    console.log("[SEO] Sitemap served");
+  });
+  app.get("/robots.txt", (_req, res) => {
+    res.setHeader("Content-Type", "text/plain");
+    res.send(
+      `User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: ${DOMAIN}/sitemap.xml
+`
+    );
+  });
+  const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "parlayking-indexnow-key";
+  app.get(`/${INDEXNOW_KEY}.txt`, (_req, res) => {
+    res.setHeader("Content-Type", "text/plain");
+    res.send(INDEXNOW_KEY);
+  });
+  console.log("[SEO] Routes registered: /sitemap.xml, /robots.txt");
+}
+var https, http, DOMAIN, SITE_PAGES;
+var init_seo = __esm({
+  "server/seo.ts"() {
+    https = __toESM(require("https"));
+    http = __toESM(require("http"));
+    DOMAIN = "https://soccernbaparlayking.vip";
+    SITE_PAGES = [
+      { url: "/", priority: "1.0", changefreq: "daily" },
+      { url: "/picks", priority: "0.9", changefreq: "daily" },
+      { url: "/soccer-picks", priority: "0.9", changefreq: "daily" },
+      { url: "/nba-picks", priority: "0.9", changefreq: "daily" },
+      { url: "/parlays", priority: "0.8", changefreq: "daily" },
+      { url: "/results", priority: "0.8", changefreq: "daily" },
+      { url: "/vip", priority: "0.7", changefreq: "weekly" },
+      { url: "/pro", priority: "0.7", changefreq: "weekly" },
+      { url: "/admin", priority: "0.3", changefreq: "monthly" }
+    ];
+  }
+});
+
 // node_modules/postgres-array/index.js
 var require_postgres_array = __commonJS({
   "node_modules/postgres-array/index.js"(exports2) {
@@ -42416,156 +42566,6 @@ var init_routes = __esm({
   }
 });
 
-// server/seo.ts
-var seo_exports = {};
-__export(seo_exports, {
-  generateSitemapXml: () => generateSitemapXml,
-  pingGoogleAfterUpdate: () => pingGoogleAfterUpdate,
-  pingSitemapToSearchEngines: () => pingSitemapToSearchEngines,
-  registerSeoRoutes: () => registerSeoRoutes,
-  submitIndexNow: () => submitIndexNow
-});
-function generateSitemapXml() {
-  const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-  const urls = SITE_PAGES.map((p) => `
-  <url>
-    <loc>${DOMAIN}${p.url}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>${p.changefreq}</changefreq>
-    <priority>${p.priority}</priority>
-  </url>`).join("");
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls}
-</urlset>`;
-}
-function httpGet(url) {
-  return new Promise((resolve) => {
-    const mod = url.startsWith("https") ? https : http;
-    const req = mod.get(url, (res) => {
-      resolve(res.statusCode || 0);
-    });
-    req.on("error", () => resolve(0));
-    req.setTimeout(1e4, () => {
-      req.destroy();
-      resolve(0);
-    });
-  });
-}
-function httpPost(url, body, contentType = "application/json") {
-  return new Promise((resolve) => {
-    const parsed = new URL(url);
-    const options = {
-      hostname: parsed.hostname,
-      path: parsed.pathname + parsed.search,
-      method: "POST",
-      headers: {
-        "Content-Type": contentType,
-        "Content-Length": Buffer.byteLength(body)
-      }
-    };
-    const req = https.request(options, (res) => {
-      resolve(res.statusCode || 0);
-    });
-    req.on("error", () => resolve(0));
-    req.setTimeout(1e4, () => {
-      req.destroy();
-      resolve(0);
-    });
-    req.write(body);
-    req.end();
-  });
-}
-async function pingSitemapToSearchEngines() {
-  const sitemapUrl = encodeURIComponent(`${DOMAIN}/sitemap.xml`);
-  const pings = [
-    { name: "Google", url: `https://www.google.com/ping?sitemap=${sitemapUrl}` },
-    { name: "Bing", url: `https://www.bing.com/ping?sitemap=${sitemapUrl}` }
-  ];
-  for (const ping of pings) {
-    try {
-      const status = await httpGet(ping.url);
-      console.log(`[SEO] ${ping.name} sitemap ping \u2192 HTTP ${status}`);
-    } catch (err) {
-      console.warn(`[SEO] ${ping.name} ping failed:`, err);
-    }
-  }
-}
-async function submitIndexNow() {
-  const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "parlayking-indexnow-key";
-  const urlList = SITE_PAGES.map((p) => `${DOMAIN}${p.url}`);
-  const body = JSON.stringify({
-    host: "soccernbaparlayking.vip",
-    key: INDEXNOW_KEY,
-    keyLocation: `${DOMAIN}/${INDEXNOW_KEY}.txt`,
-    urlList
-  });
-  try {
-    const status = await httpPost("https://api.indexnow.org/indexnow", body);
-    console.log(`[SEO] IndexNow submission \u2192 HTTP ${status} (${urlList.length} URLs)`);
-  } catch (err) {
-    console.warn("[SEO] IndexNow submission failed:", err);
-  }
-}
-async function pingGoogleAfterUpdate(reason = "daily-picks-update") {
-  console.log(`[SEO] Running full Google/Bing ping \u2014 reason: ${reason}`);
-  try {
-    await Promise.allSettled([
-      pingSitemapToSearchEngines(),
-      submitIndexNow()
-    ]);
-    console.log("[SEO] All search engine pings complete");
-  } catch (err) {
-    console.warn("[SEO] Ping error:", err);
-  }
-}
-function registerSeoRoutes(app) {
-  app.get("/sitemap.xml", (_req, res) => {
-    const xml = generateSitemapXml();
-    res.setHeader("Content-Type", "application/xml");
-    res.setHeader("Cache-Control", "public, max-age=3600");
-    res.send(xml);
-    console.log("[SEO] Sitemap served");
-  });
-  app.get("/robots.txt", (_req, res) => {
-    res.setHeader("Content-Type", "text/plain");
-    res.send(
-      `User-agent: *
-Allow: /
-Disallow: /admin
-Disallow: /api/
-
-Sitemap: ${DOMAIN}/sitemap.xml
-`
-    );
-  });
-  const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "parlayking-indexnow-key";
-  app.get(`/${INDEXNOW_KEY}.txt`, (_req, res) => {
-    res.setHeader("Content-Type", "text/plain");
-    res.send(INDEXNOW_KEY);
-  });
-  console.log("[SEO] Routes registered: /sitemap.xml, /robots.txt");
-}
-var https, http, DOMAIN, SITE_PAGES;
-var init_seo = __esm({
-  "server/seo.ts"() {
-    https = __toESM(require("https"));
-    http = __toESM(require("http"));
-    DOMAIN = "https://soccernbaparlayking.vip";
-    SITE_PAGES = [
-      { url: "/", priority: "1.0", changefreq: "daily" },
-      { url: "/picks", priority: "0.9", changefreq: "daily" },
-      { url: "/soccer-picks", priority: "0.9", changefreq: "daily" },
-      { url: "/nba-picks", priority: "0.9", changefreq: "daily" },
-      { url: "/parlays", priority: "0.8", changefreq: "daily" },
-      { url: "/results", priority: "0.8", changefreq: "daily" },
-      { url: "/vip", priority: "0.7", changefreq: "weekly" },
-      { url: "/pro", priority: "0.7", changefreq: "weekly" },
-      { url: "/admin", priority: "0.3", changefreq: "monthly" }
-    ];
-  }
-});
-
 // node_modules/node-cron/src/task.js
 var require_task = __commonJS({
   "node_modules/node-cron/src/task.js"(exports2, module2) {
@@ -43758,6 +43758,8 @@ async function initializeExpress() {
       version: "V3 Titan XII",
       scheduler: "active"
     }));
+    const { registerSeoRoutes: registerSeoRoutes2 } = await Promise.resolve().then(() => (init_seo(), seo_exports));
+    registerSeoRoutes2(app);
     const distPath = path2.join(process.cwd(), "dist");
     if (fs2.existsSync(distPath)) {
       app.use(express.static(distPath));
@@ -43794,8 +43796,6 @@ async function initializeExpress() {
     });
     const { registerRoutes: registerRoutes2 } = await Promise.resolve().then(() => (init_routes(), routes_exports));
     await registerRoutes2(app);
-    const { registerSeoRoutes: registerSeoRoutes2 } = await Promise.resolve().then(() => (init_seo(), seo_exports));
-    registerSeoRoutes2(app);
     app.get("*", (req, res) => {
       if (req.path.startsWith("/api/")) {
         return res.status(404).json({ error: "Not found" });

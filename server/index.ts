@@ -110,6 +110,11 @@ async function initializeExpress() {
       scheduler: 'active',
     }));
 
+    // SEO routes — MUST be registered before static middleware so /sitemap.xml
+    // and /robots.txt are served correctly and not intercepted by express.static
+    const { registerSeoRoutes } = await import('./seo.js');
+    registerSeoRoutes(app);
+
     // Serve built Expo admin app from /dist
     const distPath = path.join(process.cwd(), 'dist');
     if (fs.existsSync(distPath)) {
@@ -155,10 +160,6 @@ async function initializeExpress() {
     // Load all API routes
     const { registerRoutes } = await import('./routes.js');
     await registerRoutes(app);
-
-    // SEO routes — sitemap.xml, robots.txt, IndexNow key
-    const { registerSeoRoutes } = await import('./seo.js');
-    registerSeoRoutes(app);
 
     // SPA fallback — serve admin app for all unmatched routes
     app.get('*', (req, res) => {
