@@ -39205,21 +39205,6 @@ async function getMembers() {
   const db2 = getDb();
   return db2.select().from(members).orderBy(desc(members.createdAt));
 }
-async function getMemberByEmail(email) {
-  const db2 = getDb();
-  const [member] = await db2.select().from(members).where(eq(members.email, email));
-  return member;
-}
-async function createOrUpdateMember(email, tier) {
-  const db2 = getDb();
-  const existing = await getMemberByEmail(email);
-  if (existing) {
-    const [m2] = await db2.update(members).set({ tier, lastActive: /* @__PURE__ */ new Date() }).where(eq(members.email, email)).returning();
-    return m2;
-  }
-  const [m] = await db2.insert(members).values({ email, tier, lastActive: /* @__PURE__ */ new Date() }).returning();
-  return m;
-}
 async function recordHeartbeat(email, page) {
   const db2 = getDb();
   await db2.insert(memberHeartbeats).values({ email, page });
@@ -39266,13 +39251,6 @@ async function setEngineConfig(key, value) {
 async function getAuditReports(limit = 10) {
   const db2 = getDb();
   return db2.select().from(auditReports).orderBy(desc(auditReports.createdAt)).limit(limit);
-}
-async function getPlayerStats(date2, sport) {
-  const db2 = getDb();
-  if (sport) {
-    return db2.select().from(playerStats).where(and(eq(playerStats.date, date2), eq(playerStats.sport, sport)));
-  }
-  return db2.select().from(playerStats).where(eq(playerStats.date, date2));
 }
 async function getTierPricing() {
   const db2 = getDb();
@@ -39605,13 +39583,13 @@ var init_goldStandardV2 = __esm({
 var apiFootball_exports = {};
 __export(apiFootball_exports, {
   clearApiCache: () => clearApiCache,
+  fetchNBAFixtures: () => fetchNBAFixtures,
+  fetchSoccerFixtures: () => fetchSoccerFixtures,
   fetchTodayFixtures: () => fetchTodayFixtures,
   getCacheStatus: () => getCacheStatus
 });
 function ensureCacheDir() {
-  if (!fs.existsSync(CACHE_DIR)) {
-    fs.mkdirSync(CACHE_DIR, { recursive: true });
-  }
+  if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
 }
 function getCacheKey(endpoint) {
   return endpoint.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 120) + ".json";
@@ -39624,11 +39602,10 @@ function readCache(cacheKey) {
     const { timestamp: timestamp2, data } = JSON.parse(raw);
     const age = Date.now() - timestamp2;
     if (age > CACHE_TTL_MS) {
-      console.log(`[Cache] EXPIRED (${Math.round(age / 6e4)}min old): ${cacheKey}`);
       fs.unlinkSync(filePath);
       return null;
     }
-    console.log(`[Cache] HIT (${Math.round(age / 6e4)}min old): ${cacheKey}`);
+    console.log(`[Cache] HIT (${Math.round(age / 6e4)}min): ${cacheKey}`);
     return data;
   } catch {
     return null;
@@ -39637,26 +39614,20 @@ function readCache(cacheKey) {
 function writeCache(cacheKey, data) {
   try {
     ensureCacheDir();
-    const filePath = path.join(CACHE_DIR, cacheKey);
-    fs.writeFileSync(filePath, JSON.stringify({ timestamp: Date.now(), data }), "utf8");
-    console.log(`[Cache] STORED: ${cacheKey}`);
-  } catch (err) {
-    console.warn("[Cache] Failed to write cache:", err);
+    fs.writeFileSync(path.join(CACHE_DIR, cacheKey), JSON.stringify({ timestamp: Date.now(), data }), "utf8");
+  } catch {
   }
 }
-async function apiFetch(endpoint) {
-  if (!API_KEY) throw new Error("API_FOOTBALL_KEY not configured");
-  const cacheKey = getCacheKey(endpoint);
+async function apiFetch(endpoint, baseUrl = BASE_URL, apiKey = API_KEY) {
+  if (!apiKey) throw new Error("API key not configured");
+  const cacheKey = getCacheKey(baseUrl.replace(/https?:\/\//, "") + endpoint);
   const cached = readCache(cacheKey);
   if (cached !== null) return cached;
-  console.log(`[API-Football] LIVE REQUEST: ${endpoint}`);
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    headers: {
-      "x-apisports-key": API_KEY,
-      "x-rapidapi-key": API_KEY
-    }
+  console.log(`[API] LIVE REQUEST: ${baseUrl}${endpoint}`);
+  const res = await fetch(`${baseUrl}${endpoint}`, {
+    headers: { "x-apisports-key": apiKey, "x-rapidapi-key": apiKey }
   });
-  if (!res.ok) throw new Error(`API-Football error: ${res.status} ${res.statusText}`);
+  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
   const data = await res.json();
   writeCache(cacheKey, data);
   return data;
@@ -39668,8 +39639,7 @@ function clearApiCache() {
       files.forEach((f) => fs.unlinkSync(path.join(CACHE_DIR, f)));
       console.log(`[Cache] Cleared ${files.length} cached responses`);
     }
-  } catch (err) {
-    console.warn("[Cache] Failed to clear cache:", err);
+  } catch {
   }
 }
 function getCacheStatus() {
@@ -39678,12 +39648,10 @@ function getCacheStatus() {
     const files = fs.readdirSync(CACHE_DIR);
     let totalSize = 0;
     const entries = files.map((f) => {
-      const filePath = path.join(CACHE_DIR, f);
-      const stat = fs.statSync(filePath);
-      totalSize += stat.size;
+      const fp = path.join(CACHE_DIR, f);
+      totalSize += fs.statSync(fp).size;
       try {
-        const raw = fs.readFileSync(filePath, "utf8");
-        const { timestamp: timestamp2 } = JSON.parse(raw);
+        const { timestamp: timestamp2 } = JSON.parse(fs.readFileSync(fp, "utf8"));
         const ageMs = Date.now() - timestamp2;
         return { key: f, ageMin: Math.round(ageMs / 6e4), expiresMin: Math.round((CACHE_TTL_MS - ageMs) / 6e4) };
       } catch {
@@ -39695,22 +39663,42 @@ function getCacheStatus() {
     return { files: 0, totalSizeKB: 0, entries: [] };
   }
 }
-async function fetchTodayFixtures(date2) {
-  console.log(`[API-Football] Fetching fixtures for ${date2}`);
+function isDateMatch(fixtureDate, targetDate) {
+  return fixtureDate.startsWith(targetDate);
+}
+async function fetchSoccerFixtures(date2) {
+  console.log(`[API-Football] Fetching ALL soccer fixtures for ${date2}`);
   const fixtures = [];
   try {
     const data = await apiFetch(`/fixtures?date=${date2}&timezone=America/Moncton`);
     const rawFixtures = data.response || [];
+    console.log(`[API-Football] Total raw fixtures on ${date2}: ${rawFixtures.length}`);
     for (const f of rawFixtures) {
-      if (!TARGET_LEAGUES.includes(f.league?.id)) continue;
+      const leagueId = f.league?.id;
+      const leagueInfo = SOCCER_LEAGUES[leagueId];
+      if (!leagueInfo) continue;
       if (f.fixture?.status?.short !== "NS") continue;
+      const fixtureDate = f.fixture?.date || "";
+      if (!isDateMatch(fixtureDate, date2)) {
+        console.warn(`[DateCheck] SKIPPED \u2014 fixture ${f.fixture?.id} date ${fixtureDate} does not match target ${date2}`);
+        continue;
+      }
+      const sport = leagueInfo.sport;
       const fixture = {
         fixtureId: f.fixture.id,
         homeTeam: f.teams?.home?.name || "Home",
         awayTeam: f.teams?.away?.name || "Away",
-        league: f.league?.name || "Unknown",
-        sport: "soccer",
-        date: date2
+        league: f.league?.name || leagueInfo.name,
+        leagueId,
+        leagueTier: leagueInfo.tier,
+        sport,
+        date: date2,
+        fixtureDate: f.fixture?.date,
+        venueCity: f.fixture?.venue?.city,
+        venueId: f.fixture?.venue?.id,
+        homeTeamId: f.teams?.home?.id,
+        awayTeamId: f.teams?.away?.id,
+        season: f.league?.season
       };
       const [
         oddsResult,
@@ -39722,19 +39710,12 @@ async function fetchTodayFixtures(date2) {
         weatherResult
       ] = await Promise.allSettled([
         fetchOdds(f.fixture.id),
-        // F01 + F05
-        fetchTeamStats(f.teams?.home?.id, f.teams?.away?.id, f.league?.id, f.league?.season),
-        // F02 + F03 + F06
+        fetchTeamStats(f.teams?.home?.id, f.teams?.away?.id, leagueId, f.league?.season),
         fetchH2H(f.teams?.home?.id, f.teams?.away?.id),
-        // F04
         fetchInjuries(f.fixture.id),
-        // F07 (LIVE)
-        fetchStandings(f.league?.id, f.league?.season, f.teams?.home?.id, f.teams?.away?.id),
-        // F11
+        fetchStandings(leagueId, f.league?.season, f.teams?.home?.id, f.teams?.away?.id),
         fetchVenue(f.fixture?.venue?.id),
-        // F12
         fetchWeather(f.fixture?.venue?.city)
-        // F10
       ]);
       if (oddsResult.status === "fulfilled") Object.assign(fixture, oddsResult.value);
       if (statsResult.status === "fulfilled") Object.assign(fixture, statsResult.value);
@@ -39745,12 +39726,166 @@ async function fetchTodayFixtures(date2) {
       if (weatherResult.status === "fulfilled") Object.assign(fixture, weatherResult.value);
       fixtures.push(fixture);
     }
-    console.log(`[API-Football] Found ${fixtures.length} qualifying fixtures with full 12-factor data`);
+    console.log(`[API-Football] Qualified soccer fixtures: ${fixtures.filter((f) => f.sport === "soccer").length} soccer, ${fixtures.filter((f) => f.sport === "mls").length} MLS`);
   } catch (err) {
-    console.error("[API-Football] Fetch failed:", err);
+    console.error("[API-Football] Soccer fetch failed:", err);
     throw err;
   }
   return fixtures;
+}
+async function fetchNBAFixtures(date2) {
+  console.log(`[API-Basketball] Fetching NBA games for ${date2}`);
+  const fixtures = [];
+  try {
+    const data = await apiFetch(
+      `/games?league=${NBA_LEAGUE_ID}&season=${NBA_SEASON}&date=${date2}`,
+      NBA_BASE_URL,
+      NBA_API_KEY
+    );
+    const rawGames = data.response || [];
+    console.log(`[API-Basketball] Raw NBA games on ${date2}: ${rawGames.length}`);
+    for (const g of rawGames) {
+      const gameDate = g.date?.start || "";
+      if (!isDateMatch(gameDate, date2)) {
+        console.warn(`[DateCheck] NBA game ${g.id} date ${gameDate} does not match ${date2} \u2014 skipped`);
+        continue;
+      }
+      const status = g.status?.short || "";
+      if (status !== "NS" && status !== "scheduled") continue;
+      const fixture = {
+        fixtureId: `nba-${g.id}`,
+        homeTeam: g.teams?.home?.name || "Home",
+        awayTeam: g.teams?.away?.name || "Away",
+        league: "NBA",
+        leagueId: NBA_LEAGUE_ID,
+        leagueTier: 1,
+        sport: "nba",
+        date: date2,
+        fixtureDate: g.date?.start,
+        homeTeamId: g.teams?.home?.id,
+        awayTeamId: g.teams?.away?.id,
+        season: NBA_SEASON
+      };
+      const [oddsResult, injuriesResult] = await Promise.allSettled([
+        fetchNBAOdds(g.id),
+        fetchNBAInjuries(g.teams?.home?.id, g.teams?.away?.id)
+      ]);
+      if (oddsResult.status === "fulfilled") Object.assign(fixture, oddsResult.value);
+      if (injuriesResult.status === "fulfilled") Object.assign(fixture, injuriesResult.value);
+      const [homeFormResult, awayFormResult] = await Promise.allSettled([
+        fetchNBATeamForm(g.teams?.home?.id, date2),
+        fetchNBATeamForm(g.teams?.away?.id, date2)
+      ]);
+      if (homeFormResult.status === "fulfilled") {
+        fixture.homeForm = homeFormResult.value.form;
+        fixture.homeWinRate = homeFormResult.value.winRate;
+        fixture.homeGoalDiff = homeFormResult.value.pointDiff;
+        fixture.homeRestDays = homeFormResult.value.restDays;
+      }
+      if (awayFormResult.status === "fulfilled") {
+        fixture.awayForm = awayFormResult.value.form;
+        fixture.awayWinRate = awayFormResult.value.winRate;
+        fixture.awayGoalDiff = awayFormResult.value.pointDiff;
+        fixture.awayRestDays = awayFormResult.value.restDays;
+      }
+      fixtures.push(fixture);
+    }
+    console.log(`[API-Basketball] Qualified NBA fixtures: ${fixtures.length}`);
+  } catch (err) {
+    console.error("[API-Basketball] NBA fetch failed:", err);
+  }
+  return fixtures;
+}
+async function fetchNBAOdds(gameId) {
+  try {
+    const data = await apiFetch(`/odds?game=${gameId}`, NBA_BASE_URL, NBA_API_KEY);
+    const bookmakers = data.response?.[0]?.bookmakers || [];
+    if (!bookmakers.length) return {};
+    const bets = bookmakers[0]?.bets || [];
+    const moneyline = bets.find((b) => b.name === "Home/Away" || b.name === "Match Winner");
+    if (!moneyline) return {};
+    const homeOdd = moneyline.values?.find((v) => v.value === "Home")?.odd;
+    const awayOdd = moneyline.values?.find((v) => v.value === "Away")?.odd;
+    return {
+      homeOdds: homeOdd ? parseFloat(homeOdd) : void 0,
+      awayOdds: awayOdd ? parseFloat(awayOdd) : void 0
+    };
+  } catch {
+    return {};
+  }
+}
+async function fetchNBAInjuries(homeTeamId, awayTeamId) {
+  try {
+    const [homeInj, awayInj] = await Promise.allSettled([
+      apiFetch(`/injuries?team=${homeTeamId}&season=${NBA_SEASON}`, NBA_BASE_URL, NBA_API_KEY),
+      apiFetch(`/injuries?team=${awayTeamId}&season=${NBA_SEASON}`, NBA_BASE_URL, NBA_API_KEY)
+    ]);
+    let homeInjuries = 0, awayInjuries = 0;
+    let homeKeyPlayerOut = false, awayKeyPlayerOut = false;
+    if (homeInj.status === "fulfilled") {
+      const injuries = homeInj.value.response || [];
+      homeInjuries = injuries.filter((i) => i.status === "Out").length;
+      homeKeyPlayerOut = injuries.some(
+        (i) => i.status === "Out" && (i.player?.pos === "G" || i.player?.pos === "F" || i.player?.pos === "C")
+      );
+    }
+    if (awayInj.status === "fulfilled") {
+      const injuries = awayInj.value.response || [];
+      awayInjuries = injuries.filter((i) => i.status === "Out").length;
+      awayKeyPlayerOut = injuries.some(
+        (i) => i.status === "Out" && (i.player?.pos === "G" || i.player?.pos === "F" || i.player?.pos === "C")
+      );
+    }
+    const homeInjuryRating = Math.max(0, 1 - homeInjuries * 0.06 - (homeKeyPlayerOut ? 0.18 : 0));
+    const awayInjuryRating = Math.max(0, 1 - awayInjuries * 0.06 - (awayKeyPlayerOut ? 0.18 : 0));
+    console.log(`[F07-NBA] Home: ${homeInjuries} out (key=${homeKeyPlayerOut}), Away: ${awayInjuries} out (key=${awayKeyPlayerOut})`);
+    return { homeInjuries, awayInjuries, homeKeyPlayerOut, awayKeyPlayerOut, homeInjuryRating, awayInjuryRating };
+  } catch {
+    return {};
+  }
+}
+async function fetchNBATeamForm(teamId, date2) {
+  try {
+    const data = await apiFetch(
+      `/games?team=${teamId}&season=${NBA_SEASON}&last=6`,
+      NBA_BASE_URL,
+      NBA_API_KEY
+    );
+    const games = (data.response || []).filter((g) => {
+      const gDate = g.date?.start || "";
+      return gDate < date2;
+    }).slice(0, 5);
+    if (!games.length) return { form: [], winRate: 0.5, pointDiff: 0, restDays: 2 };
+    const form = [];
+    let wins = 0;
+    let totalDiff = 0;
+    for (const g of games) {
+      const isHome = g.teams?.home?.id === teamId;
+      const homeScore = g.scores?.home?.points ?? 0;
+      const awayScore = g.scores?.away?.points ?? 0;
+      const teamScore = isHome ? homeScore : awayScore;
+      const oppScore = isHome ? awayScore : homeScore;
+      const diff = teamScore - oppScore;
+      totalDiff += diff;
+      if (diff > 0) {
+        form.push("W");
+        wins++;
+      } else if (diff < 0) form.push("L");
+      else form.push("D");
+    }
+    const lastGame = games[0];
+    const lastDate = new Date(lastGame.date?.start || Date.now());
+    const targetDate = new Date(date2);
+    const restDays = Math.max(0, Math.floor((targetDate.getTime() - lastDate.getTime()) / (1e3 * 60 * 60 * 24)));
+    return {
+      form,
+      winRate: wins / games.length,
+      pointDiff: totalDiff / games.length,
+      restDays
+    };
+  } catch {
+    return { form: [], winRate: 0.5, pointDiff: 0, restDays: 2 };
+  }
 }
 async function fetchOdds(fixtureId) {
   try {
@@ -39814,8 +39949,7 @@ async function fetchTeamStats(homeId, awayId, leagueId, season) {
       });
       if (fxs.length > 0) {
         const lastDate = new Date(fxs[0].fixture?.date || Date.now());
-        const today = /* @__PURE__ */ new Date();
-        result.homeRestDays = Math.floor((today.getTime() - lastDate.getTime()) / (1e3 * 60 * 60 * 24));
+        result.homeRestDays = Math.floor((Date.now() - lastDate.getTime()) / (1e3 * 60 * 60 * 24));
       }
     }
     if (awayFixtures.status === "fulfilled") {
@@ -39829,8 +39963,7 @@ async function fetchTeamStats(homeId, awayId, leagueId, season) {
       });
       if (fxs.length > 0) {
         const lastDate = new Date(fxs[0].fixture?.date || Date.now());
-        const today = /* @__PURE__ */ new Date();
-        result.awayRestDays = Math.floor((today.getTime() - lastDate.getTime()) / (1e3 * 60 * 60 * 24));
+        result.awayRestDays = Math.floor((Date.now() - lastDate.getTime()) / (1e3 * 60 * 60 * 24));
       }
     }
     return result;
@@ -39847,13 +39980,9 @@ async function fetchH2H(homeId, awayId) {
       const hg = m.goals?.home ?? 0;
       const ag = m.goals?.away ?? 0;
       const homeIsHome = m.teams?.home?.id === homeId;
-      if (hg === ag) {
-        h2hDraws++;
-      } else if (hg > ag) {
-        homeIsHome ? h2hHomeWins++ : h2hAwayWins++;
-      } else {
-        homeIsHome ? h2hAwayWins++ : h2hHomeWins++;
-      }
+      if (hg === ag) h2hDraws++;
+      else if (hg > ag) homeIsHome ? h2hHomeWins++ : h2hAwayWins++;
+      else homeIsHome ? h2hAwayWins++ : h2hHomeWins++;
     }
     return { h2hHomeWins, h2hAwayWins, h2hDraws };
   } catch {
@@ -39865,10 +39994,8 @@ async function fetchInjuries(fixtureId) {
     console.log(`[F07-Injuries] Fetching LIVE injury report for fixture ${fixtureId}`);
     const data = await apiFetch(`/injuries?fixture=${fixtureId}`);
     const injuries = data.response || [];
-    let homeInjuries = 0;
-    let awayInjuries = 0;
-    let homeKeyPlayerOut = false;
-    let awayKeyPlayerOut = false;
+    let homeInjuries = 0, awayInjuries = 0;
+    let homeKeyPlayerOut = false, awayKeyPlayerOut = false;
     const KEY_POSITIONS = ["Goalkeeper", "Attacker", "Forward", "Striker"];
     for (const inj of injuries) {
       const team = inj.team?.id;
@@ -39876,7 +40003,7 @@ async function fetchInjuries(fixtureId) {
       const reason = inj.player?.reason || "";
       const isOut = reason.toLowerCase().includes("injured") || reason.toLowerCase().includes("suspended") || reason.toLowerCase().includes("out");
       if (!isOut) continue;
-      if (inj.team?.name?.includes("home") || inj.fixture?.teams?.home?.id === team) {
+      if (inj.fixture?.teams?.home?.id === team) {
         homeInjuries++;
         if (KEY_POSITIONS.some((p) => position.includes(p))) homeKeyPlayerOut = true;
       } else {
@@ -39886,17 +40013,10 @@ async function fetchInjuries(fixtureId) {
     }
     const homeInjuryRating = Math.max(0, 1 - homeInjuries * 0.07 - (homeKeyPlayerOut ? 0.15 : 0));
     const awayInjuryRating = Math.max(0, 1 - awayInjuries * 0.07 - (awayKeyPlayerOut ? 0.15 : 0));
-    console.log(`[F07-Injuries] Home: ${homeInjuries} injuries (key=${homeKeyPlayerOut}), Away: ${awayInjuries} injuries (key=${awayKeyPlayerOut})`);
-    return {
-      homeInjuries,
-      awayInjuries,
-      homeKeyPlayerOut,
-      awayKeyPlayerOut,
-      homeInjuryRating,
-      awayInjuryRating
-    };
+    console.log(`[F07-Injuries] Home: ${homeInjuries} (key=${homeKeyPlayerOut}), Away: ${awayInjuries} (key=${awayKeyPlayerOut})`);
+    return { homeInjuries, awayInjuries, homeKeyPlayerOut, awayKeyPlayerOut, homeInjuryRating, awayInjuryRating };
   } catch (err) {
-    console.warn(`[F07-Injuries] Failed to fetch injuries for fixture ${fixtureId}:`, err);
+    console.warn(`[F07-Injuries] Failed for fixture ${fixtureId}:`, err);
     return {};
   }
 }
@@ -39925,7 +40045,6 @@ async function fetchVenue(venueId) {
     return {
       stadiumCapacity: venue.capacity ?? void 0,
       homeAttendancePct: venue.capacity ? 0.85 : void 0
-      // default 85% fill if no live attendance
     };
   } catch {
     return {};
@@ -39947,7 +40066,6 @@ async function fetchWeather(city) {
     const result = {
       weatherCondition: mapped,
       windSpeed: w.wind?.speed ? Math.round(w.wind.speed * 3.6) : 0,
-      // m/s to km/h
       temperature: w.main?.temp ?? 20
     };
     writeCache(cacheKey, result);
@@ -39956,37 +40074,82 @@ async function fetchWeather(city) {
     return {};
   }
 }
-var fs, path, os, API_KEY, BASE_URL, WEATHER_KEY, CACHE_DIR, CACHE_TTL_MS, TARGET_LEAGUES;
+async function fetchTodayFixtures(date2) {
+  return fetchSoccerFixtures(date2);
+}
+var fs, path, os, API_KEY, NBA_API_KEY, BASE_URL, NBA_BASE_URL, WEATHER_KEY, CACHE_DIR, CACHE_TTL_MS, SOCCER_LEAGUES, NBA_LEAGUE_ID, NBA_SEASON;
 var init_apiFootball = __esm({
   "server/apis/apiFootball.ts"() {
     fs = __toESM(require("fs"));
     path = __toESM(require("path"));
     os = __toESM(require("os"));
     API_KEY = process.env.API_FOOTBALL_KEY || "";
+    NBA_API_KEY = process.env.API_BASKETBALL_KEY || process.env.API_FOOTBALL_KEY || "";
     BASE_URL = "https://v3.football.api-sports.io";
+    NBA_BASE_URL = "https://v1.basketball.api-sports.io";
     WEATHER_KEY = process.env.OPENWEATHER_KEY || "";
     CACHE_DIR = path.join(os.tmpdir(), "parlay-king-cache");
     CACHE_TTL_MS = 60 * 60 * 1e3;
-    TARGET_LEAGUES = [
-      39,
-      // Premier League
-      140,
-      // La Liga
-      135,
-      // Serie A
-      78,
-      // Bundesliga
-      61,
-      // Ligue 1
-      2,
-      // Champions League
-      3,
-      // Europa League
-      253,
-      // MLS
-      307
-      // Saudi Pro League
-    ];
+    SOCCER_LEAGUES = {
+      // ── UEFA / Europe ──
+      2: { name: "UEFA Champions League", tier: 1, sport: "soccer" },
+      3: { name: "UEFA Europa League", tier: 1, sport: "soccer" },
+      848: { name: "UEFA Conference League", tier: 1, sport: "soccer" },
+      39: { name: "Premier League", tier: 1, sport: "soccer" },
+      40: { name: "Championship", tier: 2, sport: "soccer" },
+      41: { name: "League One", tier: 3, sport: "soccer" },
+      140: { name: "La Liga", tier: 1, sport: "soccer" },
+      141: { name: "La Liga 2", tier: 2, sport: "soccer" },
+      135: { name: "Serie A", tier: 1, sport: "soccer" },
+      136: { name: "Serie B", tier: 2, sport: "soccer" },
+      78: { name: "Bundesliga", tier: 1, sport: "soccer" },
+      79: { name: "2. Bundesliga", tier: 2, sport: "soccer" },
+      61: { name: "Ligue 1", tier: 1, sport: "soccer" },
+      62: { name: "Ligue 2", tier: 2, sport: "soccer" },
+      88: { name: "Eredivisie", tier: 1, sport: "soccer" },
+      94: { name: "Primeira Liga", tier: 1, sport: "soccer" },
+      144: { name: "Belgian Pro League", tier: 1, sport: "soccer" },
+      203: { name: "Super Lig (Turkey)", tier: 1, sport: "soccer" },
+      179: { name: "Scottish Premiership", tier: 2, sport: "soccer" },
+      197: { name: "Super League (Greece)", tier: 2, sport: "soccer" },
+      218: { name: "Ligue 1 (Morocco)", tier: 2, sport: "soccer" },
+      235: { name: "Russian Premier League", tier: 2, sport: "soccer" },
+      283: { name: "Czech First League", tier: 2, sport: "soccer" },
+      318: { name: "Danish Superliga", tier: 2, sport: "soccer" },
+      103: { name: "Eliteserien (Norway)", tier: 2, sport: "soccer" },
+      113: { name: "Allsvenskan (Sweden)", tier: 2, sport: "soccer" },
+      119: { name: "Superliga (Denmark)", tier: 2, sport: "soccer" },
+      169: { name: "Swiss Super League", tier: 2, sport: "soccer" },
+      244: { name: "Ekstraklasa (Poland)", tier: 2, sport: "soccer" },
+      271: { name: "Fortuna Liga (Slovakia)", tier: 3, sport: "soccer" },
+      // ── Americas ──
+      253: { name: "MLS", tier: 1, sport: "mls" },
+      262: { name: "Liga MX", tier: 1, sport: "soccer" },
+      11: { name: "CONMEBOL Libertadores", tier: 1, sport: "soccer" },
+      13: { name: "CONMEBOL Sudamericana", tier: 1, sport: "soccer" },
+      71: { name: "Brasileirao Serie A", tier: 1, sport: "soccer" },
+      72: { name: "Brasileirao Serie B", tier: 2, sport: "soccer" },
+      128: { name: "Liga Profesional (ARG)", tier: 1, sport: "soccer" },
+      239: { name: "Primera Division (CHI)", tier: 2, sport: "soccer" },
+      240: { name: "Primera A (COL)", tier: 2, sport: "soccer" },
+      242: { name: "Liga 1 (PER)", tier: 2, sport: "soccer" },
+      268: { name: "Primera Division (URU)", tier: 2, sport: "soccer" },
+      332: { name: "Primera Division (ECU)", tier: 2, sport: "soccer" },
+      // ── Asia / Middle East ──
+      17: { name: "AFC Champions League", tier: 1, sport: "soccer" },
+      307: { name: "Saudi Pro League", tier: 1, sport: "soccer" },
+      188: { name: "UAE Pro League", tier: 2, sport: "soccer" },
+      98: { name: "J1 League (Japan)", tier: 1, sport: "soccer" },
+      292: { name: "K League 1 (Korea)", tier: 1, sport: "soccer" },
+      169: { name: "Chinese Super League", tier: 2, sport: "soccer" },
+      323: { name: "A-League (Australia)", tier: 2, sport: "soccer" },
+      // ── Africa ──
+      12: { name: "CAF Champions League", tier: 1, sport: "soccer" },
+      233: { name: "NPFL (Nigeria)", tier: 2, sport: "soccer" },
+      202: { name: "Premier League (Egypt)", tier: 2, sport: "soccer" }
+    };
+    NBA_LEAGUE_ID = 12;
+    NBA_SEASON = 2024;
   }
 });
 
@@ -42100,58 +42263,188 @@ function requireAuth(req, res, next) {
   }
   next();
 }
+function selectBestLegs(predictions, count, minConfidence = CONFIDENCE_THRESHOLDS2.MINIMUM) {
+  const qualified = predictions.filter((p) => p.topConfidence >= minConfidence).filter((p) => !p.topPick.toLowerCase().includes("draw")).sort((a, b) => {
+    const aValue = a.topConfidence * (a.factors?.valueScore ?? 1);
+    const bValue = b.topConfidence * (b.factors?.valueScore ?? 1);
+    return bValue - aValue;
+  });
+  const seen = /* @__PURE__ */ new Set();
+  const unique = [];
+  for (const p of qualified) {
+    const key = `${p.homeTeam}|${p.awayTeam}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(p);
+    }
+  }
+  return unique.slice(0, count);
+}
 async function generateDailyPicks(date2) {
-  console.log(`[Engine] Generating picks for ${date2}`);
-  let fixtures = [];
+  console.log(`
+[Engine] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
+  console.log(`[Engine] Gold Standard V3 Titan XII \u2014 Generating picks`);
+  console.log(`[Engine] Date: ${date2} | Timezone: America/Moncton`);
+  console.log(`[Engine] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
+  let soccerFixtures = [];
+  let nbaFixtures = [];
   try {
-    const { fetchTodayFixtures: fetchTodayFixtures2 } = await Promise.resolve().then(() => (init_apiFootball(), apiFootball_exports));
-    fixtures = await fetchTodayFixtures2(date2);
+    const { fetchSoccerFixtures: fetchSoccerFixtures2, fetchNBAFixtures: fetchNBAFixtures2 } = await Promise.resolve().then(() => (init_apiFootball(), apiFootball_exports));
+    [soccerFixtures, nbaFixtures] = await Promise.all([
+      fetchSoccerFixtures2(date2).catch((err) => {
+        console.warn("[Engine] Soccer fetch failed, using mock:", err.message);
+        return getMockSoccerFixtures(date2);
+      }),
+      fetchNBAFixtures2(date2).catch((err) => {
+        console.warn("[Engine] NBA fetch failed, using mock:", err.message);
+        return getMockNBAFixtures(date2);
+      })
+    ]);
   } catch (err) {
-    console.warn("[Engine] API-Football fetch failed, using mock data:", err);
-    fixtures = getMockFixtures(date2);
+    console.warn("[Engine] API fetch failed, using full mock data:", err);
+    soccerFixtures = getMockSoccerFixtures(date2);
+    nbaFixtures = getMockNBAFixtures(date2);
   }
-  if (fixtures.length === 0) {
-    console.log("[Engine] No live fixtures found \u2014 using mock fixtures for demo");
-    fixtures = getMockFixtures(date2);
+  if (soccerFixtures.length === 0) {
+    console.log("[Engine] No live soccer fixtures \u2014 using mock data");
+    soccerFixtures = getMockSoccerFixtures(date2);
   }
-  const predictions = runBatchPredictions(fixtures);
-  let soccerCount = 0;
-  let nbaCount = 0;
-  for (const pred of predictions) {
+  if (nbaFixtures.length === 0) {
+    console.log("[Engine] No live NBA fixtures \u2014 using mock data");
+    nbaFixtures = getMockNBAFixtures(date2);
+  }
+  const mlsFixtures = soccerFixtures.filter((f) => f.sport === "mls");
+  const pureSOccer = soccerFixtures.filter((f) => f.sport === "soccer");
+  console.log(`[Engine] Fixtures loaded: ${pureSOccer.length} soccer, ${mlsFixtures.length} MLS, ${nbaFixtures.length} NBA`);
+  const soccerPreds = runBatchPredictions(pureSOccer);
+  const mlsPreds = runBatchPredictions(mlsFixtures);
+  const nbaPreds = runBatchPredictions(nbaFixtures);
+  console.log(`[Engine] Predictions: ${soccerPreds.length} soccer, ${mlsPreds.length} MLS, ${nbaPreds.length} NBA`);
+  const soccerLegs = selectBestLegs(soccerPreds, 3, CONFIDENCE_THRESHOLDS2.MINIMUM);
+  const mlsLegs = selectBestLegs(mlsPreds, 3, CONFIDENCE_THRESHOLDS2.MINIMUM);
+  const nbaLegs = selectBestLegs(nbaPreds, 3, CONFIDENCE_THRESHOLDS2.MINIMUM);
+  const allPreds = [...soccerPreds, ...mlsPreds, ...nbaPreds];
+  const powerCandidates = allPreds.filter((p) => p.topConfidence >= CONFIDENCE_THRESHOLDS2.MINIMUM).filter((p) => !p.topPick.toLowerCase().includes("draw")).sort((a, b) => b.topConfidence - a.topConfidence);
+  const powerPick = powerCandidates[0] || null;
+  console.log(`[Engine] Selected: ${soccerLegs.length} soccer legs, ${mlsLegs.length} MLS legs, ${nbaLegs.length} NBA legs`);
+  console.log(`[Engine] Power Pick: ${powerPick ? `${powerPick.homeTeam} vs ${powerPick.awayTeam} (${powerPick.topConfidence.toFixed(1)}%)` : "none"}`);
+  const totalScored = soccerPreds.length + mlsPreds.length + nbaPreds.length;
+  const totalPassed = soccerLegs.length + mlsLegs.length + nbaLegs.length;
+  const totalDiscarded = totalScored - totalPassed;
+  console.log(`[Titan XII] Threshold filter: ${totalPassed} passed | ${totalDiscarded} discarded (< ${CONFIDENCE_THRESHOLDS2.MINIMUM}%)`);
+  try {
+    const existingPicks = await getPicksByDate(date2);
+    for (const pick of existingPicks) {
+      await deletePick(pick.id);
+    }
+    console.log(`[Engine] Cleared ${existingPicks.length} existing picks for ${date2}`);
+  } catch (err) {
+    console.warn("[Engine] Failed to clear existing picks:", err);
+  }
+  let soccerCount = 0, nbaCount = 0, mlsCount = 0, powerCount = 0;
+  async function savePick(pred, overrideSport, overrideTier, isPower = false) {
     try {
       await createPick({
         date: date2,
-        sport: pred.sport,
-        tier: pred.tier,
+        sport: overrideSport || pred.sport,
+        tier: overrideTier || pred.tier,
         homeTeam: pred.homeTeam,
         awayTeam: pred.awayTeam,
         league: pred.league,
         prediction: pred.topPick,
         confidence: pred.topConfidence,
         fixtureId: String(pred.fixtureId),
-        isPowerPick: pred.isPowerPick,
+        isPowerPick: isPower,
         metadata: pred
       });
-      if (pred.sport === "soccer") soccerCount++;
-      else nbaCount++;
     } catch (err) {
       console.error("[Engine] Failed to save pick:", err);
     }
   }
+  for (const pred of soccerLegs) {
+    await savePick(pred, "soccer");
+    soccerCount++;
+    console.log(`[Engine] \u2705 Soccer leg: ${pred.homeTeam} vs ${pred.awayTeam} \u2014 ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)`);
+  }
+  for (const pred of nbaLegs) {
+    await savePick(pred, "nba");
+    nbaCount++;
+    console.log(`[Engine] \u2705 NBA leg:    ${pred.homeTeam} vs ${pred.awayTeam} \u2014 ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)`);
+  }
+  if (mlsLegs.length > 0) {
+    for (const pred of mlsLegs) {
+      await savePick(pred, "mls");
+      mlsCount++;
+      console.log(`[Engine] \u2705 MLS leg:    ${pred.homeTeam} vs ${pred.awayTeam} \u2014 ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)`);
+    }
+  } else {
+    console.log(`[Engine] \u2139\uFE0F  MLS tab: No MLS games on ${date2} \u2014 tab will show blank`);
+  }
+  if (powerPick) {
+    await savePick(powerPick, powerPick.sport, powerPick.tier, true);
+    powerCount++;
+    console.log(`[Engine] \u26A1 Power Pick: ${powerPick.homeTeam} vs ${powerPick.awayTeam} \u2014 ${powerPick.topPick} (${powerPick.topConfidence.toFixed(1)}%)`);
+  }
+  if (soccerLegs.length >= 2) {
+    const soccerOdds = soccerLegs.reduce((acc, p) => {
+      const odds = p.metadata?.homeOdds || p.metadata?.awayOdds || 1.85;
+      return acc * odds;
+    }, 1);
+    await saveParlays(date2, "soccer", soccerLegs.map((p) => ({
+      homeTeam: p.homeTeam,
+      awayTeam: p.awayTeam,
+      league: p.league,
+      pick: p.topPick,
+      confidence: p.topConfidence
+    })), soccerOdds.toFixed(2));
+  }
+  if (nbaLegs.length >= 2) {
+    const nbaOdds = nbaLegs.reduce((acc, p) => {
+      const odds = p.metadata?.homeOdds || p.metadata?.awayOdds || 1.9;
+      return acc * odds;
+    }, 1);
+    await saveParlays(date2, "nba", nbaLegs.map((p) => ({
+      homeTeam: p.homeTeam,
+      awayTeam: p.awayTeam,
+      league: p.league,
+      pick: p.topPick,
+      confidence: p.topConfidence
+    })), nbaOdds.toFixed(2));
+  }
+  if (mlsLegs.length >= 2) {
+    const mlsOdds = mlsLegs.reduce((acc, p) => {
+      const odds = p.metadata?.homeOdds || p.metadata?.awayOdds || 1.8;
+      return acc * odds;
+    }, 1);
+    await saveParlays(date2, "mls", mlsLegs.map((p) => ({
+      homeTeam: p.homeTeam,
+      awayTeam: p.awayTeam,
+      league: p.league,
+      pick: p.topPick,
+      confidence: p.topConfidence
+    })), mlsOdds.toFixed(2));
+  }
   let ftpUploaded = false;
   try {
+    const allSaved = [...soccerLegs, ...nbaLegs, ...mlsLegs, ...powerPick ? [powerPick] : []];
     const { uploadPicksToFTP: uploadPicksToFTP2 } = await Promise.resolve().then(() => (init_upload(), upload_exports));
-    await uploadPicksToFTP2(date2, predictions);
+    await uploadPicksToFTP2(date2, allSaved);
     ftpUploaded = true;
   } catch (err) {
-    console.warn("[Engine] FTP upload failed:", err);
+    console.warn("[Engine] FTP upload failed (non-critical):", err);
   }
-  return { total: predictions.length, soccer: soccerCount, nba: nbaCount, ftpUploaded };
+  const total = soccerCount + nbaCount + mlsCount + powerCount;
+  console.log(`[Engine] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
+  console.log(`[Engine] COMPLETE: ${total} picks saved for ${date2}`);
+  console.log(`[Engine]   Soccer: ${soccerCount}/3 | NBA: ${nbaCount}/3 | MLS: ${mlsCount}/3 | Power: ${powerCount}/1`);
+  console.log(`[Engine] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+`);
+  return { total, soccer: soccerCount, nba: nbaCount, mls: mlsCount, powerPick: powerCount, ftpUploaded };
 }
-function getMockFixtures(date2) {
+function getMockSoccerFixtures(date2) {
   return [
     {
-      fixtureId: "mock-1",
+      fixtureId: "mock-soccer-1",
       homeTeam: "Manchester City",
       awayTeam: "Arsenal",
       league: "Premier League",
@@ -42165,21 +42458,194 @@ function getMockFixtures(date2) {
       homeWinRate: 0.72,
       awayWinRate: 0.65,
       homeRestDays: 4,
-      awayRestDays: 3
+      awayRestDays: 3,
+      homeTableRank: 1,
+      awayTableRank: 3,
+      leagueSize: 20
     },
     {
-      fixtureId: "mock-2",
-      homeTeam: "Los Angeles Lakers",
-      awayTeam: "Boston Celtics",
+      fixtureId: "mock-soccer-2",
+      homeTeam: "Real Madrid",
+      awayTeam: "Barcelona",
+      league: "La Liga",
+      sport: "soccer",
+      date: date2,
+      homeOdds: 2.1,
+      drawOdds: 3.2,
+      awayOdds: 3.4,
+      homeForm: ["W", "W", "W", "L", "W"],
+      awayForm: ["W", "W", "L", "W", "W"],
+      homeWinRate: 0.7,
+      awayWinRate: 0.68,
+      homeRestDays: 5,
+      awayRestDays: 5,
+      homeTableRank: 2,
+      awayTableRank: 1,
+      leagueSize: 20
+    },
+    {
+      fixtureId: "mock-soccer-3",
+      homeTeam: "Bayern Munich",
+      awayTeam: "Dortmund",
+      league: "Bundesliga",
+      sport: "soccer",
+      date: date2,
+      homeOdds: 1.75,
+      drawOdds: 3.8,
+      awayOdds: 4.5,
+      homeForm: ["W", "W", "W", "W", "D"],
+      awayForm: ["W", "L", "W", "W", "L"],
+      homeWinRate: 0.78,
+      awayWinRate: 0.55,
+      homeRestDays: 6,
+      awayRestDays: 4,
+      homeTableRank: 1,
+      awayTableRank: 4,
+      leagueSize: 18
+    },
+    {
+      fixtureId: "mock-soccer-4",
+      homeTeam: "PSG",
+      awayTeam: "Lyon",
+      league: "Ligue 1",
+      sport: "soccer",
+      date: date2,
+      homeOdds: 1.55,
+      drawOdds: 4,
+      awayOdds: 5.5,
+      homeForm: ["W", "W", "W", "W", "W"],
+      awayForm: ["L", "D", "W", "L", "D"],
+      homeWinRate: 0.82,
+      awayWinRate: 0.42,
+      homeRestDays: 5,
+      awayRestDays: 3,
+      homeTableRank: 1,
+      awayTableRank: 8,
+      leagueSize: 20
+    },
+    {
+      fixtureId: "mock-soccer-5",
+      homeTeam: "Flamengo",
+      awayTeam: "Palmeiras",
+      league: "Brasileirao Serie A",
+      sport: "soccer",
+      date: date2,
+      homeOdds: 2,
+      drawOdds: 3.3,
+      awayOdds: 3.6,
+      homeForm: ["W", "W", "D", "W", "L"],
+      awayForm: ["W", "W", "W", "D", "W"],
+      homeWinRate: 0.62,
+      awayWinRate: 0.68,
+      homeRestDays: 4,
+      awayRestDays: 4,
+      homeTableRank: 3,
+      awayTableRank: 1,
+      leagueSize: 20
+    }
+  ];
+}
+function getMockNBAFixtures(date2) {
+  return [
+    {
+      fixtureId: "mock-nba-1",
+      homeTeam: "Boston Celtics",
+      awayTeam: "Miami Heat",
       league: "NBA",
       sport: "nba",
       date: date2,
-      homeOdds: 2.1,
-      awayOdds: 1.75,
-      homeForm: ["W", "L", "W", "W", "D"],
-      awayForm: ["W", "W", "W", "L", "W"],
-      homeWinRate: 0.58,
-      awayWinRate: 0.68
+      homeOdds: 1.62,
+      awayOdds: 2.35,
+      homeForm: ["W", "W", "W", "L", "W"],
+      awayForm: ["L", "W", "L", "L", "W"],
+      homeWinRate: 0.71,
+      awayWinRate: 0.44,
+      homeRestDays: 2,
+      awayRestDays: 1,
+      homeInjuries: 1,
+      awayInjuries: 3,
+      homeKeyPlayerOut: false,
+      awayKeyPlayerOut: true,
+      homeInjuryRating: 0.93,
+      awayInjuryRating: 0.62,
+      homeTableRank: 2,
+      awayTableRank: 11,
+      leagueSize: 30
+    },
+    {
+      fixtureId: "mock-nba-2",
+      homeTeam: "Denver Nuggets",
+      awayTeam: "Phoenix Suns",
+      league: "NBA",
+      sport: "nba",
+      date: date2,
+      homeOdds: 1.55,
+      awayOdds: 2.55,
+      homeForm: ["W", "W", "W", "W", "L"],
+      awayForm: ["L", "L", "W", "L", "L"],
+      homeWinRate: 0.68,
+      awayWinRate: 0.38,
+      homeRestDays: 4,
+      awayRestDays: 2,
+      homeInjuries: 0,
+      awayInjuries: 5,
+      homeKeyPlayerOut: false,
+      awayKeyPlayerOut: true,
+      homeInjuryRating: 1,
+      awayInjuryRating: 0.42,
+      homeTableRank: 3,
+      awayTableRank: 18,
+      leagueSize: 30
+    },
+    {
+      fixtureId: "mock-nba-3",
+      homeTeam: "Oklahoma City Thunder",
+      awayTeam: "Sacramento Kings",
+      league: "NBA",
+      sport: "nba",
+      date: date2,
+      homeOdds: 1.7,
+      awayOdds: 2.2,
+      homeForm: ["W", "W", "W", "W", "W"],
+      awayForm: ["W", "L", "W", "L", "W"],
+      homeWinRate: 0.74,
+      awayWinRate: 0.52,
+      homeRestDays: 3,
+      awayRestDays: 2,
+      homeInjuries: 0,
+      awayInjuries: 2,
+      homeKeyPlayerOut: false,
+      awayKeyPlayerOut: false,
+      homeInjuryRating: 1,
+      awayInjuryRating: 0.86,
+      homeTableRank: 1,
+      awayTableRank: 6,
+      leagueSize: 30
+    },
+    {
+      fixtureId: "mock-nba-4",
+      homeTeam: "Cleveland Cavaliers",
+      awayTeam: "Orlando Magic",
+      league: "NBA",
+      sport: "nba",
+      date: date2,
+      homeOdds: 1.65,
+      awayOdds: 2.3,
+      homeForm: ["W", "W", "L", "W", "W"],
+      awayForm: ["W", "L", "W", "L", "L"],
+      homeWinRate: 0.69,
+      awayWinRate: 0.48,
+      homeRestDays: 2,
+      awayRestDays: 3,
+      homeInjuries: 1,
+      awayInjuries: 2,
+      homeKeyPlayerOut: false,
+      awayKeyPlayerOut: false,
+      homeInjuryRating: 0.93,
+      awayInjuryRating: 0.86,
+      homeTableRank: 2,
+      awayTableRank: 9,
+      leagueSize: 30
     }
   ];
 }
@@ -42207,7 +42673,104 @@ async function registerRoutes(app) {
     }
   });
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", uptime: process.uptime(), version: "V3 Titan XII", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+    res.json({
+      status: "ok",
+      uptime: process.uptime(),
+      version: "V3 Titan XII",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      pickStructure: {
+        nba: "3 legs",
+        mls: "3 legs (blank if no games)",
+        soccer: "3 legs",
+        power: "1 pick (highest confidence \u226568%)"
+      }
+    });
+  });
+  app.get("/api/picks/nba", async (req, res) => {
+    try {
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const picks2 = await getPicksByDate(date2);
+      const nbaLegs = picks2.filter((p) => p.sport === "nba" && !p.isDisabled).sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0)).slice(0, 3);
+      res.json({
+        tab: "NBA",
+        date: date2,
+        legs: nbaLegs,
+        count: nbaLegs.length,
+        target: 3,
+        complete: nbaLegs.length === 3
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/picks/mls", async (req, res) => {
+    try {
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const picks2 = await getPicksByDate(date2);
+      const mlsLegs = picks2.filter((p) => p.sport === "mls" && !p.isDisabled).sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0)).slice(0, 3);
+      res.json({
+        tab: "MLS",
+        date: date2,
+        legs: mlsLegs,
+        count: mlsLegs.length,
+        target: 3,
+        complete: mlsLegs.length === 3,
+        noGames: mlsLegs.length === 0,
+        message: mlsLegs.length === 0 ? "No MLS games scheduled today" : void 0
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/picks/soccer", async (req, res) => {
+    try {
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const picks2 = await getPicksByDate(date2);
+      const soccerLegs = picks2.filter((p) => p.sport === "soccer" && !p.isDisabled).sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0)).slice(0, 3);
+      res.json({
+        tab: "Soccer",
+        date: date2,
+        legs: soccerLegs,
+        count: soccerLegs.length,
+        target: 3,
+        complete: soccerLegs.length === 3
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/picks/power", async (req, res) => {
+    try {
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const picks2 = await getPicksByDate(date2);
+      const powerPick = picks2.filter((p) => p.isPowerPick && !p.isDisabled).sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0] || null;
+      res.json({
+        tab: "Power Pick",
+        date: date2,
+        pick: powerPick,
+        confidence: powerPick?.confidence ?? null,
+        available: !!powerPick
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/picks/today", async (req, res) => {
+    try {
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const picks2 = await getPicksByDate(date2);
+      const active = picks2.filter((p) => !p.isDisabled);
+      res.json({
+        date: date2,
+        nba: active.filter((p) => p.sport === "nba").slice(0, 3),
+        mls: active.filter((p) => p.sport === "mls").slice(0, 3),
+        soccer: active.filter((p) => p.sport === "soccer").slice(0, 3),
+        power: active.filter((p) => p.isPowerPick).slice(0, 1),
+        total: active.length
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
   app.get("/api/admin/picks", requireAuth, async (req, res) => {
     try {
@@ -42246,7 +42809,11 @@ async function registerRoutes(app) {
     try {
       const date2 = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
       const picks2 = await getPicksByDate(date2);
-      const byTier = { free: picks2.filter((p) => p.tier === "free"), vip: picks2.filter((p) => p.tier === "vip"), pro: picks2.filter((p) => p.tier === "pro") };
+      const byTier = {
+        free: picks2.filter((p) => p.tier === "free"),
+        vip: picks2.filter((p) => p.tier === "vip"),
+        pro: picks2.filter((p) => p.tier === "pro")
+      };
       res.json(byTier);
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -42283,6 +42850,15 @@ async function registerRoutes(app) {
     try {
       const { date: date2, legs, totalOdds } = req.body;
       const parlay = await saveParlays(date2 || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA"), "nba", legs, totalOdds);
+      res.json({ success: true, parlay });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/mls-parlay-override", requireAuth, async (req, res) => {
+    try {
+      const { date: date2, legs, totalOdds } = req.body;
+      const parlay = await saveParlays(date2 || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA"), "mls", legs, totalOdds);
       res.json({ success: true, parlay });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -42327,24 +42903,23 @@ async function registerRoutes(app) {
       const wins = tierResults.filter((r) => r.result === "won").length;
       const losses = tierResults.filter((r) => r.result === "lost").length;
       const total = wins + losses;
-      res.json({ tier: req.params.tier, wins, losses, total, winRate: total > 0 ? Math.round(wins / total * 1e3) / 10 : 0, results: tierResults });
+      res.json({
+        tier: req.params.tier,
+        wins,
+        losses,
+        total,
+        winRate: total > 0 ? Math.round(wins / total * 1e3) / 10 : 0,
+        results: tierResults
+      });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   });
   app.post("/api/admin/trigger", requireAuth, async (req, res) => {
     try {
-      const date2 = req.body.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
-      res.json({ message: "Generation started", date: date2 });
-      generateDailyPicks(date2).catch((err) => console.error("[Trigger] Error:", err));
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/runs", requireAuth, async (req, res) => {
-    try {
-      const logs = await getRunLogs(30);
-      res.json(logs);
+      const date2 = req.body.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      res.json({ success: true, message: `Generation triggered for ${date2}`, date: date2 });
+      generateDailyPicks(date2).catch((err) => console.error("[Admin] Manual trigger failed:", err));
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -42357,20 +42932,19 @@ async function registerRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.post("/api/admin/v2-validate", requireAuth, async (req, res) => {
+  app.post("/api/admin/engine-config", requireAuth, async (req, res) => {
     try {
-      const fixture = req.body;
-      const result = runTitanXII(fixture);
-      res.json(result);
+      const { key, value } = req.body;
+      await setEngineConfig(key, value);
+      res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.post("/api/admin/refresh-data", requireAuth, async (req, res) => {
+  app.get("/api/admin/run-logs", requireAuth, async (req, res) => {
     try {
-      const { clearApiCache: clearApiCache2 } = await Promise.resolve().then(() => (init_apiFootball(), apiFootball_exports));
-      clearApiCache2();
-      res.json({ success: true, message: "API cache cleared \u2014 next generation will fetch live data" });
+      const logs = await getRunLogs(20);
+      res.json(logs);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -42378,48 +42952,16 @@ async function registerRoutes(app) {
   app.get("/api/admin/cache-status", requireAuth, async (req, res) => {
     try {
       const { getCacheStatus: getCacheStatus2 } = await Promise.resolve().then(() => (init_apiFootball(), apiFootball_exports));
-      const status = getCacheStatus2();
-      res.json(status);
+      res.json(getCacheStatus2());
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/admin/player-stats", requireAuth, async (req, res) => {
+  app.post("/api/admin/clear-cache", requireAuth, async (req, res) => {
     try {
-      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
-      const sport = req.query.sport;
-      const stats = await getPlayerStats(date2, sport);
-      res.json(stats);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/member/login", async (req, res) => {
-    try {
-      const { email, tier } = req.body;
-      if (!email) return res.status(400).json({ error: "Email required" });
-      const member = await createOrUpdateMember(email, tier || "free");
-      const token = generateToken();
-      activeTokens.add(token);
-      res.json({ token, member });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/member/heartbeat", async (req, res) => {
-    try {
-      const { email, page } = req.body;
-      if (email) await recordHeartbeat(email, page);
-      res.json({ ok: true });
-    } catch {
-      res.json({ ok: true });
-    }
-  });
-  app.get("/api/admin/active-users", requireAuth, async (req, res) => {
-    try {
-      const minutes = parseInt(req.query.minutes) || 15;
-      const users2 = await getActiveUsers(minutes);
-      res.json({ count: users2.length, users: users2 });
+      const { clearApiCache: clearApiCache2 } = await Promise.resolve().then(() => (init_apiFootball(), apiFootball_exports));
+      clearApiCache2();
+      res.json({ success: true, message: "API cache cleared" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -42432,7 +42974,25 @@ async function registerRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/admin/tiers-pricing", requireAuth, async (req, res) => {
+  app.post("/api/member/heartbeat", async (req, res) => {
+    try {
+      const { email, page } = req.body;
+      if (!email) return res.status(400).json({ error: "Email required" });
+      await recordHeartbeat(email, page);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/active-users", requireAuth, async (req, res) => {
+    try {
+      const users2 = await getActiveUsers(15);
+      res.json(users2);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/tier-pricing", requireAuth, async (req, res) => {
     try {
       const pricing = await getTierPricing();
       res.json(pricing);
@@ -42440,68 +43000,10 @@ async function registerRoutes(app) {
       res.status(500).json({ error: err.message });
     }
   });
-  app.post("/api/admin/tiers-pricing", requireAuth, async (req, res) => {
+  app.post("/api/admin/tier-pricing", requireAuth, async (req, res) => {
     try {
       const { tier, price, label } = req.body;
       await setTierPricing(tier, price, label);
-      res.json({ success: true });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/tier-assign", requireAuth, async (req, res) => {
-    try {
-      const { pickId, tier } = req.body;
-      const pick = await updatePick(pickId, { tier });
-      res.json(pick);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/expert", requireAuth, async (req, res) => {
-    res.json({ content: "", visible: true });
-  });
-  app.post("/api/admin/expert/update", requireAuth, async (req, res) => {
-    res.json({ success: true });
-  });
-  app.get("/api/admin/featured", requireAuth, async (req, res) => {
-    try {
-      const date2 = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
-      const picks2 = await getPicksByDate(date2);
-      const featured = picks2.find((p) => p.isFeatured) || picks2[0] || null;
-      res.json({ featured, trending: picks2.slice(0, 3) });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/featured/update", requireAuth, async (req, res) => {
-    res.json({ success: true });
-  });
-  app.get("/api/admin/featured/visibility", requireAuth, async (req, res) => {
-    res.json({ visible: true });
-  });
-  app.post("/api/admin/featured/visibility", requireAuth, async (req, res) => {
-    res.json({ success: true });
-  });
-  app.post("/api/admin/homepage-edit", requireAuth, async (req, res) => {
-    res.json({ success: true });
-  });
-  app.post("/api/admin/seo-ping", requireAuth, async (req, res) => {
-    res.json({ success: true, message: "SEO pings sent" });
-  });
-  app.get("/api/admin/ftp-files", requireAuth, async (req, res) => {
-    try {
-      const { listFTPFiles: listFTPFiles2 } = await Promise.resolve().then(() => (init_upload(), upload_exports));
-      const files = await listFTPFiles2();
-      res.json(files);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.delete("/api/admin/ftp-files", requireAuth, async (req, res) => {
-    try {
-      const { deleteFTPFile: deleteFTPFile2 } = await Promise.resolve().then(() => (init_upload(), upload_exports));
-      await deleteFTPFile2(req.body.filename);
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -42540,7 +43042,7 @@ async function registerRoutes(app) {
   });
   app.get("/api/bet-builder/games", async (req, res) => {
     try {
-      const date2 = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
+      const date2 = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
       const picks2 = await getPicksByDate(date2);
       const freePicks = picks2.filter((p) => p.tier === "free" && !p.isDisabled);
       res.json(freePicks);
@@ -42555,14 +43057,24 @@ async function registerRoutes(app) {
     res.json({ success: true, message: "Re-engagement notifications queued" });
   });
   console.log("[Routes] All API routes registered");
+  console.log("[Routes] Public tab endpoints: /api/picks/nba | /api/picks/mls | /api/picks/soccer | /api/picks/power | /api/picks/today");
 }
-var ADMIN_PASSWORDS, activeTokens;
+var ADMIN_PASSWORDS, activeTokens, CONFIDENCE_THRESHOLDS2;
 var init_routes = __esm({
   "server/routes.ts"() {
     init_storage();
     init_goldStandardV2();
     ADMIN_PASSWORDS = ["Parlayking", "386Leblanc", "admin123"];
     activeTokens = /* @__PURE__ */ new Set();
+    CONFIDENCE_THRESHOLDS2 = {
+      MINIMUM: 68,
+      // All picks must pass this
+      FREE_TIER: 68,
+      VIP_TIER: 72,
+      PRO_TIER: 75,
+      POWER_PICK: 80
+      // Power Pick badge
+    };
   }
 });
 

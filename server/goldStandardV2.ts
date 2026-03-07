@@ -54,8 +54,16 @@ export interface FixtureData {
   homeTeam: string;
   awayTeam: string;
   league: string;
-  sport: 'soccer' | 'nba';
-  date: string;
+  leagueId?: number;          // API-Football league ID
+  leagueTier?: number;        // 1=elite, 2=major, 3=other
+  sport: 'soccer' | 'nba' | 'mls';
+  date: string;               // YYYY-MM-DD target date
+  fixtureDate?: string;       // ISO datetime from API (used for date validation)
+  venueCity?: string;
+  venueId?: number;
+  homeTeamId?: number;
+  awayTeamId?: number;
+  season?: number;
 
   // F01: Market Consensus
   homeOdds?: number;
