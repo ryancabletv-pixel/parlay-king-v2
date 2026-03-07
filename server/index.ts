@@ -112,8 +112,26 @@ async function initializeExpress() {
 
     // SEO routes — MUST be registered before static middleware so /sitemap.xml
     // and /robots.txt are served correctly and not intercepted by express.static
-    const { registerSeoRoutes } = await import('./seo.js');
-    registerSeoRoutes(app);
+    try {
+      const { registerSeoRoutes } = await import('./seo.js');
+      registerSeoRoutes(app);
+      console.log('[SEO] Module loaded and routes registered successfully');
+    } catch (seoErr) {
+      console.error('[SEO] FAILED to register SEO routes:', seoErr);
+      // Fallback: register sitemap inline if seo.ts fails
+      app.get('/sitemap.xml', (_req: any, res: any) => {
+        const today = new Date().toISOString().split('T')[0];
+        const pages = ['/', '/picks', '/soccer-picks', '/nba-picks', '/parlays', '/results', '/vip', '/pro'];
+        const urls = pages.map(p => `<url><loc>https://soccernbaparlayking.vip${p}</loc><lastmod>${today}</lastmod><priority>0.9</priority></url>`).join('');
+        res.setHeader('Content-Type', 'application/xml');
+        res.send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`);
+      });
+      app.get('/robots.txt', (_req: any, res: any) => {
+        res.setHeader('Content-Type', 'text/plain');
+        res.send('User-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: https://soccernbaparlayking.vip/sitemap.xml\n');
+      });
+      console.log('[SEO] Fallback sitemap/robots routes registered');
+    }
 
     // Serve built Expo admin app from /dist
     const distPath = path.join(process.cwd(), 'dist');

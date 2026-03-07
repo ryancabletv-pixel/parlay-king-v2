@@ -43758,8 +43758,25 @@ async function initializeExpress() {
       version: "V3 Titan XII",
       scheduler: "active"
     }));
-    const { registerSeoRoutes: registerSeoRoutes2 } = await Promise.resolve().then(() => (init_seo(), seo_exports));
-    registerSeoRoutes2(app);
+    try {
+      const { registerSeoRoutes: registerSeoRoutes2 } = await Promise.resolve().then(() => (init_seo(), seo_exports));
+      registerSeoRoutes2(app);
+      console.log("[SEO] Module loaded and routes registered successfully");
+    } catch (seoErr) {
+      console.error("[SEO] FAILED to register SEO routes:", seoErr);
+      app.get("/sitemap.xml", (_req, res) => {
+        const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+        const pages = ["/", "/picks", "/soccer-picks", "/nba-picks", "/parlays", "/results", "/vip", "/pro"];
+        const urls = pages.map((p) => `<url><loc>https://soccernbaparlayking.vip${p}</loc><lastmod>${today}</lastmod><priority>0.9</priority></url>`).join("");
+        res.setHeader("Content-Type", "application/xml");
+        res.send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`);
+      });
+      app.get("/robots.txt", (_req, res) => {
+        res.setHeader("Content-Type", "text/plain");
+        res.send("User-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: https://soccernbaparlayking.vip/sitemap.xml\n");
+      });
+      console.log("[SEO] Fallback sitemap/robots routes registered");
+    }
     const distPath = path2.join(process.cwd(), "dist");
     if (fs2.existsSync(distPath)) {
       app.use(express.static(distPath));
