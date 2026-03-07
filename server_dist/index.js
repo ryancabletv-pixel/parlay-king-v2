@@ -19006,10 +19006,10 @@ var require_layer = __commonJS({
 var require_methods = __commonJS({
   "node_modules/methods/index.js"(exports2, module2) {
     "use strict";
-    var http2 = require("http");
+    var http3 = require("http");
     module2.exports = getCurrentNodeMethods() || getBasicNodeMethods();
     function getCurrentNodeMethods() {
-      return http2.METHODS && http2.METHODS.map(function lowerCaseMethod(method) {
+      return http3.METHODS && http3.METHODS.map(function lowerCaseMethod(method) {
         return method.toLowerCase();
       });
     }
@@ -22222,7 +22222,7 @@ var require_application = __commonJS({
     var query = require_query();
     var debug = require_src3()("express:application");
     var View2 = require_view();
-    var http2 = require("http");
+    var http3 = require("http");
     var compileETag = require_utils2().compileETag;
     var compileQueryParser = require_utils2().compileQueryParser;
     var compileTrust = require_utils2().compileTrust;
@@ -22471,7 +22471,7 @@ var require_application = __commonJS({
       tryRender(view, renderOptions, done);
     };
     app.listen = function listen() {
-      var server = http2.createServer(this);
+      var server = http3.createServer(this);
       return server.listen.apply(server, arguments);
     };
     function logerror(err) {
@@ -22939,11 +22939,11 @@ var require_negotiator = __commonJS({
     var preferredMediaTypes = require_mediaType();
     module2.exports = Negotiator;
     module2.exports.Negotiator = Negotiator;
-    function Negotiator(request) {
+    function Negotiator(request2) {
       if (!(this instanceof Negotiator)) {
-        return new Negotiator(request);
+        return new Negotiator(request2);
       }
-      this.request = request;
+      this.request = request2;
     }
     Negotiator.prototype.charset = function charset(available) {
       var set = this.charsets(available);
@@ -23073,12 +23073,12 @@ var require_request = __commonJS({
     var deprecate = require_depd()("express");
     var isIP = require("net").isIP;
     var typeis = require_type_is();
-    var http2 = require("http");
+    var http3 = require("http");
     var fresh = require_fresh();
     var parseRange = require_range_parser();
     var parse2 = require_parseurl();
     var proxyaddr = require_proxy_addr();
-    var req = Object.create(http2.IncomingMessage.prototype);
+    var req = Object.create(http3.IncomingMessage.prototype);
     module2.exports = req;
     req.get = req.header = function header(name) {
       if (!name) {
@@ -23499,7 +23499,7 @@ var require_response = __commonJS({
     var deprecate = require_depd()("express");
     var encodeUrl = require_encodeurl();
     var escapeHtml = require_escape_html();
-    var http2 = require("http");
+    var http3 = require("http");
     var isAbsolute = require_utils2().isAbsolute;
     var onFinished = require_on_finished();
     var path2 = require("path");
@@ -23515,7 +23515,7 @@ var require_response = __commonJS({
     var mime = send.mime;
     var resolve = path2.resolve;
     var vary = require_vary();
-    var res = Object.create(http2.ServerResponse.prototype);
+    var res = Object.create(http3.ServerResponse.prototype);
     module2.exports = res;
     var charsetRegExp = /;\s*charset\s*=/;
     res.status = function status(code) {
@@ -24642,8 +24642,8 @@ var require_on_headers = __commonJS({
   "node_modules/on-headers/index.js"(exports2, module2) {
     "use strict";
     module2.exports = onHeaders;
-    var http2 = require("http");
-    var isAppendHeaderSupported = typeof http2.ServerResponse.prototype.appendHeader === "function";
+    var http3 = require("http");
+    var isAppendHeaderSupported = typeof http3.ServerResponse.prototype.appendHeader === "function";
     var set1dArray = isAppendHeaderSupported ? set1dArrayWithAppend : set1dArrayWithSet;
     function createWriteHead(prevWriteHead, listener) {
       var fired = false;
@@ -25799,6 +25799,156 @@ var require_lib3 = __commonJS({
       }
       module2.exports = middlewareWrapper;
     })();
+  }
+});
+
+// server/seo.ts
+var seo_exports = {};
+__export(seo_exports, {
+  generateSitemapXml: () => generateSitemapXml,
+  pingGoogleAfterUpdate: () => pingGoogleAfterUpdate,
+  pingSitemapToSearchEngines: () => pingSitemapToSearchEngines,
+  registerSeoRoutes: () => registerSeoRoutes,
+  submitIndexNow: () => submitIndexNow
+});
+function generateSitemapXml() {
+  const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+  const urls = SITE_PAGES.map((p) => `
+  <url>
+    <loc>${DOMAIN}${p.url}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${p.changefreq}</changefreq>
+    <priority>${p.priority}</priority>
+  </url>`).join("");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>`;
+}
+function httpGet(url) {
+  return new Promise((resolve) => {
+    const mod = url.startsWith("https") ? https : http;
+    const req = mod.get(url, (res) => {
+      resolve(res.statusCode || 0);
+    });
+    req.on("error", () => resolve(0));
+    req.setTimeout(1e4, () => {
+      req.destroy();
+      resolve(0);
+    });
+  });
+}
+function httpPost(url, body, contentType = "application/json") {
+  return new Promise((resolve) => {
+    const parsed = new URL(url);
+    const options = {
+      hostname: parsed.hostname,
+      path: parsed.pathname + parsed.search,
+      method: "POST",
+      headers: {
+        "Content-Type": contentType,
+        "Content-Length": Buffer.byteLength(body)
+      }
+    };
+    const req = https.request(options, (res) => {
+      resolve(res.statusCode || 0);
+    });
+    req.on("error", () => resolve(0));
+    req.setTimeout(1e4, () => {
+      req.destroy();
+      resolve(0);
+    });
+    req.write(body);
+    req.end();
+  });
+}
+async function pingSitemapToSearchEngines() {
+  const sitemapUrl = encodeURIComponent(`${DOMAIN}/sitemap.xml`);
+  const pings = [
+    { name: "Google", url: `https://www.google.com/ping?sitemap=${sitemapUrl}` },
+    { name: "Bing", url: `https://www.bing.com/ping?sitemap=${sitemapUrl}` }
+  ];
+  for (const ping of pings) {
+    try {
+      const status = await httpGet(ping.url);
+      console.log(`[SEO] ${ping.name} sitemap ping \u2192 HTTP ${status}`);
+    } catch (err) {
+      console.warn(`[SEO] ${ping.name} ping failed:`, err);
+    }
+  }
+}
+async function submitIndexNow() {
+  const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "parlayking-indexnow-key";
+  const urlList = SITE_PAGES.map((p) => `${DOMAIN}${p.url}`);
+  const body = JSON.stringify({
+    host: "soccernbaparlayking.vip",
+    key: INDEXNOW_KEY,
+    keyLocation: `${DOMAIN}/${INDEXNOW_KEY}.txt`,
+    urlList
+  });
+  try {
+    const status = await httpPost("https://api.indexnow.org/indexnow", body);
+    console.log(`[SEO] IndexNow submission \u2192 HTTP ${status} (${urlList.length} URLs)`);
+  } catch (err) {
+    console.warn("[SEO] IndexNow submission failed:", err);
+  }
+}
+async function pingGoogleAfterUpdate(reason = "daily-picks-update") {
+  console.log(`[SEO] Running full Google/Bing ping \u2014 reason: ${reason}`);
+  try {
+    await Promise.allSettled([
+      pingSitemapToSearchEngines(),
+      submitIndexNow()
+    ]);
+    console.log("[SEO] All search engine pings complete");
+  } catch (err) {
+    console.warn("[SEO] Ping error:", err);
+  }
+}
+function registerSeoRoutes(app) {
+  app.get("/sitemap.xml", (_req, res) => {
+    const xml = generateSitemapXml();
+    res.setHeader("Content-Type", "application/xml");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(xml);
+    console.log("[SEO] Sitemap served");
+  });
+  app.get("/robots.txt", (_req, res) => {
+    res.setHeader("Content-Type", "text/plain");
+    res.send(
+      `User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: ${DOMAIN}/sitemap.xml
+`
+    );
+  });
+  const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "parlayking-indexnow-key";
+  app.get(`/${INDEXNOW_KEY}.txt`, (_req, res) => {
+    res.setHeader("Content-Type", "text/plain");
+    res.send(INDEXNOW_KEY);
+  });
+  console.log("[SEO] Routes registered: /sitemap.xml, /robots.txt");
+}
+var https, http, DOMAIN, SITE_PAGES;
+var init_seo = __esm({
+  "server/seo.ts"() {
+    https = __toESM(require("https"));
+    http = __toESM(require("http"));
+    DOMAIN = "https://soccernbaparlayking.vip";
+    SITE_PAGES = [
+      { url: "/", priority: "1.0", changefreq: "daily" },
+      { url: "/picks", priority: "0.9", changefreq: "daily" },
+      { url: "/soccer-picks", priority: "0.9", changefreq: "daily" },
+      { url: "/nba-picks", priority: "0.9", changefreq: "daily" },
+      { url: "/parlays", priority: "0.8", changefreq: "daily" },
+      { url: "/results", priority: "0.8", changefreq: "daily" },
+      { url: "/vip", priority: "0.7", changefreq: "weekly" },
+      { url: "/pro", priority: "0.7", changefreq: "weekly" },
+      { url: "/admin", priority: "0.3", changefreq: "monthly" }
+    ];
   }
 });
 
@@ -39185,144 +39335,177 @@ var init_storage = __esm({
 });
 
 // server/goldStandardV2.ts
-function calcMarketConsensus(homeOdds, drawOdds, awayOdds) {
-  if (!homeOdds || !awayOdds) return { home: 0.45, draw: 0.25, away: 0.3 };
+function calcF01_MarketConsensus(homeOdds, drawOdds, awayOdds) {
+  if (!homeOdds || !awayOdds) return { home: 0.44, draw: 0.26, away: 0.3 };
   const homeImpl = 1 / homeOdds;
-  const drawImpl = drawOdds ? 1 / drawOdds : 0.25;
+  const drawImpl = drawOdds ? 1 / drawOdds : 0.26;
   const awayImpl = 1 / awayOdds;
   const total = homeImpl + drawImpl + awayImpl;
-  return {
-    home: homeImpl / total,
-    draw: drawImpl / total,
-    away: awayImpl / total
-  };
+  return { home: homeImpl / total, draw: drawImpl / total, away: awayImpl / total };
 }
-function calcMomentum(form) {
+function calcF02_Momentum(form) {
   if (!form || form.length === 0) return 0.5;
   const weights = [0.35, 0.25, 0.2, 0.12, 0.08];
   let score = 0;
-  let totalWeight = 0;
+  let maxScore = 0;
   for (let i = 0; i < Math.min(form.length, 5); i++) {
     const w = weights[i];
     const pts = form[i] === "W" ? 3 : form[i] === "D" ? 1 : 0;
     score += pts * w;
-    totalWeight += 3 * w;
+    maxScore += 3 * w;
   }
-  return totalWeight > 0 ? score / totalWeight : 0.5;
+  return maxScore > 0 ? score / maxScore : 0.5;
 }
-function calcQuality(winRate, goalDiff) {
+function calcF03_Quality(winRate, goalDiff) {
   const wr = winRate ?? 0.5;
   const gd = goalDiff ?? 0;
-  const gdNorm = Math.max(0, Math.min(1, (gd + 30) / 60));
+  const gdNorm = Math.max(0, Math.min(1, (gd + 2) / 4));
   return wr * 0.7 + gdNorm * 0.3;
 }
-function calcSecretSauce(h2hHomeWins = 0, h2hAwayWins = 0, h2hDraws = 0, homeRestDays = 3, awayRestDays = 3, homeInjuries = 0, awayInjuries = 0) {
-  const h2hTotal = h2hHomeWins + h2hAwayWins + h2hDraws;
-  const h2hHome = h2hTotal > 0 ? h2hHomeWins / h2hTotal : 0.45;
-  const h2hAway = h2hTotal > 0 ? h2hAwayWins / h2hTotal : 0.35;
-  const restDiff = homeRestDays - awayRestDays;
-  const restHome = Math.min(1, Math.max(0, 0.5 + restDiff * 0.05));
-  const restAway = 1 - restHome;
-  const injHome = Math.max(0, 1 - homeInjuries * 0.08);
-  const injAway = Math.max(0, 1 - awayInjuries * 0.08);
-  const injTotal = injHome + injAway;
-  const injHomeNorm = injTotal > 0 ? injHome / injTotal : 0.5;
-  const injAwayNorm = injTotal > 0 ? injAway / injTotal : 0.5;
-  return {
-    home: h2hHome * 0.33 + restHome * 0.33 + injHomeNorm * 0.34,
-    away: h2hAway * 0.33 + restAway * 0.33 + injAwayNorm * 0.34
-  };
+function calcF04_H2H(h2hHomeWins = 0, h2hAwayWins = 0, h2hDraws = 0) {
+  const total = h2hHomeWins + h2hAwayWins + h2hDraws;
+  if (total === 0) return { home: 0.45, away: 0.35 };
+  return { home: h2hHomeWins / total, away: h2hAwayWins / total };
 }
-function calcMarketSteam(openingHomeOdds, currentHomeOdds, openingAwayOdds, currentAwayOdds) {
+function calcF05_MarketSteam(openingHomeOdds, currentHomeOdds, openingAwayOdds, currentAwayOdds) {
   if (!openingHomeOdds || !currentHomeOdds) return { home: 0.5, away: 0.5 };
   const homeMove = (openingHomeOdds - currentHomeOdds) / openingHomeOdds;
   const awayMove = openingAwayOdds && currentAwayOdds ? (openingAwayOdds - currentAwayOdds) / openingAwayOdds : 0;
-  const homeScore = Math.min(1, Math.max(0, 0.5 + homeMove * 2));
-  const awayScore = Math.min(1, Math.max(0, 0.5 + awayMove * 2));
-  return { home: homeScore, away: awayScore };
+  return {
+    home: Math.min(1, Math.max(0, 0.5 + homeMove * 2)),
+    away: Math.min(1, Math.max(0, 0.5 + awayMove * 2))
+  };
 }
-function calcTravelStress(homeTimezone = 0, awayTimezone = 0) {
+function calcF06_RestFatigue(restDays = 3) {
+  if (restDays >= 5) return 1;
+  if (restDays >= 3) return 0.9;
+  if (restDays === 2) return 0.75;
+  if (restDays === 1) return 0.6;
+  return 0.45;
+}
+function calcF07_Injuries(injuryCount = 0, keyPlayerOut = false, injuryRating) {
+  if (injuryRating !== void 0) {
+    const keyPenalty2 = keyPlayerOut ? 0.15 : 0;
+    return Math.max(0, injuryRating - keyPenalty2);
+  }
+  const countPenalty = Math.min(0.6, injuryCount * 0.07);
+  const keyPenalty = keyPlayerOut ? 0.15 : 0;
+  return Math.max(0, 1 - countPenalty - keyPenalty);
+}
+function calcF08_TravelStress(homeTimezone = 0, awayTimezone = 0) {
   const diff = Math.abs(homeTimezone - awayTimezone);
   return Math.min(1, diff / 12);
 }
-function calcRefereeBias(refereeHomeWinPct = 0.45) {
-  return refereeHomeWinPct;
+function calcF09_RefereeBias(homeWinPct = 0.45, strictness = 0.5) {
+  return {
+    homeBoost: homeWinPct,
+    drawBoost: strictness > 0.7 ? 0.06 : 0
+  };
 }
-function calcEnvironmental(weatherCondition = "clear", windSpeed = 0, temperature = 20) {
+function calcF10_Environmental(condition = "clear", windSpeed = 0, temperature = 20) {
   let penalty = 0;
-  if (weatherCondition === "rain") penalty += 0.15;
-  if (weatherCondition === "snow") penalty += 0.25;
-  if (windSpeed > 30) penalty += 0.1;
-  if (temperature < 0 || temperature > 35) penalty += 0.1;
+  if (condition === "rain") penalty += 0.12;
+  if (condition === "snow") penalty += 0.22;
+  if (condition === "wind") penalty += 0.08;
+  if (windSpeed > 40) penalty += 0.12;
+  else if (windSpeed > 25) penalty += 0.06;
+  if (temperature < -5) penalty += 0.1;
+  else if (temperature < 5) penalty += 0.05;
+  if (temperature > 38) penalty += 0.08;
   return Math.max(0, 1 - penalty);
 }
-function calcPsychological(refereeStrictness = 0.5, isPressureGame = false) {
-  return refereeStrictness * (isPressureGame ? 1.2 : 1);
+function calcF11_LeagueStanding(rank, leagueSize = 20) {
+  if (!rank) return 0.5;
+  return Math.max(0, Math.min(1, (leagueSize - rank) / (leagueSize - 1)));
+}
+function calcF12_VenuePressure(capacity = 3e4, attendancePct = 0.8, isNeutral = false) {
+  if (isNeutral) return 0;
+  const capScore = Math.min(1, Math.max(0, (capacity - 5e3) / 75e3));
+  const attScore = Math.min(1, attendancePct);
+  return capScore * 0.6 + attScore * 0.4;
 }
 function runTitanXII(fixture, weights = DEFAULT_WEIGHTS) {
   const { sport } = fixture;
-  const market = calcMarketConsensus(fixture.homeOdds, fixture.drawOdds, fixture.awayOdds);
-  const homeMomentum = calcMomentum(fixture.homeForm);
-  const awayMomentum = calcMomentum(fixture.awayForm);
-  const homeQuality = calcQuality(fixture.homeWinRate, fixture.homeGoalDiff);
-  const awayQuality = calcQuality(fixture.awayWinRate, fixture.awayGoalDiff);
-  const secretSauce = calcSecretSauce(
-    fixture.h2hHomeWins,
-    fixture.h2hAwayWins,
-    fixture.h2hDraws,
-    fixture.homeRestDays,
-    fixture.awayRestDays,
-    fixture.homeInjuries,
-    fixture.awayInjuries
+  const f01 = calcF01_MarketConsensus(fixture.homeOdds, fixture.drawOdds, fixture.awayOdds);
+  const f02Home = calcF02_Momentum(fixture.homeForm);
+  const f02Away = calcF02_Momentum(fixture.awayForm);
+  const f03Home = calcF03_Quality(fixture.homeWinRate, fixture.homeGoalDiff);
+  const f03Away = calcF03_Quality(fixture.awayWinRate, fixture.awayGoalDiff);
+  const f04 = calcF04_H2H(fixture.h2hHomeWins, fixture.h2hAwayWins, fixture.h2hDraws);
+  const f05 = calcF05_MarketSteam(
+    fixture.openingHomeOdds,
+    fixture.homeOdds,
+    fixture.openingAwayOdds,
+    fixture.awayOdds
   );
-  const steam = calcMarketSteam(fixture.openingHomeOdds, fixture.homeOdds, fixture.openingAwayOdds, fixture.awayOdds);
-  const travelStress = calcTravelStress(fixture.homeTimezone, fixture.awayTimezone);
-  const refBias = calcRefereeBias(fixture.refereeHomeWinPct);
-  const envFactor = calcEnvironmental(fixture.weatherCondition, fixture.windSpeed, fixture.temperature);
-  const psychFactor = calcPsychological(fixture.refereeStrictness);
-  const homeAdvantage = fixture.isNeutral ? 0 : 0.05;
-  const rawHome = market.home * weights.marketConsensus + homeMomentum * weights.momentum + homeQuality * weights.quality + secretSauce.home * weights.secretSauce + steam.home * weights.marketSteam + travelStress * weights.travelStress + refBias * weights.refereeBias + envFactor * weights.environmental + (1 - psychFactor * 0.5) * weights.psychological + homeAdvantage;
-  const rawAway = market.away * weights.marketConsensus + awayMomentum * weights.momentum + awayQuality * weights.quality + secretSauce.away * weights.secretSauce + steam.away * weights.marketSteam + (1 - travelStress) * weights.travelStress + (1 - refBias) * weights.refereeBias + envFactor * weights.environmental + (1 - psychFactor * 0.5) * weights.psychological;
-  const rawDraw = sport === "soccer" ? market.draw * weights.marketConsensus + 0.5 * weights.momentum + 0.5 * weights.quality + 0.5 * weights.secretSauce + 0.5 * weights.marketSteam + 0.5 * weights.travelStress + psychFactor * weights.refereeBias + envFactor * 0.5 * weights.environmental + psychFactor * weights.psychological : 0;
+  const f06Home = calcF06_RestFatigue(fixture.homeRestDays);
+  const f06Away = calcF06_RestFatigue(fixture.awayRestDays);
+  const f07Home = calcF07_Injuries(fixture.homeInjuries, fixture.homeKeyPlayerOut, fixture.homeInjuryRating);
+  const f07Away = calcF07_Injuries(fixture.awayInjuries, fixture.awayKeyPlayerOut, fixture.awayInjuryRating);
+  const f08 = calcF08_TravelStress(fixture.homeTimezone, fixture.awayTimezone);
+  const f09 = calcF09_RefereeBias(fixture.refereeHomeWinPct, fixture.refereeStrictness);
+  const f10 = calcF10_Environmental(fixture.weatherCondition, fixture.windSpeed, fixture.temperature);
+  const f11Home = calcF11_LeagueStanding(fixture.homeTableRank, fixture.leagueSize);
+  const f11Away = calcF11_LeagueStanding(fixture.awayTableRank, fixture.leagueSize);
+  const f12 = calcF12_VenuePressure(fixture.stadiumCapacity, fixture.homeAttendancePct, fixture.isNeutral);
+  const homeAdvantage = fixture.isNeutral ? 0 : 0.04;
+  const rawHome = f01.home * weights.marketConsensus + f02Home * weights.momentum + f03Home * weights.quality + f04.home * weights.h2hHistory + f05.home * weights.marketSteam + f06Home * weights.restFatigue + f07Home * weights.injuriesAbsences + (1 - f08) * weights.travelStress + f09.homeBoost * weights.refereeBias + f10 * weights.environmental + f11Home * weights.leagueStanding + f12 * weights.venuePressure + homeAdvantage;
+  const rawAway = f01.away * weights.marketConsensus + f02Away * weights.momentum + f03Away * weights.quality + f04.away * weights.h2hHistory + f05.away * weights.marketSteam + f06Away * weights.restFatigue + f07Away * weights.injuriesAbsences + f08 * weights.travelStress + (1 - f09.homeBoost) * weights.refereeBias + f10 * weights.environmental + f11Away * weights.leagueStanding + 0 * weights.venuePressure;
+  const rawDraw = sport === "soccer" ? f01.draw * weights.marketConsensus + 0.5 * weights.momentum + 0.5 * weights.quality + 0.3 * weights.h2hHistory + 0.5 * weights.marketSteam + 0.5 * weights.restFatigue + 0.5 * weights.injuriesAbsences + 0.5 * weights.travelStress + f09.drawBoost * weights.refereeBias + f10 * 0.6 * weights.environmental + 0.5 * weights.leagueStanding + 0 * weights.venuePressure : 0;
   const totalRaw = rawHome + rawDraw + rawAway;
   let homeConf = rawHome / totalRaw * 100;
   let drawConf = sport === "soccer" ? rawDraw / totalRaw * 100 : 0;
   let awayConf = rawAway / totalRaw * 100;
-  if (fixture.refereeStrictness && fixture.refereeStrictness > 0.7 && sport === "soccer") {
-    drawConf += 6;
-    homeConf -= 3;
-    awayConf -= 3;
+  if (f09.drawBoost > 0 && sport === "soccer") {
+    drawConf += 4;
+    homeConf -= 2;
+    awayConf -= 2;
   }
-  if (fixture.weatherCondition === "rain" || fixture.windSpeed && fixture.windSpeed > 25) {
-    drawConf += 3;
-    homeConf -= 1.5;
-    awayConf -= 1.5;
+  if ((fixture.weatherCondition === "rain" || fixture.weatherCondition === "snow") && sport === "soccer") {
+    drawConf += 2;
+    homeConf -= 1;
+    awayConf -= 1;
   }
   const homeOrDraw = sport === "soccer" ? Math.min(95, homeConf + drawConf * 0.7) : void 0;
   const awayOrDraw = sport === "soccer" ? Math.min(95, awayConf + drawConf * 0.7) : void 0;
   const homeOrAway = sport === "soccer" ? Math.min(95, homeConf + awayConf) : void 0;
-  const attackStrength = (homeMomentum + awayMomentum) / 2;
-  const over25 = sport === "soccer" ? Math.min(90, attackStrength * 100 * 0.8 + 20) : void 0;
+  const attackStrength = (f02Home + f02Away) / 2;
+  const weatherPenalty = f10 < 0.8 ? 10 : 0;
+  const over25 = sport === "soccer" ? Math.min(90, attackStrength * 100 * 0.8 + 20 - weatherPenalty) : void 0;
   const under25 = sport === "soccer" ? Math.min(90, 100 - (over25 || 50)) : void 0;
-  const btts = sport === "soccer" ? Math.min(85, (homeMomentum + awayMomentum) * 50) : void 0;
+  const btts = sport === "soccer" ? Math.min(85, (f02Home * f07Home + f02Away * f07Away) * 55) : void 0;
   const outcomes = [
     ["Home Win", homeConf],
     ["Away Win", awayConf]
   ];
   if (sport === "soccer") {
     outcomes.push(["Draw", drawConf]);
-    if (homeOrDraw) outcomes.push(["Home or Draw", homeOrDraw]);
-    if (awayOrDraw) outcomes.push(["Away or Draw", awayOrDraw]);
-    if (over25) outcomes.push(["Over 2.5", over25]);
-    if (btts) outcomes.push(["BTTS", btts]);
+    if (homeOrDraw !== void 0) outcomes.push(["Home or Draw", homeOrDraw]);
+    if (awayOrDraw !== void 0) outcomes.push(["Away or Draw", awayOrDraw]);
+    if (over25 !== void 0) outcomes.push(["Over 2.5 Goals", over25]);
+    if (btts !== void 0) outcomes.push(["Both Teams to Score", btts]);
   }
   outcomes.sort((a, b) => b[1] - a[1]);
   const [topPick, topConfidence] = outcomes[0];
   let tier = "free";
-  if (topConfidence >= 69) tier = "pro";
-  else if (topConfidence >= 68) tier = "vip";
-  else if (topConfidence >= 60) tier = "free";
-  const isPowerPick = topConfidence >= 69;
+  if (topConfidence >= CONFIDENCE_THRESHOLDS.PRO_TIER) tier = "pro";
+  else if (topConfidence >= CONFIDENCE_THRESHOLDS.VIP_TIER) tier = "vip";
+  else if (topConfidence >= CONFIDENCE_THRESHOLDS.FREE_TIER) tier = "free";
+  const isPowerPick = topConfidence >= CONFIDENCE_THRESHOLDS.POWER_PICK;
+  const factorBreakdown = {
+    f01_marketConsensus: { homeScore: f01.home, awayScore: f01.away, weight: weights.marketConsensus },
+    f02_momentum: { homeScore: f02Home, awayScore: f02Away, weight: weights.momentum },
+    f03_quality: { homeScore: f03Home, awayScore: f03Away, weight: weights.quality },
+    f04_h2hHistory: { homeScore: f04.home, awayScore: f04.away, weight: weights.h2hHistory },
+    f05_marketSteam: { homeScore: f05.home, awayScore: f05.away, weight: weights.marketSteam },
+    f06_restFatigue: { homeScore: f06Home, awayScore: f06Away, weight: weights.restFatigue },
+    f07_injuries: { homeScore: f07Home, awayScore: f07Away, weight: weights.injuriesAbsences },
+    f08_travelStress: { homeScore: 1 - f08, awayScore: f08, weight: weights.travelStress },
+    f09_refereeBias: { homeScore: f09.homeBoost, awayScore: 1 - f09.homeBoost, weight: weights.refereeBias },
+    f10_environmental: { score: f10, weight: weights.environmental },
+    f11_leagueStanding: { homeScore: f11Home, awayScore: f11Away, weight: weights.leagueStanding },
+    f12_venuePressure: { score: f12, weight: weights.venuePressure }
+  };
   return {
     fixtureId: fixture.fixtureId,
     homeTeam: fixture.homeTeam,
@@ -39334,29 +39517,38 @@ function runTitanXII(fixture, weights = DEFAULT_WEIGHTS) {
       homeWin: Math.round(homeConf * 10) / 10,
       draw: sport === "soccer" ? Math.round(drawConf * 10) / 10 : void 0,
       awayWin: Math.round(awayConf * 10) / 10,
-      homeOrDraw: homeOrDraw ? Math.round(homeOrDraw * 10) / 10 : void 0,
-      awayOrDraw: awayOrDraw ? Math.round(awayOrDraw * 10) / 10 : void 0,
-      homeOrAway: homeOrAway ? Math.round(homeOrAway * 10) / 10 : void 0,
-      over25: over25 ? Math.round(over25 * 10) / 10 : void 0,
-      under25: under25 ? Math.round(under25 * 10) / 10 : void 0,
-      btts: btts ? Math.round(btts * 10) / 10 : void 0
+      homeOrDraw: homeOrDraw !== void 0 ? Math.round(homeOrDraw * 10) / 10 : void 0,
+      awayOrDraw: awayOrDraw !== void 0 ? Math.round(awayOrDraw * 10) / 10 : void 0,
+      homeOrAway: homeOrAway !== void 0 ? Math.round(homeOrAway * 10) / 10 : void 0,
+      over25: over25 !== void 0 ? Math.round(over25 * 10) / 10 : void 0,
+      under25: under25 !== void 0 ? Math.round(under25 * 10) / 10 : void 0,
+      btts: btts !== void 0 ? Math.round(btts * 10) / 10 : void 0
     },
     topPick,
     topConfidence: Math.round(topConfidence * 10) / 10,
     isPowerPick,
     tier,
     factors: {
-      marketConsensus: Math.round(market.home * 100) / 100,
-      homeMomentum: Math.round(homeMomentum * 100) / 100,
-      awayMomentum: Math.round(awayMomentum * 100) / 100,
-      homeQuality: Math.round(homeQuality * 100) / 100,
-      awayQuality: Math.round(awayQuality * 100) / 100,
-      secretSauceHome: Math.round(secretSauce.home * 100) / 100,
-      travelStress: Math.round(travelStress * 100) / 100,
-      refereeBias: Math.round(refBias * 100) / 100,
-      environmental: Math.round(envFactor * 100) / 100
+      f01_marketConsensus_home: Math.round(f01.home * 100) / 100,
+      f02_momentum_home: Math.round(f02Home * 100) / 100,
+      f02_momentum_away: Math.round(f02Away * 100) / 100,
+      f03_quality_home: Math.round(f03Home * 100) / 100,
+      f03_quality_away: Math.round(f03Away * 100) / 100,
+      f04_h2h_home: Math.round(f04.home * 100) / 100,
+      f05_steam_home: Math.round(f05.home * 100) / 100,
+      f06_rest_home: Math.round(f06Home * 100) / 100,
+      f06_rest_away: Math.round(f06Away * 100) / 100,
+      f07_injuries_home: Math.round(f07Home * 100) / 100,
+      f07_injuries_away: Math.round(f07Away * 100) / 100,
+      f08_travelStress: Math.round(f08 * 100) / 100,
+      f09_refereeBias: Math.round(f09.homeBoost * 100) / 100,
+      f10_environmental: Math.round(f10 * 100) / 100,
+      f11_standing_home: Math.round(f11Home * 100) / 100,
+      f11_standing_away: Math.round(f11Away * 100) / 100,
+      f12_venuePressure: Math.round(f12 * 100) / 100
     },
-    recommendation: `${topPick} \u2014 ${Math.round(topConfidence)}% confidence${isPowerPick ? " \u26A1 POWER PICK" : ""}`
+    factorBreakdown,
+    recommendation: `${topPick} \u2014 ${Math.round(topConfidence)}% confidence${isPowerPick ? " POWER PICK" : ""}`
   };
 }
 function runBatchPredictions(fixtures, weights) {
@@ -39364,29 +39556,47 @@ function runBatchPredictions(fixtures, weights) {
   for (const fixture of fixtures) {
     try {
       const result = runTitanXII(fixture, weights);
-      const minThreshold = fixture.sport === "nba" ? 55 : 60;
-      if (result.topConfidence >= minThreshold) {
+      if (result.topConfidence >= CONFIDENCE_THRESHOLDS.MINIMUM) {
         results2.push(result);
+      } else {
+        console.log(
+          `[Titan XII] Discarded ${fixture.homeTeam} vs ${fixture.awayTeam} \u2014 ${result.topConfidence}% < ${CONFIDENCE_THRESHOLDS.MINIMUM}% threshold`
+        );
       }
     } catch (err) {
-      console.error(`[Engine] Failed to process fixture ${fixture.fixtureId}:`, err);
+      console.error(`[Titan XII] Failed to process fixture ${fixture.fixtureId}:`, err);
     }
   }
   return results2.sort((a, b) => b.topConfidence - a.topConfidence);
 }
-var DEFAULT_WEIGHTS;
+var DEFAULT_WEIGHTS, CONFIDENCE_THRESHOLDS;
 var init_goldStandardV2 = __esm({
   "server/goldStandardV2.ts"() {
     DEFAULT_WEIGHTS = {
-      marketConsensus: 0.25,
-      momentum: 0.15,
-      quality: 0.15,
-      secretSauce: 0.15,
-      marketSteam: 0.12,
+      marketConsensus: 0.2,
+      momentum: 0.13,
+      quality: 0.12,
+      h2hHistory: 0.08,
+      marketSteam: 0.1,
+      restFatigue: 0.07,
+      injuriesAbsences: 0.1,
       travelStress: 0.05,
       refereeBias: 0.05,
       environmental: 0.04,
-      psychological: 0.04
+      leagueStanding: 0.04,
+      venuePressure: 0.02
+    };
+    CONFIDENCE_THRESHOLDS = {
+      MINIMUM: 68,
+      // Below this -> pick is discarded
+      FREE_TIER: 68,
+      // 68-71%
+      VIP_TIER: 72,
+      // 72-74%
+      PRO_TIER: 75,
+      // 75-79%
+      POWER_PICK: 80
+      // 80%+
     };
   }
 });
@@ -39489,7 +39699,7 @@ async function fetchTodayFixtures(date2) {
   console.log(`[API-Football] Fetching fixtures for ${date2}`);
   const fixtures = [];
   try {
-    const data = await apiFetch(`/fixtures?date=${date2}&timezone=America/Halifax`);
+    const data = await apiFetch(`/fixtures?date=${date2}&timezone=America/Moncton`);
     const rawFixtures = data.response || [];
     for (const f of rawFixtures) {
       if (!TARGET_LEAGUES.includes(f.league?.id)) continue;
@@ -39502,19 +39712,40 @@ async function fetchTodayFixtures(date2) {
         sport: "soccer",
         date: date2
       };
-      try {
-        const [oddsData, statsData] = await Promise.allSettled([
-          fetchOdds(f.fixture.id),
-          fetchTeamStats(f.teams?.home?.id, f.teams?.away?.id, f.league?.id, f.league?.season)
-        ]);
-        if (oddsData.status === "fulfilled") Object.assign(fixture, oddsData.value);
-        if (statsData.status === "fulfilled") Object.assign(fixture, statsData.value);
-      } catch (err) {
-        console.warn(`[API-Football] Failed to fetch extra data for fixture ${f.fixture.id}`);
-      }
+      const [
+        oddsResult,
+        statsResult,
+        h2hResult,
+        injuriesResult,
+        standingsResult,
+        venueResult,
+        weatherResult
+      ] = await Promise.allSettled([
+        fetchOdds(f.fixture.id),
+        // F01 + F05
+        fetchTeamStats(f.teams?.home?.id, f.teams?.away?.id, f.league?.id, f.league?.season),
+        // F02 + F03 + F06
+        fetchH2H(f.teams?.home?.id, f.teams?.away?.id),
+        // F04
+        fetchInjuries(f.fixture.id),
+        // F07 (LIVE)
+        fetchStandings(f.league?.id, f.league?.season, f.teams?.home?.id, f.teams?.away?.id),
+        // F11
+        fetchVenue(f.fixture?.venue?.id),
+        // F12
+        fetchWeather(f.fixture?.venue?.city)
+        // F10
+      ]);
+      if (oddsResult.status === "fulfilled") Object.assign(fixture, oddsResult.value);
+      if (statsResult.status === "fulfilled") Object.assign(fixture, statsResult.value);
+      if (h2hResult.status === "fulfilled") Object.assign(fixture, h2hResult.value);
+      if (injuriesResult.status === "fulfilled") Object.assign(fixture, injuriesResult.value);
+      if (standingsResult.status === "fulfilled") Object.assign(fixture, standingsResult.value);
+      if (venueResult.status === "fulfilled") Object.assign(fixture, venueResult.value);
+      if (weatherResult.status === "fulfilled") Object.assign(fixture, weatherResult.value);
       fixtures.push(fixture);
     }
-    console.log(`[API-Football] Found ${fixtures.length} qualifying fixtures`);
+    console.log(`[API-Football] Found ${fixtures.length} qualifying fixtures with full 12-factor data`);
   } catch (err) {
     console.error("[API-Football] Fetch failed:", err);
     throw err;
@@ -39532,10 +39763,18 @@ async function fetchOdds(fixtureId) {
     const home = matchWinner.values?.find((v) => v.value === "Home")?.odd;
     const draw = matchWinner.values?.find((v) => v.value === "Draw")?.odd;
     const away = matchWinner.values?.find((v) => v.value === "Away")?.odd;
+    const openData = await apiFetch(`/odds?fixture=${fixtureId}&bookmaker=8&bet=1`);
+    const openBookmakers = openData.response?.[0]?.bookmakers || [];
+    const openMarkets = openBookmakers[0]?.bets || [];
+    const openWinner = openMarkets.find((m) => m.name === "Match Winner");
+    const openHome = openWinner?.values?.find((v) => v.value === "Home")?.odd;
+    const openAway = openWinner?.values?.find((v) => v.value === "Away")?.odd;
     return {
       homeOdds: home ? parseFloat(home) : void 0,
       drawOdds: draw ? parseFloat(draw) : void 0,
-      awayOdds: away ? parseFloat(away) : void 0
+      awayOdds: away ? parseFloat(away) : void 0,
+      openingHomeOdds: openHome ? parseFloat(openHome) : home ? parseFloat(home) : void 0,
+      openingAwayOdds: openAway ? parseFloat(openAway) : away ? parseFloat(away) : void 0
     };
   } catch {
     return {};
@@ -39543,9 +39782,11 @@ async function fetchOdds(fixtureId) {
 }
 async function fetchTeamStats(homeId, awayId, leagueId, season) {
   try {
-    const [homeStats, awayStats] = await Promise.allSettled([
+    const [homeStats, awayStats, homeFixtures, awayFixtures] = await Promise.allSettled([
       apiFetch(`/teams/statistics?team=${homeId}&league=${leagueId}&season=${season}`),
-      apiFetch(`/teams/statistics?team=${awayId}&league=${leagueId}&season=${season}`)
+      apiFetch(`/teams/statistics?team=${awayId}&league=${leagueId}&season=${season}`),
+      apiFetch(`/fixtures?team=${homeId}&last=6`),
+      apiFetch(`/fixtures?team=${awayId}&last=6`)
     ]);
     const result = {};
     if (homeStats.status === "fulfilled") {
@@ -39562,12 +39803,160 @@ async function fetchTeamStats(homeId, awayId, leagueId, season) {
       result.awayWinRate = wins / played;
       result.awayGoalDiff = (s?.goals?.for?.total?.away || 0) - (s?.goals?.against?.total?.away || 0);
     }
+    if (homeFixtures.status === "fulfilled") {
+      const fxs = (homeFixtures.value.response || []).slice(0, 5);
+      result.homeForm = fxs.map((fx) => {
+        const hg = fx.goals?.home ?? 0;
+        const ag = fx.goals?.away ?? 0;
+        const isHome = fx.teams?.home?.id === homeId;
+        if (isHome) return hg > ag ? "W" : hg < ag ? "L" : "D";
+        return ag > hg ? "W" : ag < hg ? "L" : "D";
+      });
+      if (fxs.length > 0) {
+        const lastDate = new Date(fxs[0].fixture?.date || Date.now());
+        const today = /* @__PURE__ */ new Date();
+        result.homeRestDays = Math.floor((today.getTime() - lastDate.getTime()) / (1e3 * 60 * 60 * 24));
+      }
+    }
+    if (awayFixtures.status === "fulfilled") {
+      const fxs = (awayFixtures.value.response || []).slice(0, 5);
+      result.awayForm = fxs.map((fx) => {
+        const hg = fx.goals?.home ?? 0;
+        const ag = fx.goals?.away ?? 0;
+        const isHome = fx.teams?.home?.id === awayId;
+        if (isHome) return hg > ag ? "W" : hg < ag ? "L" : "D";
+        return ag > hg ? "W" : ag < hg ? "L" : "D";
+      });
+      if (fxs.length > 0) {
+        const lastDate = new Date(fxs[0].fixture?.date || Date.now());
+        const today = /* @__PURE__ */ new Date();
+        result.awayRestDays = Math.floor((today.getTime() - lastDate.getTime()) / (1e3 * 60 * 60 * 24));
+      }
+    }
     return result;
   } catch {
     return {};
   }
 }
-var fs, path, os, API_KEY, BASE_URL, CACHE_DIR, CACHE_TTL_MS, TARGET_LEAGUES;
+async function fetchH2H(homeId, awayId) {
+  try {
+    const data = await apiFetch(`/fixtures/headtohead?h2h=${homeId}-${awayId}&last=10`);
+    const meetings = data.response || [];
+    let h2hHomeWins = 0, h2hAwayWins = 0, h2hDraws = 0;
+    for (const m of meetings) {
+      const hg = m.goals?.home ?? 0;
+      const ag = m.goals?.away ?? 0;
+      const homeIsHome = m.teams?.home?.id === homeId;
+      if (hg === ag) {
+        h2hDraws++;
+      } else if (hg > ag) {
+        homeIsHome ? h2hHomeWins++ : h2hAwayWins++;
+      } else {
+        homeIsHome ? h2hAwayWins++ : h2hHomeWins++;
+      }
+    }
+    return { h2hHomeWins, h2hAwayWins, h2hDraws };
+  } catch {
+    return {};
+  }
+}
+async function fetchInjuries(fixtureId) {
+  try {
+    console.log(`[F07-Injuries] Fetching LIVE injury report for fixture ${fixtureId}`);
+    const data = await apiFetch(`/injuries?fixture=${fixtureId}`);
+    const injuries = data.response || [];
+    let homeInjuries = 0;
+    let awayInjuries = 0;
+    let homeKeyPlayerOut = false;
+    let awayKeyPlayerOut = false;
+    const KEY_POSITIONS = ["Goalkeeper", "Attacker", "Forward", "Striker"];
+    for (const inj of injuries) {
+      const team = inj.team?.id;
+      const position = inj.player?.type || "";
+      const reason = inj.player?.reason || "";
+      const isOut = reason.toLowerCase().includes("injured") || reason.toLowerCase().includes("suspended") || reason.toLowerCase().includes("out");
+      if (!isOut) continue;
+      if (inj.team?.name?.includes("home") || inj.fixture?.teams?.home?.id === team) {
+        homeInjuries++;
+        if (KEY_POSITIONS.some((p) => position.includes(p))) homeKeyPlayerOut = true;
+      } else {
+        awayInjuries++;
+        if (KEY_POSITIONS.some((p) => position.includes(p))) awayKeyPlayerOut = true;
+      }
+    }
+    const homeInjuryRating = Math.max(0, 1 - homeInjuries * 0.07 - (homeKeyPlayerOut ? 0.15 : 0));
+    const awayInjuryRating = Math.max(0, 1 - awayInjuries * 0.07 - (awayKeyPlayerOut ? 0.15 : 0));
+    console.log(`[F07-Injuries] Home: ${homeInjuries} injuries (key=${homeKeyPlayerOut}), Away: ${awayInjuries} injuries (key=${awayKeyPlayerOut})`);
+    return {
+      homeInjuries,
+      awayInjuries,
+      homeKeyPlayerOut,
+      awayKeyPlayerOut,
+      homeInjuryRating,
+      awayInjuryRating
+    };
+  } catch (err) {
+    console.warn(`[F07-Injuries] Failed to fetch injuries for fixture ${fixtureId}:`, err);
+    return {};
+  }
+}
+async function fetchStandings(leagueId, season, homeId, awayId) {
+  try {
+    const data = await apiFetch(`/standings?league=${leagueId}&season=${season}`);
+    const standings = data.response?.[0]?.league?.standings?.[0] || [];
+    const leagueSize = standings.length || 20;
+    const homeEntry = standings.find((s) => s.team?.id === homeId);
+    const awayEntry = standings.find((s) => s.team?.id === awayId);
+    return {
+      homeTableRank: homeEntry?.rank ?? void 0,
+      awayTableRank: awayEntry?.rank ?? void 0,
+      leagueSize
+    };
+  } catch {
+    return {};
+  }
+}
+async function fetchVenue(venueId) {
+  if (!venueId) return {};
+  try {
+    const data = await apiFetch(`/venues?id=${venueId}`);
+    const venue = data.response?.[0];
+    if (!venue) return {};
+    return {
+      stadiumCapacity: venue.capacity ?? void 0,
+      homeAttendancePct: venue.capacity ? 0.85 : void 0
+      // default 85% fill if no live attendance
+    };
+  } catch {
+    return {};
+  }
+}
+async function fetchWeather(city) {
+  if (!city || !WEATHER_KEY) return {};
+  try {
+    const cacheKey = getCacheKey(`weather_${city}`);
+    const cached = readCache(cacheKey);
+    if (cached) return cached;
+    const res = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${WEATHER_KEY}&units=metric`
+    );
+    if (!res.ok) return {};
+    const w = await res.json();
+    const condition = w.weather?.[0]?.main?.toLowerCase() || "clear";
+    const mapped = condition.includes("rain") || condition.includes("drizzle") ? "rain" : condition.includes("snow") ? "snow" : condition.includes("wind") ? "wind" : "clear";
+    const result = {
+      weatherCondition: mapped,
+      windSpeed: w.wind?.speed ? Math.round(w.wind.speed * 3.6) : 0,
+      // m/s to km/h
+      temperature: w.main?.temp ?? 20
+    };
+    writeCache(cacheKey, result);
+    return result;
+  } catch {
+    return {};
+  }
+}
+var fs, path, os, API_KEY, BASE_URL, WEATHER_KEY, CACHE_DIR, CACHE_TTL_MS, TARGET_LEAGUES;
 var init_apiFootball = __esm({
   "server/apis/apiFootball.ts"() {
     fs = __toESM(require("fs"));
@@ -39575,6 +39964,7 @@ var init_apiFootball = __esm({
     os = __toESM(require("os"));
     API_KEY = process.env.API_FOOTBALL_KEY || "";
     BASE_URL = "https://v3.football.api-sports.io";
+    WEATHER_KEY = process.env.OPENWEATHER_KEY || "";
     CACHE_DIR = path.join(os.tmpdir(), "parlay-king-cache");
     CACHE_TTL_MS = 60 * 60 * 1e3;
     TARGET_LEAGUES = [
@@ -43094,18 +43484,28 @@ __export(scheduler_exports, {
 });
 function startKeepAlive() {
   const port = process.env.PORT || "8080";
-  const url = `http://localhost:${port}/api/health`;
+  const internalUrl = `http://localhost:${port}/api/health`;
+  const externalUrl = "https://soccernbaparlayking.vip/api/health";
   keepAliveInterval = setInterval(async () => {
     try {
-      const http2 = await import("http");
-      const req = http2.default.get(url, (res) => {
+      const http3 = await import("http");
+      const req = http3.default.get(internalUrl, (res) => {
         if (false) {
-          console.log(`[Keep-Alive] Ping OK (${res.statusCode})`);
+          console.log(`[Keep-Alive] Internal ping OK (${res.statusCode})`);
         }
       });
       req.on("error", () => {
       });
       req.setTimeout(5e3, () => req.destroy());
+      const https2 = await import("https");
+      const extReq = https2.default.get(externalUrl, (res) => {
+        if (false) {
+          console.log(`[Keep-Alive] External ping OK (${res.statusCode})`);
+        }
+      });
+      extReq.on("error", () => {
+      });
+      extReq.setTimeout(8e3, () => extReq.destroy());
     } catch {
     }
   }, 5 * 60 * 1e3);
@@ -43145,6 +43545,9 @@ async function runDailyGeneration(triggeredBy = "scheduler") {
     dailyRunCompleted = true;
     lastRunDate = today;
     console.log(`[Scheduler] Daily generation complete: ${result.total} picks in ${duration}ms`);
+    pingGoogleAfterUpdate(`daily-generation-${today}`).catch((err) => {
+      console.warn("[Scheduler] Google ping failed (non-critical):", err);
+    });
     return true;
   } catch (err) {
     const duration = Date.now() - startTime;
@@ -43170,10 +43573,10 @@ function startScheduler() {
   startKeepAlive();
   import_node_cron.default.schedule("0 0 0 * * *", () => {
     dailyRunCompleted = false;
-    console.log(`[Scheduler] Midnight reset \u2014 daily flag cleared for ${todayStr()}`);
+    console.log(`[Scheduler] Midnight reset (America/Moncton) \u2014 daily flag cleared for ${todayStr()}`);
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 2 0 * * *", async () => {
-    console.log("[Scheduler] 12:02 AM \u2014 Midnight archival");
+    console.log("[Scheduler] 12:02 AM AST \u2014 Midnight archival");
     try {
       await createAlert("info", `Midnight archival completed for ${todayStr()}`);
     } catch (err) {
@@ -43181,40 +43584,40 @@ function startScheduler() {
     }
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 30 0 * * *", async () => {
-    console.log("[Scheduler] 12:30 AM \u2014 Pre-check watchdog");
+    console.log("[Scheduler] 12:30 AM AST \u2014 Pre-check watchdog");
     dailyRunCompleted = false;
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 0 1 * * *", async () => {
-    console.log("[Scheduler] 1:00 AM \u2014 PRIMARY daily pick generation");
+    console.log("[Scheduler] 1:00 AM AST (America/Moncton) \u2014 PRIMARY daily pick generation");
     await runDailyGeneration("scheduler-1am");
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 10 1 * * *", async () => {
     if (!dailyRunCompleted) {
-      console.warn("[Scheduler] 1:10 AM \u2014 CRITICAL: 1:00 AM run did not complete!");
+      console.warn("[Scheduler] 1:10 AM AST \u2014 CRITICAL: 1:00 AM run did not complete!");
       await createAlert("critical", "1:00 AM daily generation did not complete \u2014 retry cascade starting");
     }
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 30 1 * * *", async () => {
     if (!dailyRunCompleted) {
-      console.log("[Scheduler] 1:30 AM \u2014 Retry 1");
+      console.log("[Scheduler] 1:30 AM AST \u2014 Retry 1");
       await runDailyGeneration("scheduler-retry1");
     }
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 0 2 * * *", async () => {
     if (!dailyRunCompleted) {
-      console.log("[Scheduler] 2:00 AM \u2014 Retry 2");
+      console.log("[Scheduler] 2:00 AM AST \u2014 Retry 2");
       await runDailyGeneration("scheduler-retry2");
     }
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 30 2 * * *", async () => {
     if (!dailyRunCompleted) {
-      console.log("[Scheduler] 2:30 AM \u2014 Retry 3");
+      console.log("[Scheduler] 2:30 AM AST \u2014 Retry 3");
       await runDailyGeneration("scheduler-retry3");
     }
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 0 3 * * *", async () => {
     if (!dailyRunCompleted) {
-      console.error("[Scheduler] 3:00 AM \u2014 FINAL FAILSAFE");
+      console.error("[Scheduler] 3:00 AM AST \u2014 FINAL FAILSAFE");
       const success = await runDailyGeneration("scheduler-failsafe");
       if (!success) {
         await createAlert("critical", `TOTAL FAILURE: All retry attempts failed for ${todayStr()}`);
@@ -43222,31 +43625,39 @@ function startScheduler() {
     }
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 0 4 * * *", async () => {
-    console.log("[Scheduler] 4:00 AM \u2014 Player stats collection");
+    console.log("[Scheduler] 4:00 AM AST \u2014 Player stats collection");
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 0 8 * * *", async () => {
-    console.log("[Scheduler] 8:00 AM \u2014 Featured auto-pilot");
+    console.log("[Scheduler] 8:00 AM AST \u2014 Featured auto-pilot");
+    pingGoogleAfterUpdate("featured-autopilot").catch(() => {
+    });
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 0 10 * * *", async () => {
-    console.log("[Scheduler] 10:00 AM \u2014 Re-engagement check");
+    console.log("[Scheduler] 10:00 AM AST \u2014 Re-engagement check");
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 0 11 * * *", async () => {
-    console.log("[Scheduler] 11:00 AM \u2014 NBA props fetch");
+    console.log("[Scheduler] 11:00 AM AST \u2014 NBA props fetch");
+    pingGoogleAfterUpdate("nba-props-update").catch(() => {
+    });
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 59 23 * * *", async () => {
-    console.log("[Scheduler] 11:59 PM \u2014 Nightly reset");
+    console.log("[Scheduler] 11:59 PM AST \u2014 Nightly reset");
     dailyRunCompleted = false;
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 0 */2 * * *", async () => {
     console.log("[Scheduler] Auto-settle results check");
+    pingGoogleAfterUpdate("results-settled").catch(() => {
+    });
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 */15 * * * *", async () => {
   }, { timezone: TZ });
   import_node_cron.default.schedule("0 0 23 * * 0", async () => {
-    console.log("[Scheduler] Sunday 11 PM \u2014 Weekly audit");
+    console.log("[Scheduler] Sunday 11 PM AST \u2014 Weekly audit");
   }, { timezone: TZ });
   console.log("[Scheduler] All cron jobs registered");
+  console.log("[Scheduler] Timezone: America/Moncton (AST UTC-4 / ADT UTC-3)");
   console.log("[Scheduler] Primary generation: 1:00 AM AST with 4-layer retry cascade");
+  console.log("[Scheduler] Google/Bing ping: after every pick update");
 }
 var import_node_cron, TZ, schedulerStarted, keepAliveInterval, dailyRunCompleted, lastRunDate;
 var init_scheduler = __esm({
@@ -43254,7 +43665,8 @@ var init_scheduler = __esm({
     import_node_cron = __toESM(require_node_cron());
     init_storage();
     init_routes();
-    TZ = "America/Halifax";
+    init_seo();
+    TZ = "America/Moncton";
     schedulerStarted = false;
     keepAliveInterval = null;
     dailyRunCompleted = false;
@@ -43265,7 +43677,7 @@ var init_scheduler = __esm({
 // server/index.ts
 var import_http = __toESM(require("http"));
 var PORT = parseInt(process.env.PORT || "8080", 10);
-var TZ2 = process.env.TZ || "America/Halifax";
+var TZ2 = process.env.TZ || "America/Moncton";
 process.env.TZ = TZ2;
 var serverFullyReady = false;
 var expressApp = null;
@@ -43346,6 +43758,25 @@ async function initializeExpress() {
       version: "V3 Titan XII",
       scheduler: "active"
     }));
+    try {
+      const { registerSeoRoutes: registerSeoRoutes2 } = await Promise.resolve().then(() => (init_seo(), seo_exports));
+      registerSeoRoutes2(app);
+      console.log("[SEO] Module loaded and routes registered successfully");
+    } catch (seoErr) {
+      console.error("[SEO] FAILED to register SEO routes:", seoErr);
+      app.get("/sitemap.xml", (_req, res) => {
+        const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+        const pages = ["/", "/picks", "/soccer-picks", "/nba-picks", "/parlays", "/results", "/vip", "/pro"];
+        const urls = pages.map((p) => `<url><loc>https://soccernbaparlayking.vip${p}</loc><lastmod>${today}</lastmod><priority>0.9</priority></url>`).join("");
+        res.setHeader("Content-Type", "application/xml");
+        res.send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`);
+      });
+      app.get("/robots.txt", (_req, res) => {
+        res.setHeader("Content-Type", "text/plain");
+        res.send("User-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: https://soccernbaparlayking.vip/sitemap.xml\n");
+      });
+      console.log("[SEO] Fallback sitemap/robots routes registered");
+    }
     const distPath = path2.join(process.cwd(), "dist");
     if (fs2.existsSync(distPath)) {
       app.use(express.static(distPath));
