@@ -153,9 +153,8 @@ export async function pingGoogleAfterUpdate(reason = 'daily-picks-update'): Prom
 
 // ─── Register SEO Routes ──────────────────────────────────────────────────────
 // Call this from registerRoutes() to serve /sitemap.xml and /robots.txt
-import { Express } from 'express';
-
-export function registerSeoRoutes(app: Express): void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function registerSeoRoutes(app: any): void {
   // Serve dynamic sitemap.xml
   app.get('/sitemap.xml', (_req, res) => {
     const xml = generateSitemapXml();
