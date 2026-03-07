@@ -1,32 +1,41 @@
 import cron from 'node-cron';
 import { createRunLog, updateRunLog, createAlert, getRunLogs } from './storage.js';
 import { generateDailyPicks } from './routes.js';
+import { pingGoogleAfterUpdate } from './seo.js';
 
-// Timezone: AST (America/Halifax = UTC-4, no DST adjustment needed for Puerto Rico)
-const TZ = 'America/Halifax';
+// ─── Timezone ─────────────────────────────────────────────────────────────────
+// America/Moncton = AST (UTC-4) / ADT (UTC-3 during DST) — New Brunswick, Canada
+const TZ = 'America/Moncton';
 
 let schedulerStarted = false;
 let keepAliveInterval: NodeJS.Timeout | null = null;
 
 // ─── Keep-Alive Ping ──────────────────────────────────────────────────────────
-// Pings /api/health every 5 minutes to prevent container sleep
+// Pings /api/health every 5 minutes to prevent container sleep on Railway
 function startKeepAlive() {
   const port = process.env.PORT || '8080';
-  const url = `http://localhost:${port}/api/health`;
+  const internalUrl = `http://localhost:${port}/api/health`;
+  const externalUrl = 'https://soccernbaparlayking.vip/api/health';
 
   keepAliveInterval = setInterval(async () => {
     try {
       const http = await import('http');
-      const req = http.default.get(url, (res) => {
-        // Success — container stays warm
+      const req = http.default.get(internalUrl, (res) => {
         if (process.env.NODE_ENV !== 'production') {
-          console.log(`[Keep-Alive] Ping OK (${res.statusCode})`);
+          console.log(`[Keep-Alive] Internal ping OK (${res.statusCode})`);
         }
       });
-      req.on('error', () => {
-        // Silently ignore — server may be restarting
-      });
+      req.on('error', () => {});
       req.setTimeout(5000, () => req.destroy());
+
+      const https = await import('https');
+      const extReq = https.default.get(externalUrl, (res) => {
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`[Keep-Alive] External ping OK (${res.statusCode})`);
+        }
+      });
+      extReq.on('error', () => {});
+      extReq.setTimeout(8000, () => extReq.destroy());
     } catch {
       // Ignore
     }
@@ -35,23 +44,9 @@ function startKeepAlive() {
   console.log('[Scheduler] Keep-alive ping started (every 5 minutes)');
 }
 
-// ─── Helper: Get today's date string ─────────────────────────────────────────
+// ─── Helper: Today's date in AST ─────────────────────────────────────────────
 function todayStr(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: TZ }); // YYYY-MM-DD
-}
-
-// ─── Helper: Log run attempt ──────────────────────────────────────────────────
-async function logRun(status: string, triggeredBy = 'scheduler', error?: string) {
-  try {
-    await createRunLog({
-      date: todayStr(),
-      status,
-      triggeredBy,
-      errorMessage: error,
-    });
-  } catch (err) {
-    console.error('[Scheduler] Failed to log run:', err);
-  }
 }
 
 // ─── Daily Pick Generation ────────────────────────────────────────────────────
@@ -79,7 +74,7 @@ async function runDailyGeneration(triggeredBy = 'scheduler'): Promise<boolean> {
     });
     logId = log.id;
 
-    // Run the generation
+    // Run the Gold Standard V3 Titan XII engine
     const result = await generateDailyPicks(today);
 
     const duration = Date.now() - startTime;
@@ -97,6 +92,13 @@ async function runDailyGeneration(triggeredBy = 'scheduler'): Promise<boolean> {
     dailyRunCompleted = true;
     lastRunDate = today;
     console.log(`[Scheduler] Daily generation complete: ${result.total} picks in ${duration}ms`);
+
+    // ── Ping Google/Bing after every successful pick update ──────────────────
+    // This ensures all pages are re-indexed immediately after new picks are live
+    pingGoogleAfterUpdate(`daily-generation-${today}`).catch(err => {
+      console.warn('[Scheduler] Google ping failed (non-critical):', err);
+    });
+
     return true;
 
   } catch (err: any) {
@@ -128,71 +130,72 @@ export function startScheduler() {
   // Start keep-alive
   startKeepAlive();
 
-  // Reset daily flag at midnight
+  // ── Midnight reset ──────────────────────────────────────────────────────────
   cron.schedule('0 0 0 * * *', () => {
     dailyRunCompleted = false;
-    console.log(`[Scheduler] Midnight reset — daily flag cleared for ${todayStr()}`);
+    console.log(`[Scheduler] Midnight reset (America/Moncton) — daily flag cleared for ${todayStr()}`);
   }, { timezone: TZ });
 
-  // 12:02 AM — Midnight Archival
+  // ── 12:02 AM — Midnight Archival ───────────────────────────────────────────
   cron.schedule('0 2 0 * * *', async () => {
-    console.log('[Scheduler] 12:02 AM — Midnight archival');
+    console.log('[Scheduler] 12:02 AM AST — Midnight archival');
     try {
-      // Archive previous day's results
       await createAlert('info', `Midnight archival completed for ${todayStr()}`);
     } catch (err) {
       console.error('[Scheduler] Midnight archival error:', err);
     }
   }, { timezone: TZ });
 
-  // 12:30 AM — Pre-check Watchdog
+  // ── 12:30 AM — Pre-check Watchdog ──────────────────────────────────────────
   cron.schedule('0 30 0 * * *', async () => {
-    console.log('[Scheduler] 12:30 AM — Pre-check watchdog');
+    console.log('[Scheduler] 12:30 AM AST — Pre-check watchdog');
     dailyRunCompleted = false; // Reset for fresh day
   }, { timezone: TZ });
 
-  // 1:00 AM — PRIMARY Daily Pick Generation
+  // ── 1:00 AM — PRIMARY Daily Pick Generation ────────────────────────────────
+  // This is the main cron trigger: fires at exactly 1:00 AM AST (America/Moncton)
+  // Cron expression: second=0, minute=0, hour=1, every day
   cron.schedule('0 0 1 * * *', async () => {
-    console.log('[Scheduler] 1:00 AM — PRIMARY daily pick generation');
+    console.log('[Scheduler] 1:00 AM AST (America/Moncton) — PRIMARY daily pick generation');
     await runDailyGeneration('scheduler-1am');
   }, { timezone: TZ });
 
-  // 1:10 AM — Heartbeat Verification
+  // ── 1:10 AM — Heartbeat Verification ──────────────────────────────────────
   cron.schedule('0 10 1 * * *', async () => {
     if (!dailyRunCompleted) {
-      console.warn('[Scheduler] 1:10 AM — CRITICAL: 1:00 AM run did not complete!');
+      console.warn('[Scheduler] 1:10 AM AST — CRITICAL: 1:00 AM run did not complete!');
       await createAlert('critical', '1:00 AM daily generation did not complete — retry cascade starting');
     }
   }, { timezone: TZ });
 
-  // 1:30 AM — Retry 1
+  // ── 1:30 AM — Retry 1 ─────────────────────────────────────────────────────
   cron.schedule('0 30 1 * * *', async () => {
     if (!dailyRunCompleted) {
-      console.log('[Scheduler] 1:30 AM — Retry 1');
+      console.log('[Scheduler] 1:30 AM AST — Retry 1');
       await runDailyGeneration('scheduler-retry1');
     }
   }, { timezone: TZ });
 
-  // 2:00 AM — Retry 2
+  // ── 2:00 AM — Retry 2 ─────────────────────────────────────────────────────
   cron.schedule('0 0 2 * * *', async () => {
     if (!dailyRunCompleted) {
-      console.log('[Scheduler] 2:00 AM — Retry 2');
+      console.log('[Scheduler] 2:00 AM AST — Retry 2');
       await runDailyGeneration('scheduler-retry2');
     }
   }, { timezone: TZ });
 
-  // 2:30 AM — Retry 3
+  // ── 2:30 AM — Retry 3 ─────────────────────────────────────────────────────
   cron.schedule('0 30 2 * * *', async () => {
     if (!dailyRunCompleted) {
-      console.log('[Scheduler] 2:30 AM — Retry 3');
+      console.log('[Scheduler] 2:30 AM AST — Retry 3');
       await runDailyGeneration('scheduler-retry3');
     }
   }, { timezone: TZ });
 
-  // 3:00 AM — Final Failsafe
+  // ── 3:00 AM — Final Failsafe ───────────────────────────────────────────────
   cron.schedule('0 0 3 * * *', async () => {
     if (!dailyRunCompleted) {
-      console.error('[Scheduler] 3:00 AM — FINAL FAILSAFE');
+      console.error('[Scheduler] 3:00 AM AST — FINAL FAILSAFE');
       const success = await runDailyGeneration('scheduler-failsafe');
       if (!success) {
         await createAlert('critical', `TOTAL FAILURE: All retry attempts failed for ${todayStr()}`);
@@ -200,53 +203,59 @@ export function startScheduler() {
     }
   }, { timezone: TZ });
 
-  // 4:00 AM — Player Stats Collection
+  // ── 4:00 AM — Player Stats Collection ─────────────────────────────────────
   cron.schedule('0 0 4 * * *', async () => {
-    console.log('[Scheduler] 4:00 AM — Player stats collection');
-    // Player stats collection would run here
+    console.log('[Scheduler] 4:00 AM AST — Player stats collection');
   }, { timezone: TZ });
 
-  // 8:00 AM — Featured Auto-Pilot
+  // ── 8:00 AM — Featured Auto-Pilot ─────────────────────────────────────────
   cron.schedule('0 0 8 * * *', async () => {
-    console.log('[Scheduler] 8:00 AM — Featured auto-pilot');
+    console.log('[Scheduler] 8:00 AM AST — Featured auto-pilot');
     // Auto-select highest confidence pick for featured section
+    // Then ping Google to ensure featured pick page is indexed
+    pingGoogleAfterUpdate('featured-autopilot').catch(() => {});
   }, { timezone: TZ });
 
-  // 10:00 AM — Re-engagement Check
+  // ── 10:00 AM — Re-engagement Check ────────────────────────────────────────
   cron.schedule('0 0 10 * * *', async () => {
-    console.log('[Scheduler] 10:00 AM — Re-engagement check');
+    console.log('[Scheduler] 10:00 AM AST — Re-engagement check');
   }, { timezone: TZ });
 
-  // 11:00 AM — NBA Props Fetch
+  // ── 11:00 AM — NBA Props Fetch ─────────────────────────────────────────────
   cron.schedule('0 0 11 * * *', async () => {
-    console.log('[Scheduler] 11:00 AM — NBA props fetch');
+    console.log('[Scheduler] 11:00 AM AST — NBA props fetch');
+    pingGoogleAfterUpdate('nba-props-update').catch(() => {});
   }, { timezone: TZ });
 
-  // 11:59 PM — Nightly Reset
+  // ── 11:59 PM — Nightly Reset ───────────────────────────────────────────────
   cron.schedule('0 59 23 * * *', async () => {
-    console.log('[Scheduler] 11:59 PM — Nightly reset');
+    console.log('[Scheduler] 11:59 PM AST — Nightly reset');
     dailyRunCompleted = false;
   }, { timezone: TZ });
 
-  // Every 2 hours — Auto-Settle Results
+  // ── Every 2 hours — Auto-Settle Results ───────────────────────────────────
   cron.schedule('0 0 */2 * * *', async () => {
     console.log('[Scheduler] Auto-settle results check');
     // Check finished games and update Won/Lost statuses
+    // Ping Google after results are settled so results pages are re-indexed
+    pingGoogleAfterUpdate('results-settled').catch(() => {});
   }, { timezone: TZ });
 
-  // Every 15 minutes — Grace Period Enforcement
+  // ── Every 15 minutes — Grace Period Enforcement ────────────────────────────
   cron.schedule('0 */15 * * * *', async () => {
     // Enforce subscription expiry
   }, { timezone: TZ });
 
-  // Sunday 11 PM — Weekly Audit
+  // ── Sunday 11 PM — Weekly Audit ────────────────────────────────────────────
   cron.schedule('0 0 23 * * 0', async () => {
-    console.log('[Scheduler] Sunday 11 PM — Weekly audit');
+    console.log('[Scheduler] Sunday 11 PM AST — Weekly audit');
     // Generate performance audit report
   }, { timezone: TZ });
 
   console.log('[Scheduler] All cron jobs registered');
+  console.log('[Scheduler] Timezone: America/Moncton (AST UTC-4 / ADT UTC-3)');
   console.log('[Scheduler] Primary generation: 1:00 AM AST with 4-layer retry cascade');
+  console.log('[Scheduler] Google/Bing ping: after every pick update');
 }
 
 export { runDailyGeneration };

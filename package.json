@@ -5,9 +5,9 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build.js",
-    "start": "node server_dist/index.js",
+    "start": "node app.js",
     "server:build": "node scripts/build.js",
-    "server:start": "node server_dist/index.js",
+    "server:start": "node app.js",
     "dev": "tsx server/index.ts",
     "db:push": "drizzle-kit push"
   },

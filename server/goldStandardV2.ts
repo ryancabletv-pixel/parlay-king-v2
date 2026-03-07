@@ -1,18 +1,52 @@
 /**
- * Gold Standard V3 Titan XII — 12-Factor Prediction Engine
- * Proprietary weighted scoring model for Soccer & NBA predictions
+ * ╔══════════════════════════════════════════════════════════════════════════════╗
+ * ║          GOLD STANDARD V3 — TITAN XII PREDICTION ENGINE                    ║
+ * ║          12-Factor Weighted Scoring Model for Soccer & NBA                 ║
+ * ║          Confidence Threshold: 68% minimum | Power Pick: 80%+             ║
+ * ╚══════════════════════════════════════════════════════════════════════════════╝
+ *
+ * FACTOR MAP (weights sum to 1.00):
+ *  F01  Market Consensus         0.20  — Bookmaker implied probability (CLV baseline)
+ *  F02  Momentum / Form          0.13  — Weighted last-5 results (most recent = 0.35)
+ *  F03  Team Quality             0.12  — Win rate + goal differential
+ *  F04  H2H History              0.08  — Head-to-head record (last 10 meetings)
+ *  F05  Market Steam             0.10  — Line movement / sharp money signal (CLV)
+ *  F06  Rest & Fatigue           0.07  — Days since last game (both teams)
+ *  F07  Injuries & Absences      0.10  — LIVE injury report via API-Football /injuries
+ *  F08  Travel Stress            0.05  — Timezone differential for away team
+ *  F09  Referee Bias             0.05  — Referee home-win % and card strictness
+ *  F10  Environmental            0.04  — Weather, wind, temperature
+ *  F11  League Table Standing    0.04  — Current table rank differential
+ *  F12  Venue / Stadium Pressure 0.02  — Home crowd capacity & fortress rating
+ *                                ─────
+ *                                1.00
  */
 
 export interface EngineWeights {
-  marketConsensus: number;  // 0.25
-  momentum: number;         // 0.15
-  quality: number;          // 0.15
-  secretSauce: number;      // 0.15
-  marketSteam: number;      // 0.12
-  travelStress: number;     // 0.05
-  refereeBias: number;      // 0.05
-  environmental: number;    // 0.04
-  psychological: number;    // 0.04
+  /** F01 — Bookmaker implied probability */
+  marketConsensus: number;    // 0.20
+  /** F02 — Weighted last-5 form */
+  momentum: number;           // 0.13
+  /** F03 — Win rate + goal differential */
+  quality: number;            // 0.12
+  /** F04 — Head-to-head record */
+  h2hHistory: number;         // 0.08
+  /** F05 — Line movement / CLV */
+  marketSteam: number;        // 0.10
+  /** F06 — Rest days differential */
+  restFatigue: number;        // 0.07
+  /** F07 — Live injury report */
+  injuriesAbsences: number;   // 0.10
+  /** F08 — Timezone travel stress */
+  travelStress: number;       // 0.05
+  /** F09 — Referee home-win bias */
+  refereeBias: number;        // 0.05
+  /** F10 — Weather / environmental */
+  environmental: number;      // 0.04
+  /** F11 — League table rank diff */
+  leagueStanding: number;     // 0.04
+  /** F12 — Venue / crowd pressure */
+  venuePressure: number;      // 0.02
 }
 
 export interface FixtureData {
@@ -22,42 +56,80 @@ export interface FixtureData {
   league: string;
   sport: 'soccer' | 'nba';
   date: string;
-  // Market data
+
+  // F01: Market Consensus
   homeOdds?: number;
   drawOdds?: number;
   awayOdds?: number;
-  openingHomeOdds?: number;
-  openingAwayOdds?: number;
-  // Form data
-  homeForm?: string[];   // e.g. ['W','W','D','L','W']
+
+  // F02: Momentum / Form
+  homeForm?: string[];   // e.g. ['W','W','D','L','W'] — index 0 = most recent
   awayForm?: string[];
-  // Quality
+
+  // F03: Team Quality
   homeWinRate?: number;
   awayWinRate?: number;
   homeGoalDiff?: number;
   awayGoalDiff?: number;
-  // H2H
+
+  // F04: H2H History
   h2hHomeWins?: number;
   h2hAwayWins?: number;
   h2hDraws?: number;
-  // Rest
+
+  // F05: Market Steam
+  openingHomeOdds?: number;
+  openingAwayOdds?: number;
+
+  // F06: Rest & Fatigue
   homeRestDays?: number;
   awayRestDays?: number;
-  // Injuries
-  homeInjuries?: number;
+
+  // F07: Injuries & Absences (live from API-Football /injuries endpoint)
+  homeInjuries?: number;        // count of injured/suspended players
   awayInjuries?: number;
-  // Travel
-  homeTimezone?: number;
+  homeKeyPlayerOut?: boolean;   // true if top-3 scorer or goalkeeper is out
+  awayKeyPlayerOut?: boolean;
+  homeInjuryRating?: number;    // 0-1 squad availability score (1 = fully fit)
+  awayInjuryRating?: number;
+
+  // F08: Travel Stress
+  homeTimezone?: number;        // UTC offset hours
   awayTimezone?: number;
-  // Referee
-  refereeHomeWinPct?: number;
-  refereeStrictness?: number;
-  // Weather
-  weatherCondition?: string;  // 'clear' | 'rain' | 'snow' | 'wind'
-  windSpeed?: number;
-  temperature?: number;
-  // Venue
-  isNeutral?: boolean;
+
+  // F09: Referee Bias
+  refereeHomeWinPct?: number;   // 0-1
+  refereeStrictness?: number;   // 0-1 (cards per game normalised)
+
+  // F10: Environmental
+  weatherCondition?: string;    // 'clear' | 'rain' | 'snow' | 'wind'
+  windSpeed?: number;           // km/h
+  temperature?: number;         // Celsius
+
+  // F11: League Table Standing
+  homeTableRank?: number;       // 1 = top of table
+  awayTableRank?: number;
+  leagueSize?: number;          // total teams in league (default 20)
+
+  // F12: Venue / Stadium Pressure
+  stadiumCapacity?: number;     // e.g. 74000
+  homeAttendancePct?: number;   // 0-1 (avg attendance / capacity)
+  isNeutral?: boolean;          // neutral venue = no home advantage
+}
+
+export interface FactorBreakdown {
+  f01_marketConsensus: { homeScore: number; awayScore: number; weight: number };
+  f02_momentum:        { homeScore: number; awayScore: number; weight: number };
+  f03_quality:         { homeScore: number; awayScore: number; weight: number };
+  f04_h2hHistory:      { homeScore: number; awayScore: number; weight: number };
+  f05_marketSteam:     { homeScore: number; awayScore: number; weight: number };
+  f06_restFatigue:     { homeScore: number; awayScore: number; weight: number };
+  f07_injuries:        { homeScore: number; awayScore: number; weight: number };
+  f08_travelStress:    { homeScore: number; awayScore: number; weight: number };
+  f09_refereeBias:     { homeScore: number; awayScore: number; weight: number };
+  f10_environmental:   { score: number; weight: number };
+  f11_leagueStanding:  { homeScore: number; awayScore: number; weight: number };
+  f12_venuePressure:   { score: number; weight: number };
 }
 
 export interface PredictionResult {
@@ -83,293 +155,401 @@ export interface PredictionResult {
   isPowerPick: boolean;
   tier: 'free' | 'vip' | 'pro';
   factors: Record<string, number>;
+  factorBreakdown: FactorBreakdown;
   recommendation: string;
 }
 
-const DEFAULT_WEIGHTS: EngineWeights = {
-  marketConsensus: 0.25,
-  momentum: 0.15,
-  quality: 0.15,
-  secretSauce: 0.15,
-  marketSteam: 0.12,
-  travelStress: 0.05,
-  refereeBias: 0.05,
-  environmental: 0.04,
-  psychological: 0.04,
+// Default weights — must sum to 1.00
+export const DEFAULT_WEIGHTS: EngineWeights = {
+  marketConsensus:  0.20,
+  momentum:         0.13,
+  quality:          0.12,
+  h2hHistory:       0.08,
+  marketSteam:      0.10,
+  restFatigue:      0.07,
+  injuriesAbsences: 0.10,
+  travelStress:     0.05,
+  refereeBias:      0.05,
+  environmental:    0.04,
+  leagueStanding:   0.04,
+  venuePressure:    0.02,
 };
 
-// ─── Factor Calculators ───────────────────────────────────────────────────────
+// Confidence thresholds
+export const CONFIDENCE_THRESHOLDS = {
+  MINIMUM:    68,   // Below this -> pick is discarded
+  FREE_TIER:  68,   // 68-71%
+  VIP_TIER:   72,   // 72-74%
+  PRO_TIER:   75,   // 75-79%
+  POWER_PICK: 80,   // 80%+
+} as const;
 
-function calcMarketConsensus(homeOdds?: number, drawOdds?: number, awayOdds?: number) {
-  if (!homeOdds || !awayOdds) return { home: 0.45, draw: 0.25, away: 0.30 };
+// =============================================================================
+// FACTOR CALCULATORS
+// =============================================================================
+
+// F01: Market Consensus — convert decimal odds to vig-free implied probabilities
+function calcF01_MarketConsensus(
+  homeOdds?: number, drawOdds?: number, awayOdds?: number
+): { home: number; draw: number; away: number } {
+  if (!homeOdds || !awayOdds) return { home: 0.44, draw: 0.26, away: 0.30 };
   const homeImpl = 1 / homeOdds;
-  const drawImpl = drawOdds ? 1 / drawOdds : 0.25;
+  const drawImpl = drawOdds ? 1 / drawOdds : 0.26;
   const awayImpl = 1 / awayOdds;
   const total = homeImpl + drawImpl + awayImpl;
-  return {
-    home: homeImpl / total,
-    draw: drawImpl / total,
-    away: awayImpl / total,
-  };
+  return { home: homeImpl / total, draw: drawImpl / total, away: awayImpl / total };
 }
 
-function calcMomentum(form?: string[]): number {
-  if (!form || form.length === 0) return 0.5;
-  const weights = [0.35, 0.25, 0.20, 0.12, 0.08]; // Most recent first
+// F02: Momentum / Form — exponentially weighted last-5 results
+// Weights: [0.35, 0.25, 0.20, 0.12, 0.08] most-recent first
+function calcF02_Momentum(form?: string[]): number {
+  if (!form || form.length === 0) return 0.50;
+  const weights = [0.35, 0.25, 0.20, 0.12, 0.08];
   let score = 0;
-  let totalWeight = 0;
+  let maxScore = 0;
   for (let i = 0; i < Math.min(form.length, 5); i++) {
     const w = weights[i];
     const pts = form[i] === 'W' ? 3 : form[i] === 'D' ? 1 : 0;
     score += pts * w;
-    totalWeight += 3 * w; // max possible
+    maxScore += 3 * w;
   }
-  return totalWeight > 0 ? score / totalWeight : 0.5;
+  return maxScore > 0 ? score / maxScore : 0.50;
 }
 
-function calcQuality(winRate?: number, goalDiff?: number): number {
-  const wr = winRate ?? 0.5;
+// F03: Team Quality — seasonal win rate + goal differential
+function calcF03_Quality(winRate?: number, goalDiff?: number): number {
+  const wr = winRate ?? 0.50;
   const gd = goalDiff ?? 0;
-  const gdNorm = Math.max(0, Math.min(1, (gd + 30) / 60)); // normalize -30 to +30
-  return wr * 0.7 + gdNorm * 0.3;
+  // Normalise goal diff: -2.0 to +2.0 per game range -> 0-1
+  const gdNorm = Math.max(0, Math.min(1, (gd + 2.0) / 4.0));
+  return wr * 0.70 + gdNorm * 0.30;
 }
 
-function calcSecretSauce(
-  h2hHomeWins = 0, h2hAwayWins = 0, h2hDraws = 0,
-  homeRestDays = 3, awayRestDays = 3,
-  homeInjuries = 0, awayInjuries = 0
+// F04: H2H History — head-to-head win percentage over last 10 meetings
+function calcF04_H2H(
+  h2hHomeWins = 0, h2hAwayWins = 0, h2hDraws = 0
 ): { home: number; away: number } {
-  // H2H
-  const h2hTotal = h2hHomeWins + h2hAwayWins + h2hDraws;
-  const h2hHome = h2hTotal > 0 ? h2hHomeWins / h2hTotal : 0.45;
-  const h2hAway = h2hTotal > 0 ? h2hAwayWins / h2hTotal : 0.35;
-
-  // Rest advantage
-  const restDiff = homeRestDays - awayRestDays;
-  const restHome = Math.min(1, Math.max(0, 0.5 + restDiff * 0.05));
-  const restAway = 1 - restHome;
-
-  // Injury impact (more injuries = worse)
-  const injHome = Math.max(0, 1 - homeInjuries * 0.08);
-  const injAway = Math.max(0, 1 - awayInjuries * 0.08);
-  const injTotal = injHome + injAway;
-  const injHomeNorm = injTotal > 0 ? injHome / injTotal : 0.5;
-  const injAwayNorm = injTotal > 0 ? injAway / injTotal : 0.5;
-
-  return {
-    home: h2hHome * 0.33 + restHome * 0.33 + injHomeNorm * 0.34,
-    away: h2hAway * 0.33 + restAway * 0.33 + injAwayNorm * 0.34,
-  };
+  const total = h2hHomeWins + h2hAwayWins + h2hDraws;
+  if (total === 0) return { home: 0.45, away: 0.35 };
+  return { home: h2hHomeWins / total, away: h2hAwayWins / total };
 }
 
-function calcMarketSteam(
+// F05: Market Steam — Closing Line Value (CLV) / sharp money signal
+// A 10% odds shortening from open to close = +0.20 boost
+function calcF05_MarketSteam(
   openingHomeOdds?: number, currentHomeOdds?: number,
   openingAwayOdds?: number, currentAwayOdds?: number
 ): { home: number; away: number } {
-  if (!openingHomeOdds || !currentHomeOdds) return { home: 0.5, away: 0.5 };
-  // CLV: if odds shortened (lower), sharp money is on that side
+  if (!openingHomeOdds || !currentHomeOdds) return { home: 0.50, away: 0.50 };
   const homeMove = (openingHomeOdds - currentHomeOdds) / openingHomeOdds;
   const awayMove = openingAwayOdds && currentAwayOdds
     ? (openingAwayOdds - currentAwayOdds) / openingAwayOdds
     : 0;
-  const homeScore = Math.min(1, Math.max(0, 0.5 + homeMove * 2));
-  const awayScore = Math.min(1, Math.max(0, 0.5 + awayMove * 2));
-  return { home: homeScore, away: awayScore };
+  return {
+    home: Math.min(1, Math.max(0, 0.50 + homeMove * 2.0)),
+    away: Math.min(1, Math.max(0, 0.50 + awayMove * 2.0)),
+  };
 }
 
-function calcTravelStress(homeTimezone = 0, awayTimezone = 0): number {
-  // Higher timezone diff = more stress for away team = advantage for home
+// F06: Rest & Fatigue — days since last match
+// 5+ days = fully rested, 0 days = back-to-back
+function calcF06_RestFatigue(restDays = 3): number {
+  if (restDays >= 5) return 1.00;
+  if (restDays >= 3) return 0.90;
+  if (restDays === 2) return 0.75;
+  if (restDays === 1) return 0.60;
+  return 0.45;
+}
+
+// F07: Injuries & Absences — LIVE DATA from API-Football /injuries endpoint
+// injuryRating: pre-calculated squad availability (1.0 = fully fit, 0.0 = decimated)
+// keyPlayerOut: top-3 scorer or goalkeeper is injured (-0.15 penalty)
+function calcF07_Injuries(
+  injuryCount = 0,
+  keyPlayerOut = false,
+  injuryRating?: number
+): number {
+  if (injuryRating !== undefined) {
+    const keyPenalty = keyPlayerOut ? 0.15 : 0;
+    return Math.max(0, injuryRating - keyPenalty);
+  }
+  // Fallback: derive from raw count (each injury = -7% availability, max -60%)
+  const countPenalty = Math.min(0.60, injuryCount * 0.07);
+  const keyPenalty = keyPlayerOut ? 0.15 : 0;
+  return Math.max(0, 1.0 - countPenalty - keyPenalty);
+}
+
+// F08: Travel Stress — circadian disruption from timezone travel
+// 0h diff = no stress, 12h diff = maximum stress (1.0)
+function calcF08_TravelStress(homeTimezone = 0, awayTimezone = 0): number {
   const diff = Math.abs(homeTimezone - awayTimezone);
   return Math.min(1, diff / 12);
 }
 
-function calcRefereeBias(refereeHomeWinPct = 0.45): number {
-  return refereeHomeWinPct;
+// F09: Referee Bias — home-win tendency and card strictness
+function calcF09_RefereeBias(
+  homeWinPct = 0.45,
+  strictness = 0.50
+): { homeBoost: number; drawBoost: number } {
+  return {
+    homeBoost: homeWinPct,
+    drawBoost: strictness > 0.70 ? 0.06 : 0,
+  };
 }
 
-function calcEnvironmental(weatherCondition = 'clear', windSpeed = 0, temperature = 20): number {
+// F10: Environmental — weather and temperature conditions
+function calcF10_Environmental(
+  condition = 'clear', windSpeed = 0, temperature = 20
+): number {
   let penalty = 0;
-  if (weatherCondition === 'rain') penalty += 0.15;
-  if (weatherCondition === 'snow') penalty += 0.25;
-  if (windSpeed > 30) penalty += 0.10;
-  if (temperature < 0 || temperature > 35) penalty += 0.10;
+  if (condition === 'rain')  penalty += 0.12;
+  if (condition === 'snow')  penalty += 0.22;
+  if (condition === 'wind')  penalty += 0.08;
+  if (windSpeed > 40)        penalty += 0.12;
+  else if (windSpeed > 25)   penalty += 0.06;
+  if (temperature < -5)      penalty += 0.10;
+  else if (temperature < 5)  penalty += 0.05;
+  if (temperature > 38)      penalty += 0.08;
   return Math.max(0, 1 - penalty);
 }
 
-function calcPsychological(refereeStrictness = 0.5, isPressureGame = false): number {
-  // Strict referee + pressure game = more draws
-  return refereeStrictness * (isPressureGame ? 1.2 : 1.0);
+// F11: League Table Standing — current rank differential
+// Rank 1 (top) = score 1.0, rank N (bottom) = score 0.0
+function calcF11_LeagueStanding(rank?: number, leagueSize = 20): number {
+  if (!rank) return 0.50;
+  return Math.max(0, Math.min(1, (leagueSize - rank) / (leagueSize - 1)));
 }
 
-// ─── Main Engine ──────────────────────────────────────────────────────────────
+// F12: Venue / Stadium Pressure — crowd size and home fortress rating
+// Large, packed stadiums create intimidating atmospheres for visiting teams
+// Capacity >60k + >90% attendance = maximum pressure
+function calcF12_VenuePressure(
+  capacity = 30000,
+  attendancePct = 0.80,
+  isNeutral = false
+): number {
+  if (isNeutral) return 0;
+  // Normalise capacity: 5k = 0, 80k+ = 1
+  const capScore = Math.min(1, Math.max(0, (capacity - 5000) / 75000));
+  const attScore = Math.min(1, attendancePct);
+  return capScore * 0.60 + attScore * 0.40;
+}
 
-export function runTitanXII(fixture: FixtureData, weights: EngineWeights = DEFAULT_WEIGHTS): PredictionResult {
+// =============================================================================
+// MAIN ENGINE: runTitanXII
+// =============================================================================
+
+export function runTitanXII(
+  fixture: FixtureData,
+  weights: EngineWeights = DEFAULT_WEIGHTS
+): PredictionResult {
   const { sport } = fixture;
 
-  // Calculate all factors
-  const market = calcMarketConsensus(fixture.homeOdds, fixture.drawOdds, fixture.awayOdds);
-  const homeMomentum = calcMomentum(fixture.homeForm);
-  const awayMomentum = calcMomentum(fixture.awayForm);
-  const homeQuality = calcQuality(fixture.homeWinRate, fixture.homeGoalDiff);
-  const awayQuality = calcQuality(fixture.awayWinRate, fixture.awayGoalDiff);
-  const secretSauce = calcSecretSauce(
-    fixture.h2hHomeWins, fixture.h2hAwayWins, fixture.h2hDraws,
-    fixture.homeRestDays, fixture.awayRestDays,
-    fixture.homeInjuries, fixture.awayInjuries
+  // --- Calculate all 12 factors ---
+  const f01 = calcF01_MarketConsensus(fixture.homeOdds, fixture.drawOdds, fixture.awayOdds);
+  const f02Home = calcF02_Momentum(fixture.homeForm);
+  const f02Away = calcF02_Momentum(fixture.awayForm);
+  const f03Home = calcF03_Quality(fixture.homeWinRate, fixture.homeGoalDiff);
+  const f03Away = calcF03_Quality(fixture.awayWinRate, fixture.awayGoalDiff);
+  const f04 = calcF04_H2H(fixture.h2hHomeWins, fixture.h2hAwayWins, fixture.h2hDraws);
+  const f05 = calcF05_MarketSteam(
+    fixture.openingHomeOdds, fixture.homeOdds,
+    fixture.openingAwayOdds, fixture.awayOdds
   );
-  const steam = calcMarketSteam(fixture.openingHomeOdds, fixture.homeOdds, fixture.openingAwayOdds, fixture.awayOdds);
-  const travelStress = calcTravelStress(fixture.homeTimezone, fixture.awayTimezone);
-  const refBias = calcRefereeBias(fixture.refereeHomeWinPct);
-  const envFactor = calcEnvironmental(fixture.weatherCondition, fixture.windSpeed, fixture.temperature);
-  const psychFactor = calcPsychological(fixture.refereeStrictness);
+  const f06Home = calcF06_RestFatigue(fixture.homeRestDays);
+  const f06Away = calcF06_RestFatigue(fixture.awayRestDays);
+  const f07Home = calcF07_Injuries(fixture.homeInjuries, fixture.homeKeyPlayerOut, fixture.homeInjuryRating);
+  const f07Away = calcF07_Injuries(fixture.awayInjuries, fixture.awayKeyPlayerOut, fixture.awayInjuryRating);
+  const f08 = calcF08_TravelStress(fixture.homeTimezone, fixture.awayTimezone);
+  const f09 = calcF09_RefereeBias(fixture.refereeHomeWinPct, fixture.refereeStrictness);
+  const f10 = calcF10_Environmental(fixture.weatherCondition, fixture.windSpeed, fixture.temperature);
+  const f11Home = calcF11_LeagueStanding(fixture.homeTableRank, fixture.leagueSize);
+  const f11Away = calcF11_LeagueStanding(fixture.awayTableRank, fixture.leagueSize);
+  const f12 = calcF12_VenuePressure(fixture.stadiumCapacity, fixture.homeAttendancePct, fixture.isNeutral);
 
-  // Home advantage baseline
-  const homeAdvantage = fixture.isNeutral ? 0 : 0.05;
+  // Home advantage baseline (disabled on neutral venues)
+  const homeAdvantage = fixture.isNeutral ? 0 : 0.04;
 
-  // Raw scores for each outcome
+  // --- Raw weighted scores ---
   const rawHome =
-    market.home * weights.marketConsensus +
-    homeMomentum * weights.momentum +
-    homeQuality * weights.quality +
-    secretSauce.home * weights.secretSauce +
-    steam.home * weights.marketSteam +
-    travelStress * weights.travelStress +
-    refBias * weights.refereeBias +
-    envFactor * weights.environmental +
-    (1 - psychFactor * 0.5) * weights.psychological +
+    f01.home            * weights.marketConsensus  +
+    f02Home             * weights.momentum         +
+    f03Home             * weights.quality          +
+    f04.home            * weights.h2hHistory       +
+    f05.home            * weights.marketSteam      +
+    f06Home             * weights.restFatigue      +
+    f07Home             * weights.injuriesAbsences +
+    (1 - f08)           * weights.travelStress     +
+    f09.homeBoost       * weights.refereeBias      +
+    f10                 * weights.environmental    +
+    f11Home             * weights.leagueStanding   +
+    f12                 * weights.venuePressure    +
     homeAdvantage;
 
   const rawAway =
-    market.away * weights.marketConsensus +
-    awayMomentum * weights.momentum +
-    awayQuality * weights.quality +
-    secretSauce.away * weights.secretSauce +
-    steam.away * weights.marketSteam +
-    (1 - travelStress) * weights.travelStress +
-    (1 - refBias) * weights.refereeBias +
-    envFactor * weights.environmental +
-    (1 - psychFactor * 0.5) * weights.psychological;
+    f01.away            * weights.marketConsensus  +
+    f02Away             * weights.momentum         +
+    f03Away             * weights.quality          +
+    f04.away            * weights.h2hHistory       +
+    f05.away            * weights.marketSteam      +
+    f06Away             * weights.restFatigue      +
+    f07Away             * weights.injuriesAbsences +
+    f08                 * weights.travelStress     +
+    (1 - f09.homeBoost) * weights.refereeBias      +
+    f10                 * weights.environmental    +
+    f11Away             * weights.leagueStanding   +
+    0                   * weights.venuePressure;
 
   const rawDraw = sport === 'soccer'
-    ? market.draw * weights.marketConsensus +
-      0.5 * weights.momentum +
-      0.5 * weights.quality +
-      0.5 * weights.secretSauce +
-      0.5 * weights.marketSteam +
-      0.5 * weights.travelStress +
-      psychFactor * weights.refereeBias +
-      envFactor * 0.5 * weights.environmental +
-      psychFactor * weights.psychological
+    ? f01.draw          * weights.marketConsensus  +
+      0.50              * weights.momentum         +
+      0.50              * weights.quality          +
+      0.30              * weights.h2hHistory       +
+      0.50              * weights.marketSteam      +
+      0.50              * weights.restFatigue      +
+      0.50              * weights.injuriesAbsences +
+      0.50              * weights.travelStress     +
+      f09.drawBoost     * weights.refereeBias      +
+      f10 * 0.60        * weights.environmental    +
+      0.50              * weights.leagueStanding   +
+      0                 * weights.venuePressure
     : 0;
 
-  // Normalize
+  // --- Normalise to percentages ---
   const totalRaw = rawHome + rawDraw + rawAway;
   let homeConf = (rawHome / totalRaw) * 100;
   let drawConf = sport === 'soccer' ? (rawDraw / totalRaw) * 100 : 0;
   let awayConf = (rawAway / totalRaw) * 100;
 
-  // Adjustments
-  if (fixture.refereeStrictness && fixture.refereeStrictness > 0.7 && sport === 'soccer') {
-    drawConf += 6;
-    homeConf -= 3;
-    awayConf -= 3;
+  // Post-normalisation adjustments
+  if (f09.drawBoost > 0 && sport === 'soccer') {
+    drawConf += 4; homeConf -= 2; awayConf -= 2;
+  }
+  if ((fixture.weatherCondition === 'rain' || fixture.weatherCondition === 'snow') && sport === 'soccer') {
+    drawConf += 2; homeConf -= 1; awayConf -= 1;
   }
 
-  // Weather penalty on goals
-  if (fixture.weatherCondition === 'rain' || fixture.windSpeed && fixture.windSpeed > 25) {
-    drawConf += 3;
-    homeConf -= 1.5;
-    awayConf -= 1.5;
-  }
-
-  // Double chance calculations (soccer only)
-  const homeOrDraw = sport === 'soccer' ? Math.min(95, homeConf + drawConf * 0.7) : undefined;
-  const awayOrDraw = sport === 'soccer' ? Math.min(95, awayConf + drawConf * 0.7) : undefined;
+  // --- Ancillary markets (soccer only) ---
+  const homeOrDraw = sport === 'soccer' ? Math.min(95, homeConf + drawConf * 0.70) : undefined;
+  const awayOrDraw = sport === 'soccer' ? Math.min(95, awayConf + drawConf * 0.70) : undefined;
   const homeOrAway = sport === 'soccer' ? Math.min(95, homeConf + awayConf) : undefined;
 
-  // Over/Under & BTTS (soccer only)
-  const attackStrength = (homeMomentum + awayMomentum) / 2;
-  const over25 = sport === 'soccer' ? Math.min(90, attackStrength * 100 * 0.8 + 20) : undefined;
+  const attackStrength = (f02Home + f02Away) / 2;
+  const weatherPenalty = f10 < 0.80 ? 10 : 0;
+  const over25 = sport === 'soccer' ? Math.min(90, attackStrength * 100 * 0.80 + 20 - weatherPenalty) : undefined;
   const under25 = sport === 'soccer' ? Math.min(90, 100 - (over25 || 50)) : undefined;
-  const btts = sport === 'soccer' ? Math.min(85, (homeMomentum + awayMomentum) * 50) : undefined;
+  const btts = sport === 'soccer' ? Math.min(85, (f02Home * f07Home + f02Away * f07Away) * 55) : undefined;
 
-  // Determine top pick
+  // --- Determine top pick ---
   const outcomes: Array<[string, number]> = [
     ['Home Win', homeConf],
     ['Away Win', awayConf],
   ];
   if (sport === 'soccer') {
     outcomes.push(['Draw', drawConf]);
-    if (homeOrDraw) outcomes.push(['Home or Draw', homeOrDraw]);
-    if (awayOrDraw) outcomes.push(['Away or Draw', awayOrDraw]);
-    if (over25) outcomes.push(['Over 2.5', over25]);
-    if (btts) outcomes.push(['BTTS', btts]);
+    if (homeOrDraw !== undefined) outcomes.push(['Home or Draw', homeOrDraw]);
+    if (awayOrDraw !== undefined) outcomes.push(['Away or Draw', awayOrDraw]);
+    if (over25 !== undefined) outcomes.push(['Over 2.5 Goals', over25]);
+    if (btts !== undefined) outcomes.push(['Both Teams to Score', btts]);
   }
-
   outcomes.sort((a, b) => b[1] - a[1]);
   const [topPick, topConfidence] = outcomes[0];
 
-  // Tier assignment
+  // --- Tier assignment ---
   let tier: 'free' | 'vip' | 'pro' = 'free';
-  if (topConfidence >= 69) tier = 'pro';
-  else if (topConfidence >= 68) tier = 'vip';
-  else if (topConfidence >= 60) tier = 'free';
+  if (topConfidence >= CONFIDENCE_THRESHOLDS.PRO_TIER)       tier = 'pro';
+  else if (topConfidence >= CONFIDENCE_THRESHOLDS.VIP_TIER)  tier = 'vip';
+  else if (topConfidence >= CONFIDENCE_THRESHOLDS.FREE_TIER) tier = 'free';
 
-  const isPowerPick = topConfidence >= 69;
+  const isPowerPick = topConfidence >= CONFIDENCE_THRESHOLDS.POWER_PICK;
+
+  const factorBreakdown: FactorBreakdown = {
+    f01_marketConsensus: { homeScore: f01.home,         awayScore: f01.away,           weight: weights.marketConsensus  },
+    f02_momentum:        { homeScore: f02Home,           awayScore: f02Away,             weight: weights.momentum         },
+    f03_quality:         { homeScore: f03Home,           awayScore: f03Away,             weight: weights.quality          },
+    f04_h2hHistory:      { homeScore: f04.home,          awayScore: f04.away,            weight: weights.h2hHistory       },
+    f05_marketSteam:     { homeScore: f05.home,          awayScore: f05.away,            weight: weights.marketSteam      },
+    f06_restFatigue:     { homeScore: f06Home,           awayScore: f06Away,             weight: weights.restFatigue      },
+    f07_injuries:        { homeScore: f07Home,           awayScore: f07Away,             weight: weights.injuriesAbsences },
+    f08_travelStress:    { homeScore: 1 - f08,           awayScore: f08,                 weight: weights.travelStress     },
+    f09_refereeBias:     { homeScore: f09.homeBoost,     awayScore: 1 - f09.homeBoost,   weight: weights.refereeBias      },
+    f10_environmental:   { score: f10,                                                   weight: weights.environmental    },
+    f11_leagueStanding:  { homeScore: f11Home,           awayScore: f11Away,             weight: weights.leagueStanding   },
+    f12_venuePressure:   { score: f12,                                                   weight: weights.venuePressure    },
+  };
 
   return {
     fixtureId: fixture.fixtureId,
-    homeTeam: fixture.homeTeam,
-    awayTeam: fixture.awayTeam,
-    league: fixture.league,
-    sport: fixture.sport,
-    date: fixture.date,
+    homeTeam:  fixture.homeTeam,
+    awayTeam:  fixture.awayTeam,
+    league:    fixture.league,
+    sport:     fixture.sport,
+    date:      fixture.date,
     predictions: {
-      homeWin: Math.round(homeConf * 10) / 10,
-      draw: sport === 'soccer' ? Math.round(drawConf * 10) / 10 : undefined,
-      awayWin: Math.round(awayConf * 10) / 10,
-      homeOrDraw: homeOrDraw ? Math.round(homeOrDraw * 10) / 10 : undefined,
-      awayOrDraw: awayOrDraw ? Math.round(awayOrDraw * 10) / 10 : undefined,
-      homeOrAway: homeOrAway ? Math.round(homeOrAway * 10) / 10 : undefined,
-      over25: over25 ? Math.round(over25 * 10) / 10 : undefined,
-      under25: under25 ? Math.round(under25 * 10) / 10 : undefined,
-      btts: btts ? Math.round(btts * 10) / 10 : undefined,
+      homeWin:    Math.round(homeConf * 10) / 10,
+      draw:       sport === 'soccer' ? Math.round(drawConf * 10) / 10 : undefined,
+      awayWin:    Math.round(awayConf * 10) / 10,
+      homeOrDraw: homeOrDraw  !== undefined ? Math.round(homeOrDraw  * 10) / 10 : undefined,
+      awayOrDraw: awayOrDraw  !== undefined ? Math.round(awayOrDraw  * 10) / 10 : undefined,
+      homeOrAway: homeOrAway  !== undefined ? Math.round(homeOrAway  * 10) / 10 : undefined,
+      over25:     over25      !== undefined ? Math.round(over25      * 10) / 10 : undefined,
+      under25:    under25     !== undefined ? Math.round(under25     * 10) / 10 : undefined,
+      btts:       btts        !== undefined ? Math.round(btts        * 10) / 10 : undefined,
     },
     topPick,
     topConfidence: Math.round(topConfidence * 10) / 10,
     isPowerPick,
     tier,
     factors: {
-      marketConsensus: Math.round(market.home * 100) / 100,
-      homeMomentum: Math.round(homeMomentum * 100) / 100,
-      awayMomentum: Math.round(awayMomentum * 100) / 100,
-      homeQuality: Math.round(homeQuality * 100) / 100,
-      awayQuality: Math.round(awayQuality * 100) / 100,
-      secretSauceHome: Math.round(secretSauce.home * 100) / 100,
-      travelStress: Math.round(travelStress * 100) / 100,
-      refereeBias: Math.round(refBias * 100) / 100,
-      environmental: Math.round(envFactor * 100) / 100,
+      f01_marketConsensus_home: Math.round(f01.home        * 100) / 100,
+      f02_momentum_home:        Math.round(f02Home         * 100) / 100,
+      f02_momentum_away:        Math.round(f02Away         * 100) / 100,
+      f03_quality_home:         Math.round(f03Home         * 100) / 100,
+      f03_quality_away:         Math.round(f03Away         * 100) / 100,
+      f04_h2h_home:             Math.round(f04.home        * 100) / 100,
+      f05_steam_home:           Math.round(f05.home        * 100) / 100,
+      f06_rest_home:            Math.round(f06Home         * 100) / 100,
+      f06_rest_away:            Math.round(f06Away         * 100) / 100,
+      f07_injuries_home:        Math.round(f07Home         * 100) / 100,
+      f07_injuries_away:        Math.round(f07Away         * 100) / 100,
+      f08_travelStress:         Math.round(f08             * 100) / 100,
+      f09_refereeBias:          Math.round(f09.homeBoost   * 100) / 100,
+      f10_environmental:        Math.round(f10             * 100) / 100,
+      f11_standing_home:        Math.round(f11Home         * 100) / 100,
+      f11_standing_away:        Math.round(f11Away         * 100) / 100,
+      f12_venuePressure:        Math.round(f12             * 100) / 100,
     },
-    recommendation: `${topPick} — ${Math.round(topConfidence)}% confidence${isPowerPick ? ' ⚡ POWER PICK' : ''}`,
+    factorBreakdown,
+    recommendation: `${topPick} — ${Math.round(topConfidence)}% confidence${isPowerPick ? ' POWER PICK' : ''}`,
   };
 }
 
-// ─── Batch Processing ─────────────────────────────────────────────────────────
-
-export function runBatchPredictions(fixtures: FixtureData[], weights?: EngineWeights): PredictionResult[] {
+// =============================================================================
+// BATCH PROCESSING
+// =============================================================================
+// Runs all fixtures through the engine and filters by the 68% minimum threshold.
+// Results sorted by confidence descending.
+export function runBatchPredictions(
+  fixtures: FixtureData[],
+  weights?: EngineWeights
+): PredictionResult[] {
   const results: PredictionResult[] = [];
+
   for (const fixture of fixtures) {
     try {
       const result = runTitanXII(fixture, weights);
-      // Only include picks meeting minimum threshold
-      const minThreshold = fixture.sport === 'nba' ? 55 : 60;
-      if (result.topConfidence >= minThreshold) {
+      if (result.topConfidence >= CONFIDENCE_THRESHOLDS.MINIMUM) {
         results.push(result);
+      } else {
+        console.log(
+          `[Titan XII] Discarded ${fixture.homeTeam} vs ${fixture.awayTeam} — ` +
+          `${result.topConfidence}% < ${CONFIDENCE_THRESHOLDS.MINIMUM}% threshold`
+        );
       }
     } catch (err) {
-      console.error(`[Engine] Failed to process fixture ${fixture.fixtureId}:`, err);
+      console.error(`[Titan XII] Failed to process fixture ${fixture.fixtureId}:`, err);
     }
   }
-  // Sort by confidence descending
+
   return results.sort((a, b) => b.topConfidence - a.topConfidence);
 }

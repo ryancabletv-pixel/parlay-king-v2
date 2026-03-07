@@ -6,7 +6,7 @@ esbuild.build({
   bundle: true,
   platform: 'node',
   target: 'node20',
-  outfile: 'server_dist/index.js',
+  outfile: 'app.js',
   format: 'cjs',
   external: [
     'pg-native',

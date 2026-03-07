@@ -484,7 +484,7 @@
 
 <script>
 let token = localStorage.getItem('adminToken') || '';
-const API = '';
+const API = 'https://soccernbaparlayking.vip';
 
 // ── Utilities ────────────────────────────────────────────────────────────────
 function notify(msg, type='success') {
@@ -512,7 +512,7 @@ async function doLogin() {
   const err = document.getElementById('login-error');
   err.textContent = '';
   try {
-    const d = await fetch('/api/admin/login', {
+    const d = await fetch('https://soccernbaparlayking.vip/api/admin/login', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({password: pw})

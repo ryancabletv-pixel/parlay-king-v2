@@ -2,7 +2,7 @@ import http from 'http';
 import { AddressInfo } from 'net';
 
 const PORT = parseInt(process.env.PORT || '8080', 10);
-const TZ = process.env.TZ || 'America/Halifax';
+const TZ = process.env.TZ || 'America/Moncton';
 process.env.TZ = TZ;
 
 // ─── PHASE 1: Raw HTTP server for instant health checks ───────────────────────
@@ -155,6 +155,10 @@ async function initializeExpress() {
     // Load all API routes
     const { registerRoutes } = await import('./routes.js');
     await registerRoutes(app);
+
+    // SEO routes — sitemap.xml, robots.txt, IndexNow key
+    const { registerSeoRoutes } = await import('./seo.js');
+    registerSeoRoutes(app);
 
     // SPA fallback — serve admin app for all unmatched routes
     app.get('*', (req, res) => {
