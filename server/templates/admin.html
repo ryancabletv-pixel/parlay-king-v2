@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parlay King — Gold Standard V3 Titan XII</title>
+  <style>
+    :root {
+      --gold: #FFD700;
+      --gold-dim: #B8960C;
+      --gold-bg: rgba(255,215,0,0.08);
+      --gold-border: rgba(255,215,0,0.25);
+      --bg: #080810;
+      --bg2: #0f0f1a;
+      --bg3: #161628;
+      --text: #e8e8f0;
+      --text-dim: #888899;
+      --green: #00e676;
+      --red: #ff4444;
+      --blue: #4fc3f7;
+      --orange: #ff9800;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+
+    /* Login Screen */
+    #login-screen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; background: var(--bg);
+    }
+    .login-box {
+      text-align: center; padding: 50px 40px;
+      background: var(--bg2); border: 1px solid var(--gold-border);
+      border-radius: 16px; width: 380px;
+      box-shadow: 0 0 60px rgba(255,215,0,0.05);
+    }
+    .trophy { font-size: 56px; margin-bottom: 16px; }
+    .login-title { font-size: 28px; font-weight: 900; letter-spacing: 5px; color: var(--gold); }
+    .login-sub { color: var(--text-dim); font-size: 13px; margin: 6px 0 28px; letter-spacing: 1px; }
+    .badges { display: flex; gap: 8px; justify-content: center; margin-bottom: 28px; flex-wrap: wrap; }
+    .badge { background: var(--gold-bg); border: 1px solid var(--gold-border); border-radius: 20px; padding: 5px 12px; font-size: 11px; color: var(--gold); }
+    .login-label { color: var(--text-dim); font-size: 10px; letter-spacing: 2px; display: block; margin-bottom: 8px; text-align: left; }
+    .login-input {
+      width: 100%; padding: 13px 16px; background: rgba(255,255,255,0.04);
+      border: 1px solid var(--gold-border); border-radius: 8px; color: var(--text);
+      font-size: 15px; margin-bottom: 14px; outline: none; transition: border-color .2s;
+    }
+    .login-input:focus { border-color: var(--gold); }
+    .login-btn {
+      width: 100%; background: linear-gradient(135deg, var(--gold), #FFA500);
+      color: #000; border: none; padding: 14px; border-radius: 8px;
+      font-size: 14px; font-weight: 800; cursor: pointer; letter-spacing: 2px;
+      transition: opacity .2s;
+    }
+    .login-btn:hover { opacity: 0.9; }
+    .login-error { color: var(--red); font-size: 12px; margin-top: 10px; }
+
+    /* Main App */
+    #app { display: none; }
+    .sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0; width: 220px;
+      background: var(--bg2); border-right: 1px solid var(--gold-border);
+      overflow-y: auto; z-index: 100;
+    }
+    .sidebar-logo { padding: 20px 16px; border-bottom: 1px solid var(--gold-border); }
+    .sidebar-logo h1 { font-size: 14px; font-weight: 900; letter-spacing: 3px; color: var(--gold); }
+    .sidebar-logo p { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+    .nav-section { padding: 12px 0; }
+    .nav-label { padding: 6px 16px; font-size: 9px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+      cursor: pointer; color: var(--text-dim); font-size: 13px; transition: all .15s;
+      border-left: 3px solid transparent;
+    }
+    .nav-item:hover { background: var(--gold-bg); color: var(--text); }
+    .nav-item.active { background: var(--gold-bg); color: var(--gold); border-left-color: var(--gold); }
+    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+    .main { margin-left: 220px; padding: 24px; min-height: 100vh; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-size: 22px; font-weight: 800; color: var(--gold); }
+    .page-sub { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+    .card {
+      background: var(--bg2); border: 1px solid var(--gold-border);
+      border-radius: 12px; padding: 20px;
+    }
+    .card-title { font-size: 11px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px; }
+    .card-value { font-size: 32px; font-weight: 900; color: var(--gold); }
+    .card-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+    .stat-card { background: var(--bg2); border: 1px solid var(--gold-border); border-radius: 12px; padding: 16px 20px; }
+    .stat-label { font-size: 11px; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 900; }
+    .stat-value.gold { color: var(--gold); }
+    .stat-value.green { color: var(--green); }
+    .stat-value.red { color: var(--red); }
+    .stat-value.blue { color: var(--blue); }
+
+    .section-card { background: var(--bg2); border: 1px solid var(--gold-border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .section-title { font-size: 13px; font-weight: 700; color: var(--gold); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 8px 12px; color: var(--text-dim); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid var(--gold-border); }
+    td { padding: 10px 12px; border-bottom: 1px solid rgba(255,215,0,0.05); }
+    tr:hover td { background: var(--gold-bg); }
+
+    .badge-tier { padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+    .badge-tier.free { background: rgba(100,100,100,0.3); color: #aaa; }
+    .badge-tier.vip { background: rgba(255,215,0,0.2); color: var(--gold); }
+    .badge-tier.pro { background: rgba(0,230,118,0.2); color: var(--green); }
+
+    .badge-status { padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+    .badge-status.pending { background: rgba(255,152,0,0.2); color: var(--orange); }
+    .badge-status.won { background: rgba(0,230,118,0.2); color: var(--green); }
+    .badge-status.lost { background: rgba(255,68,68,0.2); color: var(--red); }
+
+    .btn {
+      padding: 9px 18px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 700; transition: opacity .2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-gold { background: linear-gradient(135deg, var(--gold), #FFA500); color: #000; }
+    .btn-outline { background: transparent; border: 1px solid var(--gold-border); color: var(--text); }
+    .btn-red { background: rgba(255,68,68,0.2); border: 1px solid rgba(255,68,68,0.4); color: var(--red); }
+    .btn-green { background: rgba(0,230,118,0.2); border: 1px solid rgba(0,230,118,0.4); color: var(--green); }
+    .btn-sm { padding: 5px 12px; font-size: 11px; }
+
+    .input-field {
+      width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.04);
+      border: 1px solid var(--gold-border); border-radius: 8px; color: var(--text);
+      font-size: 13px; outline: none; transition: border-color .2s; margin-bottom: 12px;
+    }
+    .input-field:focus { border-color: var(--gold); }
+    .input-label { font-size: 11px; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 6px; display: block; }
+
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-dot.red { background: var(--red); }
+    .status-dot.orange { background: var(--orange); }
+
+    .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
+    .alert-info { background: rgba(79,195,247,0.1); border: 1px solid rgba(79,195,247,0.3); color: var(--blue); }
+    .alert-success { background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3); color: var(--green); }
+    .alert-warning { background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); color: var(--orange); }
+    .alert-error { background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3); color: var(--red); }
+
+    .progress-bar { height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), #FFA500); border-radius: 3px; transition: width .5s; }
+
+    .top-bar {
+      position: fixed; top: 0; left: 220px; right: 0; height: 52px;
+      background: var(--bg2); border-bottom: 1px solid var(--gold-border);
+      display: flex; align-items: center; padding: 0 24px; z-index: 99;
+      justify-content: space-between;
+    }
+    .top-bar-left { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-dim); }
+    .top-bar-right { display: flex; align-items: center; gap: 16px; }
+    .main { padding-top: 76px; }
+
+    .engine-factor { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,215,0,0.05); }
+    .factor-name { flex: 1; font-size: 13px; }
+    .factor-weight { font-size: 13px; color: var(--gold); font-weight: 700; width: 50px; text-align: right; }
+    .factor-bar { flex: 2; }
+
+    #notification { position: fixed; top: 20px; right: 20px; z-index: 9999; display: none; }
+    .notif { padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+    .notif.success { background: rgba(0,230,118,0.9); color: #000; }
+    .notif.error { background: rgba(255,68,68,0.9); color: #fff; }
+  </style>
+</head>
+<body>
+
+<!-- Notification -->
+<div id="notification"></div>
+
+<!-- Login Screen -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="trophy">🏆</div>
+    <div class="login-title">PARLAY KING</div>
+    <div class="login-sub">Gold Standard V3 Titan XII — Admin Control</div>
+    <div class="badges">
+      <span class="badge">📊 87.5% Win Rate</span>
+      <span class="badge">⚡ V3 Titan XII</span>
+      <span class="badge">🟢 24/7 Automated</span>
+    </div>
+    <label class="login-label">ADMIN PASSWORD</label>
+    <input type="password" class="login-input" id="login-pw" placeholder="Enter password" />
+    <button class="login-btn" onclick="doLogin()">🛡️ ACCESS COMMAND CENTER</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <h1>🏆 PARLAY KING</h1>
+      <p>Gold Standard V3 Titan XII</p>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <div class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">📊</span>Dashboard</div>
+      <div class="nav-item" onclick="showPage('engine')"><span class="nav-icon">⚡</span>Engine</div>
+      <div class="nav-item" onclick="showPage('picks')"><span class="nav-icon">🎯</span>Picks</div>
+      <div class="nav-item" onclick="showPage('parlays')"><span class="nav-icon">🔗</span>Parlays</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Records</div>
+      <div class="nav-item" onclick="showPage('records')"><span class="nav-icon">📋</span>W/L Records</div>
+      <div class="nav-item" onclick="showPage('tierresults')"><span class="nav-icon">🏅</span>Tier Results</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Management</div>
+      <div class="nav-item" onclick="showPage('members')"><span class="nav-icon">👥</span>Members</div>
+      <div class="nav-item" onclick="showPage('tiers')"><span class="nav-icon">💎</span>Tier Pricing</div>
+      <div class="nav-item" onclick="showPage('site')"><span class="nav-icon">🌐</span>Site & FTP</div>
+      <div class="nav-item" onclick="showPage('control')"><span class="nav-icon">⚙️</span>Control</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">System</div>
+      <div class="nav-item" onclick="showPage('alerts')"><span class="nav-icon">🔔</span>Alerts</div>
+      <div class="nav-item" onclick="doLogout()"><span class="nav-icon">🚪</span>Logout</div>
+    </div>
+  </div>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="status-dot green"></span>
+      <span>System Online</span>
+      <span style="color:var(--gold-border)">|</span>
+      <span id="top-date"></span>
+    </div>
+    <div class="top-bar-right">
+      <span style="font-size:12px;color:var(--text-dim)">V3 Titan XII</span>
+      <button class="btn btn-gold btn-sm" onclick="triggerGeneration()">⚡ Run Engine</button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+
+    <!-- Dashboard -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">Live system overview — Gold Standard V3 Titan XII</div>
+      </div>
+      <div class="grid-4" style="margin-bottom:16px">
+        <div class="stat-card"><div class="stat-label">WIN RATE</div><div class="stat-value gold" id="dash-winrate">—</div></div>
+        <div class="stat-card"><div class="stat-label">TOTAL WINS</div><div class="stat-value green" id="dash-wins">—</div></div>
+        <div class="stat-card"><div class="stat-label">TOTAL LOSSES</div><div class="stat-value red" id="dash-losses">—</div></div>
+        <div class="stat-card"><div class="stat-label">TODAY'S PICKS</div><div class="stat-value blue" id="dash-picks">—</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="section-card">
+          <div class="section-title">⚡ Scheduler Status</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px">Scheduler</span>
+              <span style="color:var(--green);font-size:12px;font-weight:700"><span class="status-dot green"></span>ACTIVE</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px">Keep-Alive Ping</span>
+              <span style="color:var(--green);font-size:12px;font-weight:700">Every 5 min</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px">Daily Generation</span>
+              <span style="color:var(--gold);font-size:12px;font-weight:700">1:00 AM AST</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px">Retry Cascade</span>
+              <span style="color:var(--text-dim);font-size:12px">1:30 → 2:00 → 2:30 → 3:00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px">Database</span>
+              <span style="color:var(--green);font-size:12px;font-weight:700"><span class="status-dot green"></span>NeonDB Connected</span>
+            </div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-title">📈 Recent Runs</div>
+          <div id="dash-runs"><div style="color:var(--text-dim);font-size:13px">Loading...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Engine -->
+    <div class="page" id="page-engine">
+      <div class="page-header">
+        <div class="page-title">V3 Titan XII Engine</div>
+        <div class="page-sub">12-Factor weighted prediction model configuration</div>
+      </div>
+      <div class="grid-2">
+        <div class="section-card">
+          <div class="section-title">⚖️ Factor Weights</div>
+          <div id="engine-factors">Loading...</div>
+        </div>
+        <div class="section-card">
+          <div class="section-title">🎯 Confidence Thresholds</div>
+          <div id="engine-thresholds">Loading...</div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="section-title">🔬 Live Validator — Test Any Fixture</div>
+        <div class="grid-2">
+          <div>
+            <label class="input-label">HOME TEAM</label>
+            <input class="input-field" id="val-home" placeholder="e.g. Manchester City" />
+            <label class="input-label">AWAY TEAM</label>
+            <input class="input-field" id="val-away" placeholder="e.g. Arsenal" />
+            <label class="input-label">LEAGUE</label>
+            <input class="input-field" id="val-league" placeholder="e.g. Premier League" />
+            <label class="input-label">SPORT</label>
+            <select class="input-field" id="val-sport">
+              <option value="soccer">Soccer</option>
+              <option value="nba">NBA</option>
+            </select>
+          </div>
+          <div>
+            <label class="input-label">HOME ODDS</label>
+            <input class="input-field" id="val-home-odds" placeholder="e.g. 1.85" type="number" step="0.01" />
+            <label class="input-label">DRAW ODDS</label>
+            <input class="input-field" id="val-draw-odds" placeholder="e.g. 3.50" type="number" step="0.01" />
+            <label class="input-label">AWAY ODDS</label>
+            <input class="input-field" id="val-away-odds" placeholder="e.g. 4.20" type="number" step="0.01" />
+          </div>
+        </div>
+        <button class="btn btn-gold" onclick="runValidator()">⚡ Run Titan XII Model</button>
+        <div id="validator-result" style="margin-top:16px"></div>
+      </div>
+    </div>
+
+    <!-- Picks -->
+    <div class="page" id="page-picks">
+      <div class="page-header">
+        <div class="page-title">Today's Picks</div>
+        <div class="page-sub" id="picks-date-label">Loading...</div>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div class="section-title" style="margin:0">🎯 Active Picks</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-gold btn-sm" onclick="triggerGeneration()">⚡ Generate</button>
+            <button class="btn btn-outline btn-sm" onclick="loadPicks()">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="picks-table">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Parlays -->
+    <div class="page" id="page-parlays">
+      <div class="page-header">
+        <div class="page-title">Parlay Builder</div>
+        <div class="page-sub">Today's parlay legs and overrides</div>
+      </div>
+      <div class="section-card">
+        <div class="section-title">🔗 Today's Parlays</div>
+        <div id="parlays-content">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Records -->
+    <div class="page" id="page-records">
+      <div class="page-header">
+        <div class="page-title">W/L Records</div>
+        <div class="page-sub">Historical performance tracking</div>
+      </div>
+      <div class="grid-4" style="margin-bottom:16px">
+        <div class="stat-card"><div class="stat-label">WIN RATE</div><div class="stat-value gold" id="rec-winrate">—</div></div>
+        <div class="stat-card"><div class="stat-label">WINS</div><div class="stat-value green" id="rec-wins">—</div></div>
+        <div class="stat-card"><div class="stat-label">LOSSES</div><div class="stat-value red" id="rec-losses">—</div></div>
+        <div class="stat-card"><div class="stat-label">TOTAL</div><div class="stat-value blue" id="rec-total">—</div></div>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div class="section-title" style="margin:0">📋 Result History</div>
+          <button class="btn btn-gold btn-sm" onclick="showAddResult()">+ Add Result</button>
+        </div>
+        <div id="results-table">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Tier Results -->
+    <div class="page" id="page-tierresults">
+      <div class="page-header">
+        <div class="page-title">Tier Results</div>
+        <div class="page-sub">Per-tier hit rate tracking</div>
+      </div>
+      <div class="grid-3" id="tier-results-cards">Loading...</div>
+    </div>
+
+    <!-- Members -->
+    <div class="page" id="page-members">
+      <div class="page-header">
+        <div class="page-title">Members</div>
+        <div class="page-sub">Member tracking and active users</div>
+      </div>
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="stat-card"><div class="stat-label">TOTAL MEMBERS</div><div class="stat-value gold" id="members-total">—</div></div>
+        <div class="stat-card"><div class="stat-label">ACTIVE (15 MIN)</div><div class="stat-value green" id="members-active">—</div></div>
+      </div>
+      <div class="section-card">
+        <div class="section-title">👥 Member List</div>
+        <div id="members-table">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Tiers -->
+    <div class="page" id="page-tiers">
+      <div class="page-header">
+        <div class="page-title">Tier Pricing</div>
+        <div class="page-sub">Subscription tier configuration</div>
+      </div>
+      <div id="tiers-cards" class="grid-3">Loading...</div>
+    </div>
+
+    <!-- Site & FTP -->
+    <div class="page" id="page-site">
+      <div class="page-header">
+        <div class="page-title">Site & FTP Manager</div>
+        <div class="page-sub">soccernbaparlayking.vip file management</div>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div class="section-title" style="margin:0">📁 FTP Files</div>
+          <button class="btn btn-outline btn-sm" onclick="loadFTPFiles()">↻ Refresh</button>
+        </div>
+        <div id="ftp-files">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Control -->
+    <div class="page" id="page-control">
+      <div class="page-header">
+        <div class="page-title">System Control</div>
+        <div class="page-sub">Automation controls and system management</div>
+      </div>
+      <div class="grid-2">
+        <div class="section-card">
+          <div class="section-title">⚙️ Automation Controls</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <button class="btn btn-gold" onclick="triggerGeneration()">⚡ Manual Pick Generation</button>
+            <button class="btn btn-outline" onclick="refreshData()">🔄 Refresh Data Cache</button>
+            <button class="btn btn-outline" onclick="seoPing()">📡 SEO Ping (Google/Bing)</button>
+            <button class="btn btn-red" id="lock-btn" onclick="toggleLock()">🔒 Toggle Automation Lock</button>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-title">📊 System Info</div>
+          <div id="system-info">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alerts -->
+    <div class="page" id="page-alerts">
+      <div class="page-header">
+        <div class="page-title">System Alerts</div>
+        <div class="page-sub">Active system notifications and warnings</div>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div class="section-title" style="margin:0">🔔 Active Alerts</div>
+          <button class="btn btn-outline btn-sm" onclick="loadAlerts()">↻ Refresh</button>
+        </div>
+        <div id="alerts-list">Loading...</div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+let token = localStorage.getItem('adminToken') || '';
+const API = '';
+
+// ── Utilities ────────────────────────────────────────────────────────────────
+function notify(msg, type='success') {
+  const n = document.getElementById('notification');
+  const d = document.createElement('div');
+  d.className = `notif ${type}`;
+  d.textContent = msg;
+  n.style.display = 'block';
+  n.appendChild(d);
+  setTimeout(() => { d.remove(); if(!n.children.length) n.style.display='none'; }, 3500);
+}
+
+async function api(path, opts={}) {
+  const res = await fetch(API + path, {
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+    ...opts,
+  });
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const pw = document.getElementById('login-pw').value;
+  const err = document.getElementById('login-error');
+  err.textContent = '';
+  try {
+    const d = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({password: pw})
+    }).then(r => r.json());
+    if (d.token) {
+      token = d.token;
+      localStorage.setItem('adminToken', token);
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      initApp();
+    } else {
+      err.textContent = 'Invalid password';
+    }
+  } catch(e) {
+    err.textContent = 'Connection error: ' + e.message;
+  }
+}
+
+function doLogout() {
+  localStorage.removeItem('adminToken');
+  location.reload();
+}
+
+document.getElementById('login-pw').addEventListener('keypress', e => { if(e.key==='Enter') doLogin(); });
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if(n.getAttribute('onclick')?.includes(name)) n.classList.add('active');
+  });
+  // Load data for page
+  const loaders = {
+    dashboard: loadDashboard,
+    engine: loadEngine,
+    picks: loadPicks,
+    parlays: loadParlays,
+    records: loadRecords,
+    tierresults: loadTierResults,
+    members: loadMembers,
+    tiers: loadTiers,
+    site: loadFTPFiles,
+    control: loadControl,
+    alerts: loadAlerts,
+  };
+  loaders[name]?.();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function initApp() {
+  document.getElementById('top-date').textContent = new Date().toLocaleDateString('en-US', {weekday:'short',month:'short',day:'numeric',year:'numeric'});
+  loadDashboard();
+  setInterval(loadDashboard, 60000);
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const d = await api('/api/admin/status');
+    document.getElementById('dash-winrate').textContent = d.winloss.winRate + '%';
+    document.getElementById('dash-wins').textContent = d.winloss.wins;
+    document.getElementById('dash-losses').textContent = d.winloss.losses;
+
+    const picks = await api('/api/admin/picks');
+    document.getElementById('dash-picks').textContent = picks.length;
+
+    const runs = d.recentRuns || [];
+    const runsHtml = runs.length === 0
+      ? '<div style="color:var(--text-dim);font-size:13px">No runs yet today</div>'
+      : runs.map(r => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,215,0,0.05)">
+          <span style="font-size:12px">${r.date} — ${r.triggered_by || 'scheduler'}</span>
+          <span class="badge-status ${r.status}">${r.status}</span>
+        </div>`).join('');
+    document.getElementById('dash-runs').innerHTML = runsHtml;
+  } catch(e) {
+    console.error('Dashboard load error:', e);
+  }
+}
+
+// ── Engine ────────────────────────────────────────────────────────────────────
+async function loadEngine() {
+  try {
+    const config = await api('/api/admin/engine-config');
+    const factors = [
+      { key: 'weight.marketConsensus', name: 'Market Consensus', icon: '📈' },
+      { key: 'weight.momentum', name: 'Momentum', icon: '🔥' },
+      { key: 'weight.quality', name: 'Team Quality', icon: '⭐' },
+      { key: 'weight.secretSauce', name: 'Secret Sauce (H2H+Rest+Injury)', icon: '🧪' },
+      { key: 'weight.marketSteam', name: 'Market Steam (CLV)', icon: '💨' },
+      { key: 'weight.travelStress', name: 'Travel Stress', icon: '✈️' },
+      { key: 'weight.refereeBias', name: 'Referee Bias', icon: '🟨' },
+      { key: 'weight.environmental', name: 'Environmental (Weather)', icon: '🌦️' },
+      { key: 'weight.psychological', name: 'Psychological Edge', icon: '🧠' },
+    ];
+    document.getElementById('engine-factors').innerHTML = factors.map(f => {
+      const w = parseFloat(config[f.key] || '0');
+      const pct = Math.round(w * 100);
+      return `<div class="engine-factor">
+        <span style="font-size:16px">${f.icon}</span>
+        <span class="factor-name">${f.name}</span>
+        <div class="factor-bar"><div class="progress-bar"><div class="progress-fill" style="width:${pct * 4}%"></div></div></div>
+        <span class="factor-weight">${pct}%</span>
+      </div>`;
+    }).join('');
+
+    const thresholds = [
+      { key: 'threshold.european', name: 'European Leagues' },
+      { key: 'threshold.mls', name: 'MLS' },
+      { key: 'threshold.nba', name: 'NBA' },
+      { key: 'threshold.powerPick', name: 'Power Pick' },
+      { key: 'threshold.free', name: 'Free Tier Min' },
+    ];
+    document.getElementById('engine-thresholds').innerHTML = thresholds.map(t => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,215,0,0.05)">
+        <span style="font-size:13px">${t.name}</span>
+        <span style="color:var(--gold);font-weight:700">${config[t.key] || '—'}%</span>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('engine-factors').innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+  }
+}
+
+async function runValidator() {
+  const result = document.getElementById('validator-result');
+  result.innerHTML = '<div style="color:var(--text-dim)">Running Titan XII engine...</div>';
+  try {
+    const fixture = {
+      fixtureId: 'validator-' + Date.now(),
+      homeTeam: document.getElementById('val-home').value || 'Home Team',
+      awayTeam: document.getElementById('val-away').value || 'Away Team',
+      league: document.getElementById('val-league').value || 'Unknown',
+      sport: document.getElementById('val-sport').value,
+      date: new Date().toLocaleDateString('en-CA'),
+      homeOdds: parseFloat(document.getElementById('val-home-odds').value) || undefined,
+      drawOdds: parseFloat(document.getElementById('val-draw-odds').value) || undefined,
+      awayOdds: parseFloat(document.getElementById('val-away-odds').value) || undefined,
+    };
+    const d = await api('/api/admin/v2-validate', { method: 'POST', body: JSON.stringify(fixture) });
+    result.innerHTML = `
+      <div class="section-card" style="margin-top:0">
+        <div style="font-size:18px;font-weight:900;color:var(--gold);margin-bottom:12px">
+          ${d.recommendation}
+        </div>
+        <div class="grid-3" style="gap:10px;margin-bottom:12px">
+          <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:8px">
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">HOME WIN</div>
+            <div style="font-size:20px;font-weight:900;color:var(--blue)">${d.predictions.homeWin}%</div>
+          </div>
+          ${d.predictions.draw !== undefined ? `<div style="text-align:center;padding:12px;background:var(--bg3);border-radius:8px">
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">DRAW</div>
+            <div style="font-size:20px;font-weight:900;color:var(--orange)">${d.predictions.draw}%</div>
+          </div>` : ''}
+          <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:8px">
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">AWAY WIN</div>
+            <div style="font-size:20px;font-weight:900;color:var(--red)">${d.predictions.awayWin}%</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text-dim)">Tier: <strong style="color:var(--gold)">${d.tier.toUpperCase()}</strong> | Power Pick: <strong style="color:${d.isPowerPick ? 'var(--green)' : 'var(--text-dim)'}">${d.isPowerPick ? 'YES ⚡' : 'No'}</strong></div>
+      </div>`;
+  } catch(e) {
+    result.innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+  }
+}
+
+// ── Picks ─────────────────────────────────────────────────────────────────────
+async function loadPicks() {
+  const today = new Date().toLocaleDateString('en-CA');
+  document.getElementById('picks-date-label').textContent = `Date: ${today}`;
+  try {
+    const picks = await api('/api/admin/picks?date=' + today);
+    if (!picks.length) {
+      document.getElementById('picks-table').innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No picks for today. Click "Generate" to run the engine.</div>';
+      return;
+    }
+    document.getElementById('picks-table').innerHTML = `
+      <table>
+        <thead><tr><th>Match</th><th>League</th><th>Prediction</th><th>Confidence</th><th>Tier</th><th>Status</th></tr></thead>
+        <tbody>${picks.map(p => `
+          <tr>
+            <td><strong>${p.homeTeam || p.home_team}</strong> vs ${p.awayTeam || p.away_team}</td>
+            <td style="color:var(--text-dim)">${p.league || '—'}</td>
+            <td style="color:var(--gold)">${p.prediction}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:${p.confidence}%"></div></div>
+                <span style="color:var(--gold);font-weight:700">${p.confidence}%</span>
+              </div>
+            </td>
+            <td><span class="badge-tier ${p.tier}">${p.tier.toUpperCase()}</span></td>
+            <td><span class="badge-status ${p.status}">${p.status}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('picks-table').innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+  }
+}
+
+// ── Parlays ───────────────────────────────────────────────────────────────────
+async function loadParlays() {
+  const today = new Date().toLocaleDateString('en-CA');
+  try {
+    const parlays = await api('/api/admin/parlays?date=' + today);
+    if (!parlays.length) {
+      document.getElementById('parlays-content').innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No parlays for today.</div>';
+      return;
+    }
+    document.getElementById('parlays-content').innerHTML = parlays.map(p => `
+      <div style="padding:12px;background:var(--bg3);border-radius:8px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <strong style="color:var(--gold)">${p.type.toUpperCase()} PARLAY</strong>
+          <span style="color:var(--text-dim);font-size:12px">Total Odds: ${p.total_odds || '—'}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-dim)">${Array.isArray(p.legs) ? p.legs.length : 0} legs</div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('parlays-content').innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+  }
+}
+
+// ── Records ───────────────────────────────────────────────────────────────────
+async function loadRecords() {
+  try {
+    const [wl, results] = await Promise.all([api('/api/admin/winloss'), api('/api/admin/results')]);
+    document.getElementById('rec-winrate').textContent = wl.winRate + '%';
+    document.getElementById('rec-wins').textContent = wl.wins;
+    document.getElementById('rec-losses').textContent = wl.losses;
+    document.getElementById('rec-total').textContent = wl.total;
+    if (!results.length) {
+      document.getElementById('results-table').innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No results recorded yet.</div>';
+      return;
+    }
+    document.getElementById('results-table').innerHTML = `
+      <table>
+        <thead><tr><th>Date</th><th>Match</th><th>Prediction</th><th>Result</th><th>Tier</th></tr></thead>
+        <tbody>${results.slice(0,50).map(r => `
+          <tr>
+            <td style="color:var(--text-dim)">${r.date}</td>
+            <td>${r.homeTeam || r.home_team} vs ${r.awayTeam || r.away_team}</td>
+            <td style="color:var(--gold)">${r.prediction}</td>
+            <td><span class="badge-status ${r.result}">${r.result.toUpperCase()}</span></td>
+            <td><span class="badge-tier ${r.tier || 'free'}">${(r.tier || 'free').toUpperCase()}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('results-table').innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+  }
+}
+
+// ── Tier Results ──────────────────────────────────────────────────────────────
+async function loadTierResults() {
+  try {
+    const tiers = ['free', 'vip', 'pro'];
+    const results = await Promise.all(tiers.map(t => api(`/api/tier-results/${t}`)));
+    document.getElementById('tier-results-cards').innerHTML = results.map((r, i) => `
+      <div class="section-card">
+        <div class="section-title">${['🆓 Free','💛 VIP','💎 Pro'][i]} Tier</div>
+        <div class="stat-value gold" style="font-size:36px">${r.winRate}%</div>
+        <div style="margin-top:12px;display:flex;gap:16px">
+          <div><div style="font-size:10px;color:var(--text-dim)">WINS</div><div style="color:var(--green);font-weight:700">${r.wins}</div></div>
+          <div><div style="font-size:10px;color:var(--text-dim)">LOSSES</div><div style="color:var(--red);font-weight:700">${r.losses}</div></div>
+          <div><div style="font-size:10px;color:var(--text-dim)">TOTAL</div><div style="color:var(--text-dim);font-weight:700">${r.total}</div></div>
+        </div>
+        <div class="progress-bar" style="margin-top:12px"><div class="progress-fill" style="width:${r.winRate}%"></div></div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('tier-results-cards').innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+  }
+}
+
+// ── Members ───────────────────────────────────────────────────────────────────
+async function loadMembers() {
+  try {
+    const [members, active] = await Promise.all([api('/api/admin/members'), api('/api/admin/active-users')]);
+    document.getElementById('members-total').textContent = members.length;
+    document.getElementById('members-active').textContent = active.count;
+    if (!members.length) {
+      document.getElementById('members-table').innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No members yet.</div>';
+      return;
+    }
+    document.getElementById('members-table').innerHTML = `
+      <table>
+        <thead><tr><th>Email</th><th>Tier</th><th>Last Active</th><th>Status</th></tr></thead>
+        <tbody>${members.slice(0,50).map(m => `
+          <tr>
+            <td>${m.email}</td>
+            <td><span class="badge-tier ${m.tier}">${m.tier.toUpperCase()}</span></td>
+            <td style="color:var(--text-dim)">${m.last_active ? new Date(m.last_active).toLocaleDateString() : '—'}</td>
+            <td><span class="status-dot ${m.is_active ? 'green' : 'red'}"></span>${m.is_active ? 'Active' : 'Inactive'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('members-table').innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+  }
+}
+
+// ── Tiers ─────────────────────────────────────────────────────────────────────
+async function loadTiers() {
+  try {
+    const pricing = await api('/api/admin/tiers-pricing');
+    document.getElementById('tiers-cards').innerHTML = pricing.map(p => `
+      <div class="section-card">
+        <div class="section-title">${p.label || p.tier}</div>
+        <div class="stat-value gold">$${p.price}/mo</div>
+        <div style="margin-top:16px">
+          <label class="input-label">PRICE</label>
+          <input class="input-field" id="tier-price-${p.tier}" value="${p.price}" type="number" step="0.01" />
+          <button class="btn btn-gold btn-sm" onclick="updateTierPrice('${p.tier}')">Save</button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('tiers-cards').innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+  }
+}
+
+async function updateTierPrice(tier) {
+  const price = parseFloat(document.getElementById('tier-price-' + tier).value);
+  try {
+    await api('/api/admin/tiers-pricing', { method: 'POST', body: JSON.stringify({ tier, price }) });
+    notify('Tier price updated!');
+  } catch(e) {
+    notify('Error: ' + e.message, 'error');
+  }
+}
+
+// ── FTP ───────────────────────────────────────────────────────────────────────
+async function loadFTPFiles() {
+  try {
+    const files = await api('/api/admin/ftp-files');
+    document.getElementById('ftp-files').innerHTML = `
+      <table>
+        <thead><tr><th>Filename</th><th>Size</th><th>Protected</th><th>Action</th></tr></thead>
+        <tbody>${files.map(f => `
+          <tr>
+            <td>${f.name}</td>
+            <td style="color:var(--text-dim)">${f.size ? (f.size/1024).toFixed(1) + ' KB' : '—'}</td>
+            <td>${f.isProtected ? '<span style="color:var(--orange)">🔒 Protected</span>' : '<span style="color:var(--text-dim)">—</span>'}</td>
+            <td>${!f.isProtected ? `<button class="btn btn-red btn-sm" onclick="deleteFTPFile('${f.name}')">Delete</button>` : ''}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('ftp-files').innerHTML = `<div class="alert alert-warning">FTP connection unavailable. Configure SFTP_PASSWORD in environment variables.</div>`;
+  }
+}
+
+async function deleteFTPFile(name) {
+  if (!confirm(`Delete ${name}?`)) return;
+  try {
+    await api('/api/admin/ftp-files', { method: 'DELETE', body: JSON.stringify({ filename: name }) });
+    notify('File deleted');
+    loadFTPFiles();
+  } catch(e) {
+    notify('Error: ' + e.message, 'error');
+  }
+}
+
+// ── Control ───────────────────────────────────────────────────────────────────
+async function loadControl() {
+  try {
+    const [health, lock, cache] = await Promise.all([
+      api('/api/health'),
+      api('/api/admin/lock-status'),
+      api('/api/admin/cache-status').catch(() => ({ files: 0, totalSizeKB: 0, entries: [] }))
+    ]);
+    document.getElementById('system-info').innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between"><span>Version</span><strong style="color:var(--gold)">${health.version}</strong></div>
+        <div style="display:flex;justify-content:space-between"><span>Uptime</span><strong style="color:var(--green)">${Math.floor(health.uptime/60)} min</strong></div>
+        <div style="display:flex;justify-content:space-between"><span>Environment</span><strong style="color:var(--blue)">Production</strong></div>
+        <div style="display:flex;justify-content:space-between"><span>Database</span><strong style="color:var(--green)">NeonDB ✓</strong></div>
+        <div style="display:flex;justify-content:space-between"><span>Automation Lock</span><strong style="color:${lock.locked ? 'var(--red)' : 'var(--green)'}">${
+          lock.locked ? '🔒 LOCKED' : '🔓 Unlocked'}</strong></div>
+        <div style="display:flex;justify-content:space-between"><span>API Cache</span><strong style="color:${cache.files > 0 ? 'var(--gold)' : 'var(--text-dim)'}">${
+          cache.files > 0
+            ? `${cache.files} responses cached (${cache.totalSizeKB}KB) — expires in ${Math.max(...(cache.entries.map(e => e.expiresMin)))} min`
+            : 'Empty — next run hits live API'
+        }</strong></div>
+      </div>
+      ${cache.files > 0 ? `
+      <div style="margin-top:16px">
+        <div class="section-title" style="font-size:11px;margin-bottom:8px">CACHED ENDPOINTS (1-HOUR TTL)</div>
+        ${cache.entries.map(e => `
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+            <span style="color:var(--text-dim);max-width:260px;overflow:hidden;text-overflow:ellipsis">${e.key.replace(/_json$/, '').replace(/_/g, ' ').slice(0,50)}</span>
+            <span style="color:${e.expiresMin > 30 ? 'var(--green)' : e.expiresMin > 10 ? 'var(--gold)' : 'var(--red)'}">${e.expiresMin > 0 ? e.expiresMin + 'min left' : 'expired'}</span>
+          </div>`).join('')}
+      </div>` : ''}`;
+  } catch(e) {
+    document.getElementById('system-info').innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+  }
+}
+
+async function toggleLock() {
+  try {
+    const d = await api('/api/admin/lock-toggle', { method: 'POST' });
+    notify(`Automation ${d.locked ? 'LOCKED' : 'Unlocked'}`);
+    loadControl();
+  } catch(e) { notify('Error: ' + e.message, 'error'); }
+}
+
+async function refreshData() {
+  try {
+    await api('/api/admin/refresh-data', { method: 'POST' });
+    notify('✅ API cache cleared — next generation will fetch live data from API-Football');
+    loadControl();
+  } catch(e) { notify('Error: ' + e.message, 'error'); }
+}
+
+async function seoPing() {
+  try {
+    await api('/api/admin/seo-ping', { method: 'POST' });
+    notify('SEO pings sent to Google & Bing');
+  } catch(e) { notify('Error: ' + e.message, 'error'); }
+}
+
+// ── Alerts ────────────────────────────────────────────────────────────────────
+async function loadAlerts() {
+  try {
+    const alerts = await api('/api/admin/alerts');
+    if (!alerts.length) {
+      document.getElementById('alerts-list').innerHTML = '<div class="alert alert-success">✅ No active alerts — system running normally</div>';
+      return;
+    }
+    document.getElementById('alerts-list').innerHTML = alerts.map(a => `
+      <div class="alert alert-${a.level === 'critical' ? 'error' : a.level === 'warning' ? 'warning' : 'info'}">
+        <strong>${a.level.toUpperCase()}</strong>: ${a.message}
+        <span style="float:right;font-size:11px;opacity:0.7">${new Date(a.created_at).toLocaleString()}</span>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('alerts-list').innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+  }
+}
+
+// ── Engine Trigger ────────────────────────────────────────────────────────────
+async function triggerGeneration() {
+  try {
+    const today = new Date().toLocaleDateString('en-CA');
+    await api('/api/admin/trigger', { method: 'POST', body: JSON.stringify({ date: today }) });
+    notify('⚡ Pick generation started! Check back in ~60 seconds.');
+    setTimeout(loadPicks, 10000);
+  } catch(e) {
+    notify('Error: ' + e.message, 'error');
+  }
+}
+
+// ── Auto-login if token exists ────────────────────────────────────────────────
+if (token) {
+  api('/api/admin/status').then(() => {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+  }).catch(() => {
+    localStorage.removeItem('adminToken');
+    token = '';
+  });
+}
+</script>
+</body>
+</html>
