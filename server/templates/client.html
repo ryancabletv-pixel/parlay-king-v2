@@ -1023,67 +1023,119 @@
   </div>
 </div>
 <!-- End Founder's Note Section -->
-<!-- Stats Bar -->
+<!-- Stats Bar — Dynamic (loaded from /picks.json + /api/results/summary) -->
 <div class="stats-bar">
 <div class="stat-card">
-<div class="stat-label">⏰ Earliest Kickoff</div>
-<div class="stat-value">17:30 UTC</div>
+<div class="stat-label">&#127919; Today's Picks</div>
+<div class="stat-value" id="stat-total-picks">&#8212;</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">📅 Latest Kickoff</div>
-<div class="stat-value">20:30 UTC</div>
+<div class="stat-label">&#9989; Win Rate</div>
+<div class="stat-value" id="stat-win-rate">&#8212;</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">🎯 Total Games</div>
-<div class="stat-value">8 Matches</div>
+<div class="stat-label">&#127942; Top Confidence</div>
+<div class="stat-value" id="stat-top-conf">&#8212;</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">✅ Min Probability</div>
-<div class="stat-value">90%+</div>
+<div class="stat-label">&#128200; Record</div>
+<div class="stat-value" id="stat-record">&#8212;</div>
 </div>
 </div>
+<script>
+(function() {
+  fetch('/picks.json?t=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var allPicks = (data.soccer_picks || []).concat(data.nba_picks || []).concat((data.mls_parlay || {}).legs || []);
+      var totalEl = document.getElementById('stat-total-picks');
+      var topEl = document.getElementById('stat-top-conf');
+      if (totalEl) totalEl.textContent = allPicks.length || '—';
+      if (allPicks.length > 0 && topEl) {
+        var maxConf = Math.max.apply(null, allPicks.map(function(p) { return p.confidence || 0; }));
+        topEl.textContent = maxConf + '%';
+      }
+    }).catch(function() {});
+  fetch('/api/results/summary')
+    .then(function(r) { return r.json(); })
+    .then(function(s) {
+      var rateEl = document.getElementById('stat-win-rate');
+      var recEl = document.getElementById('stat-record');
+      if (rateEl) rateEl.textContent = (s.winRate || s.hit_rate || '—') + (typeof s.winRate === 'number' ? '%' : '');
+      if (recEl) recEl.textContent = (s.wins || 0) + '-' + (s.losses || 0);
+    }).catch(function() {});
+})();
+</script>
 <!-- Main Content -->
 <div class="container">
 <!-- Home Section -->
 <div class="section active" id="home-section">
 
-<!-- Featured Pick — Auto-Pilot (Golden State Warriors @ Oklahoma City Thunder) -->
+<!-- Featured Pick — Dynamic (loaded from /picks.json) -->
 <div id="featured-pick-section" class="public-interest-card" style="margin-bottom:20px;">
 <div style="background:linear-gradient(135deg,#0d1a0f,#13131A);border:2px solid #d4af37;border-radius:12px;padding:20px;position:relative;overflow:hidden;">
 <div style="position:absolute;top:0;right:0;background:#d4af37;color:#0A0A0F;font-size:11px;font-weight:700;padding:4px 14px;border-radius:0 10px 0 10px;text-transform:uppercase;letter-spacing:1px;">Featured</div>
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-<span style="font-size:18px;">🏆</span>
-<span style="color:#d4af37;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">GOLD PICK — Saturday NBA</span>
+<span style="font-size:18px;">&#127942;</span>
+<span id="featured-pick-label" style="color:#d4af37;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">GOLD PICK &#8212; TODAY'S TOP PICK</span>
 </div>
 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
 <div>
-<div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;">Golden State Warriors @ Oklahoma City Thunder</div>
-<div style="font-size:13px;color:#888;">NBA &bull; Mar 7 19:30 ET</div>
+<div id="featured-pick-game" style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;">Loading...</div>
+<div id="featured-pick-meta" style="font-size:13px;color:#888;">Gold Standard V3 Titan XII</div>
 </div>
 <div style="text-align:right;">
 <div style="background:linear-gradient(135deg,#1a5f3f,#0d2818);border:1px solid #00C896;border-radius:20px;padding:6px 16px;display:inline-block;">
-<span style="color:#00C896;font-size:14px;font-weight:700;">69% Confidence</span>
+<span id="featured-pick-conf-badge" style="color:#00C896;font-size:14px;font-weight:700;">&#8212;</span>
 </div>
 <div style="font-size:11px;color:#888;margin-top:4px;">Gold Standard V3 Titan XII</div>
 </div>
 </div>
 <div style="margin-top:14px;background:rgba(0,0,0,0.3);border-radius:8px;padding:14px;">
 <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-<span style="color:#00C896;font-size:16px;">✅</span>
-<span style="color:#fff;font-size:17px;font-weight:700;">Over 219.5</span>
+<span style="color:#00C896;font-size:16px;">&#9989;</span>
+<span id="featured-pick-pick" style="color:#fff;font-size:17px;font-weight:700;">&#8212;</span>
 </div>
 <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
-<div><span style="color:#888;font-size:12px;">Confidence</span><div style="color:#d4af37;font-size:16px;font-weight:700;">69%</div></div>
-<div><span style="color:#888;font-size:12px;">Model</span><div style="color:#fff;font-size:16px;font-weight:700;">GS v2</div></div>
+<div><span style="color:#888;font-size:12px;">Confidence</span><div id="featured-pick-conf" style="color:#d4af37;font-size:16px;font-weight:700;">&#8212;</div></div>
+<div><span style="color:#888;font-size:12px;">League</span><div id="featured-pick-league" style="color:#fff;font-size:16px;font-weight:700;">&#8212;</div></div>
 </div>
-<div style="font-size:14px;color:#ccc;line-height:1.6;">
-<strong style="color:#d4af37;">The "Secret Sauce" Breakdown:</strong> Projected total: 226.0 (adj -2.0 fatigue), line: 219.5
-</div>
+<div id="featured-pick-analysis" style="font-size:14px;color:#ccc;line-height:1.6;"></div>
 <div style="margin-top:10px;padding:8px 12px;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.25);border-radius:6px;">
 <span style="font-size:11px;color:#999;font-style:italic;">Trending Analysis: This is an editorial feature and does not affect the official 87.5% Gold Standard System ROI.</span>
 </div>
 </div>
 </div>
+<script>
+(function() {
+  fetch('/picks.json?t=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var fp = data.featured_pick || data.power_pick;
+      if (!fp || !fp.game) return;
+      var sport = (fp.sport || 'soccer').toUpperCase();
+      var conf = fp.confidence || Math.round((fp.probability || 0) * 100);
+      var labelEl = document.getElementById('featured-pick-label');
+      var gameEl = document.getElementById('featured-pick-game');
+      var metaEl = document.getElementById('featured-pick-meta');
+      var confBadgeEl = document.getElementById('featured-pick-conf-badge');
+      var pickEl = document.getElementById('featured-pick-pick');
+      var confEl = document.getElementById('featured-pick-conf');
+      var leagueEl = document.getElementById('featured-pick-league');
+      var analysisEl = document.getElementById('featured-pick-analysis');
+      if (labelEl) labelEl.textContent = 'GOLD PICK — ' + sport;
+      if (gameEl) gameEl.textContent = fp.game;
+      if (metaEl) metaEl.textContent = (fp.league || sport) + ' • ' + (data.last_updated_display || 'Today');
+      if (confBadgeEl) confBadgeEl.textContent = conf + '% Confidence';
+      if (pickEl) pickEl.textContent = fp.pick || fp.pick_label || '';
+      if (confEl) confEl.textContent = conf + '%';
+      if (leagueEl) leagueEl.textContent = fp.league || sport;
+      if (analysisEl) analysisEl.innerHTML = '<strong style="color:#d4af37;">Analysis:</strong> ' + (fp.reasoning || fp.analysis || 'Gold Standard V3 Titan XII — Top confidence pick of the day.');
+    })
+    .catch(function() {});
+})();
+</script>
+
 
 
 
@@ -1540,24 +1592,11 @@
 })();
 </script>
 <div id="nba-legs">
-  <div class="leg"><div class="leg-header"><div class="leg-number">Leg 1</div><div class="leg-content">
-    <div class="leg-info"><span class="leg-label">Game</span><span class="leg-value" style="color:#fff; font-weight:700;">Oklahoma City Thunder vs Dallas Mavericks</span></div>
-    <div class="leg-info"><span class="leg-label">Pick</span><span class="leg-value" style="color:#00cc66; font-weight:700;">OKC Thunder ML (-1150)</span></div>
-    <div class="leg-info"><span class="leg-label">Confidence</span><span class="leg-value" style="color:#d4af37; font-weight:700;">78%</span></div>
-    <div class="leg-reasoning"><strong>Analysis:</strong> Personnel Delta: OKC is at full strength. Dallas is 12th in the West and historically struggles against OKC&rsquo;s #1 defense (105.0 DRTG).</div>
-  </div></div></div>
-  <div class="leg"><div class="leg-header"><div class="leg-number">Leg 2</div><div class="leg-content">
-    <div class="leg-info"><span class="leg-label">Game</span><span class="leg-value" style="color:#fff; font-weight:700;">Cleveland Cavaliers vs Brooklyn Nets</span></div>
-    <div class="leg-info"><span class="leg-label">Pick</span><span class="leg-value" style="color:#00cc66; font-weight:700;">Cleveland Cavaliers -11</span></div>
-    <div class="leg-info"><span class="leg-label">Confidence</span><span class="leg-value" style="color:#d4af37; font-weight:700;">66%</span></div>
-    <div class="leg-reasoning"><strong>Analysis:</strong> Quality Index: Brooklyn (15-44) is in Tank Mode. Even without Mitchell, Cleveland&rsquo;s #5 defense faces a Nets team missing Claxton and Demin.</div>
-  </div></div></div>
-  <div class="leg"><div class="leg-header"><div class="leg-number">Leg 3</div><div class="leg-content">
-    <div class="leg-info"><span class="leg-label">Game</span><span class="leg-value" style="color:#fff; font-weight:700;">OKC Thunder &mdash; SGA Over 29.5 Points</span></div>
-    <div class="leg-info"><span class="leg-label">Pick</span><span class="leg-value" style="color:#00cc66; font-weight:700;">SGA Over 29.5 Points (Player Prop)</span></div>
-    <div class="leg-info"><span class="leg-label">Confidence</span><span class="leg-value" style="color:#d4af37; font-weight:700;">74%</span></div>
-    <div class="leg-reasoning"><strong>Analysis:</strong> Momentum Variable: Shai just dropped 36 on Denver in his return. He is averaging 32.7 PPG this season and faces a Dallas perimeter defense that is bottom-10 in the league.</div>
-  </div></div></div>
+  <div style="text-align:center;padding:30px 20px;color:#888;">
+    <div style="font-size:2em;margin-bottom:10px;">&#127936;</div>
+    <div style="font-size:1.1em;color:#d4af37;font-weight:700;">Loading NBA picks...</div>
+    <div style="font-size:0.85em;margin-top:8px;">Powered by Gold Standard V3 Titan XII</div>
+  </div>
 </div>
 <div class="parlay-stats" style="display:flex; justify-content:space-around; background:rgba(0,0,0,0.3); border:1px solid rgba(212,175,55,0.2); border-radius:10px; padding:16px 10px; margin-top:16px;">
   <div style="text-align:center;">
