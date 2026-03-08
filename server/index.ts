@@ -211,7 +211,7 @@ async function initializeExpress() {
           <h2>9. Age Requirement</h2>
           <p>You must be at least 18 years of age to subscribe to any paid plan on this Site.</p>
           <h2>10. Contact</h2>
-          <p>For questions about these Terms, contact us at: <a href="mailto:support@soccernbaparlayking.vip">support@soccernbaparlayking.vip</a></p>
+          <p>For questions about these Terms, contact us at: <a href="mailto:soccernbaparlayking@gmail.com">soccernbaparlayking@gmail.com</a></p>
           <div class="footer"><p>&copy; 2026 Soccer NBA Parlay King. All rights reserved.</p></div>
         </div></body></html>`);
     });
@@ -241,9 +241,9 @@ async function initializeExpress() {
           <h2>6. Cookies</h2>
           <p>We use minimal cookies for session management and authentication. We do not use tracking or advertising cookies.</p>
           <h2>7. Your Rights</h2>
-          <p>You may request deletion of your account and personal data at any time by contacting us at <a href="mailto:support@soccernbaparlayking.vip">support@soccernbaparlayking.vip</a>.</p>
+          <p>You may request deletion of your account and personal data at any time by contacting us at <a href="mailto:soccernbaparlayking@gmail.com">soccernbaparlayking@gmail.com</a>.</p>
           <h2>8. Contact</h2>
-          <p>For privacy questions: <a href="mailto:support@soccernbaparlayking.vip">support@soccernbaparlayking.vip</a></p>
+          <p>For privacy questions: <a href="mailto:soccernbaparlayking@gmail.com">soccernbaparlayking@gmail.com</a></p>
           <div class="footer"><p>&copy; 2026 Soccer NBA Parlay King. All rights reserved.</p></div>
         </div></body></html>`);
     });
@@ -268,9 +268,9 @@ async function initializeExpress() {
             <li>After 7 days, Lifetime purchases are final and non-refundable.</li>
           </ul>
           <h2>How to Request a Refund</h2>
-          <p>Email us at <a href="mailto:support@soccernbaparlayking.vip">support@soccernbaparlayking.vip</a> with your order details and reason for the refund. We will process eligible refunds within 5 business days via PayPal.</p>
+          <p>Email us at <a href="mailto:soccernbaparlayking@gmail.com">soccernbaparlayking@gmail.com</a> with your order details and reason for the refund. We will process eligible refunds within 5 business days via PayPal.</p>
           <h2>Contact</h2>
-          <p><a href="mailto:support@soccernbaparlayking.vip">support@soccernbaparlayking.vip</a></p>
+          <p><a href="mailto:soccernbaparlayking@gmail.com">soccernbaparlayking@gmail.com</a></p>
           <div class="footer"><p>&copy; 2026 Soccer NBA Parlay King. All rights reserved.</p></div>
         </div></body></html>`);
     });
@@ -298,7 +298,7 @@ async function initializeExpress() {
             <li><a href="https://www.gamblingtherapy.org" target="_blank">Gambling Therapy</a></li>
           </ul>
           <h2>Contact</h2>
-          <p>For questions: <a href="mailto:support@soccernbaparlayking.vip">support@soccernbaparlayking.vip</a></p>
+          <p>For questions: <a href="mailto:soccernbaparlayking@gmail.com">soccernbaparlayking@gmail.com</a></p>
           <div class="footer"><p>&copy; 2026 Soccer NBA Parlay King. All rights reserved.</p></div>
         </div></body></html>`);
     });
