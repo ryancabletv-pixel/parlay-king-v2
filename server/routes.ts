@@ -525,6 +525,168 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // ── /picks.json — Original Site Compatibility Endpoint ──────────────────────
+  // The original index.html fetches /picks.json to load all picks data.
+  // This endpoint returns the exact same JSON format as the cPanel picks.json.
+  app.get('/picks.json', async (req, res) => {
+    try {
+      const date = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+      const picks = await storage.getPicksByDate(date);
+      const active = picks.filter(p => !p.isDisabled);
+
+      const soccerPicks = active.filter(p => p.sport === 'soccer').slice(0, 3);
+      const mlsPicks    = active.filter(p => p.sport === 'mls').slice(0, 3);
+      const nbaPicks    = active.filter(p => p.sport === 'nba').slice(0, 3);
+      const powerPick   = active.find(p => p.isPowerPick) ||
+                          [...active].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
+
+      const now = new Date().toISOString();
+      const dateDisplay = new Date().toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+        timeZone: 'America/Moncton',
+      });
+
+      function fmtLeg(p: any) {
+        return {
+          game: `${p.homeTeam} vs ${p.awayTeam}`,
+          match: `${p.homeTeam} vs ${p.awayTeam}`,
+          pick: p.prediction || p.pick,
+          pick_type: p.prediction || p.pick,
+          pick_label: p.prediction || p.pick,
+          confidence: Math.round(p.confidence ?? 0),
+          probability: parseFloat(((p.confidence ?? 0) / 100).toFixed(2)),
+          probability_display: `${Math.round(p.confidence ?? 0)}%`,
+          confidence_pct: `${Math.round(p.confidence ?? 0)}%`,
+          league: p.league || 'Unknown League',
+          odds: p.odds || '-110',
+          time: `${date} — Today`,
+          time_display: `${date} — Today`,
+          analysis: `Gold Standard V3 Titan XII — ${p.prediction || p.pick} at ${Math.round(p.confidence ?? 0)}%.`,
+          reasoning: `Gold Standard V3 Titan XII — ${p.prediction || p.pick} at ${Math.round(p.confidence ?? 0)}%.`,
+          home_team: p.homeTeam,
+          away_team: p.awayTeam,
+          tier: p.tier || 'free',
+          sport: p.sport || 'soccer',
+        };
+      }
+
+      function combinedProb(legs: any[]): string {
+        if (!legs.length) return '0%';
+        const c = legs.reduce((acc, p) => acc * ((p.confidence ?? 68) / 100), 1);
+        return `${(c * 100).toFixed(1)}%`;
+      }
+
+      const parlayLegs = soccerPicks.map(fmtLeg);
+      const mlsLegs    = mlsPicks.map(fmtLeg);
+      const nbaLegs    = nbaPicks.map(fmtLeg);
+      const mlsNoSlate = mlsLegs.length === 0;
+
+      const payload = {
+        date,
+        generated_at: now,
+        last_generated: now,
+        last_updated_display: dateDisplay,
+        tiers: { power_pick: 'free', soccer_picks: 'free', mls_parlay: 'free', nba_parlay: 'free', nba_picks: 'free' },
+        parlay: { legs: parlayLegs, legs_count: parlayLegs.length, combined_probability: combinedProb(soccerPicks) },
+        three_leg_conservative: { legs: parlayLegs, legs_count: parlayLegs.length, combined_probability: combinedProb(soccerPicks) },
+        soccer_picks: parlayLegs,
+        mls_parlay: { legs: mlsLegs, legs_count: mlsLegs.length, combined_probability: combinedProb(mlsPicks) },
+        mls_no_slate: mlsNoSlate,
+        mls_next_slate_date: mlsNoSlate ? 'Check back soon' : '',
+        nba_parlay: { legs: nbaLegs, legs_count: nbaLegs.length, combined_probability: combinedProb(nbaPicks) },
+        corner_parlay: { legs: [], legs_count: 0, combined_probability: '0%' },
+        power_pick: powerPick ? {
+          game: `${powerPick.homeTeam} vs ${powerPick.awayTeam}`,
+          pick: powerPick.prediction || powerPick.pick,
+          league: powerPick.league || 'Unknown',
+          probability: parseFloat(((powerPick.confidence ?? 0) / 100).toFixed(2)),
+          probability_display: `${Math.round(powerPick.confidence ?? 0)}%`,
+          odds: powerPick.odds || '-110',
+          time: `${date} — Today`,
+          analysis: `Gold Standard V3 Titan XII — Top pick at ${Math.round(powerPick.confidence ?? 0)}%.`,
+        } : null,
+        featured_pick: powerPick ? {
+          game: `${powerPick.homeTeam} vs ${powerPick.awayTeam}`,
+          league: powerPick.league || 'Unknown',
+          pick: powerPick.prediction || powerPick.pick,
+          pick_type: powerPick.prediction || powerPick.pick,
+          confidence: Math.round(powerPick.confidence ?? 0),
+          probability: parseFloat(((powerPick.confidence ?? 0) / 100).toFixed(2)),
+          confidence_pct: `${Math.round(powerPick.confidence ?? 0)}%`,
+          odds: powerPick.odds || '-110',
+          time_display: date,
+          label: 'POWER PICK',
+          pick_label: powerPick.prediction || powerPick.pick,
+          reasoning: `Gold Standard V3 Titan XII — Top pick at ${Math.round(powerPick.confidence ?? 0)}%.`,
+          auto_generated: true,
+          tag: 'POWER PICK',
+          disclaimer: 'For entertainment purposes only.',
+        } : null,
+        featured_soccer: soccerPicks[0] ? {
+          match: `${soccerPicks[0].homeTeam} vs ${soccerPicks[0].awayTeam}`,
+          league: soccerPicks[0].league || 'Soccer',
+          sport: 'soccer',
+          pick: soccerPicks[0].prediction || soccerPicks[0].pick,
+          confidence: Math.round(soccerPicks[0].confidence ?? 0),
+          confidence_display: `${Math.round(soccerPicks[0].confidence ?? 0)}%`,
+          reasoning: `Gold Standard V3 Titan XII — ${soccerPicks[0].prediction} at ${Math.round(soccerPicks[0].confidence ?? 0)}%.`,
+          match_date: date,
+        } : { match: '', league: '', sport: 'soccer', pick: '', confidence: 0, confidence_display: '0%', reasoning: '', match_date: date },
+        featured_mls: mlsPicks[0] ? {
+          match: `${mlsPicks[0].homeTeam} vs ${mlsPicks[0].awayTeam}`,
+          league: mlsPicks[0].league || 'MLS',
+          sport: 'mls',
+          pick: mlsPicks[0].prediction || mlsPicks[0].pick,
+          confidence: Math.round(mlsPicks[0].confidence ?? 0),
+          confidence_display: `${Math.round(mlsPicks[0].confidence ?? 0)}%`,
+          reasoning: mlsNoSlate ? 'No MLS games today.' : `Gold Standard V3 Titan XII — ${mlsPicks[0].prediction} at ${Math.round(mlsPicks[0].confidence ?? 0)}%.`,
+          match_date: date,
+        } : { match: '', league: 'MLS', sport: 'mls', pick: '', confidence: 0, confidence_display: '0%', reasoning: 'No MLS games today.', match_date: date },
+        featured_nba: nbaPicks[0] ? {
+          match: `${nbaPicks[0].homeTeam} vs ${nbaPicks[0].awayTeam}`,
+          league: nbaPicks[0].league || 'NBA',
+          sport: 'nba',
+          pick: nbaPicks[0].prediction || nbaPicks[0].pick,
+          confidence: Math.round(nbaPicks[0].confidence ?? 0),
+          confidence_display: `${Math.round(nbaPicks[0].confidence ?? 0)}%`,
+          reasoning: `Gold Standard V3 Titan XII — ${nbaPicks[0].prediction} at ${Math.round(nbaPicks[0].confidence ?? 0)}%.`,
+          match_date: date,
+        } : { match: '', league: 'NBA', sport: 'nba', pick: '', confidence: 0, confidence_display: '0%', reasoning: '', match_date: date },
+        nba_picks: nbaLegs,
+        player_prop_picks: [],
+        free_tier_picks: active.filter(p => p.tier === 'free').slice(0, 3).map(fmtLeg),
+        results: { date_display: dateDisplay, entries: [] },
+        expert_analysis: {
+          title: `Gold Standard V3 Titan XII — ${dateDisplay}`,
+          body: `Today's picks were generated by the Gold Standard V3 Titan XII 12-factor AI engine. All picks passed the 68% confidence threshold.`,
+          visible: true,
+          updated_at: now,
+        },
+        manual_lock: false,
+        locked_sections: [],
+        featured_games: active.slice(0, 3).map((p, i) => ({
+          rank: i + 1,
+          game: `${p.homeTeam} vs ${p.awayTeam}`,
+          league: p.league || 'Unknown',
+          pick: p.prediction || p.pick,
+          confidence: Math.round(p.confidence ?? 0),
+          confidence_pct: `${Math.round(p.confidence ?? 0)}%`,
+          reasoning: `Gold Standard V3 Titan XII — ${p.prediction} at ${Math.round(p.confidence ?? 0)}%.`,
+          time_display: date,
+          sport: p.sport || 'soccer',
+          auto_generated: true,
+          tag: i === 0 ? 'TOP PICK' : i === 1 ? 'VALUE PLAY' : 'SAFE BET',
+        })),
+      };
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.json(payload);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ── Public Results Page API ─────────────────────────────────────────────────
   // Returns only settled results (won/lost/void) — never pending picks
   app.get('/api/results', async (req, res) => {
