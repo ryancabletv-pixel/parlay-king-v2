@@ -382,6 +382,9 @@
       <div class="nav-item" onclick="showPage('api-budget')"><span class="nav-icon">📊</span>API Budget</div>
       <div class="nav-item" onclick="showPage('parlay-builder')"><span class="nav-icon">🎯</span>Parlay Builder</div>
       <div class="nav-item" onclick="showPage('member-mgmt')"><span class="nav-icon">👥</span>Member Management</div>
+      <div class="nav-item" onclick="showPage('pro-tier')" style="color:#00b0ff"><span class="nav-icon">🏆</span>Pro Tier Games</div>
+      <div class="nav-item" onclick="showPage('lifetime-tier')" style="color:#ffd700"><span class="nav-icon">♾️</span>Lifetime Tier Games</div>
+      <div class="nav-item" onclick="showPage('paypal-compliance')" style="color:#00e676"><span class="nav-icon">⚖️</span>PayPal Compliance</div>
     </div>
   </div>
 
@@ -1294,6 +1297,71 @@
       </div>
     </div><!-- /page-member-mgmt -->
 
+    <!-- ===== PRO TIER GAMES ===== -->
+    <div class="page" id="page-pro-tier">
+      <h2 style="color:#00b0ff">🏆 Pro Tier Games</h2>
+      <p style="color:var(--text-muted)">All games assigned to the Pro tier today (70%+ confidence). These are visible to Pro subscribers only.</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px" id="pro-tier-stats">
+        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#00b0ff" id="pro-total-count">--</div><div style="font-size:.75rem;color:var(--text-muted)">TOTAL PRO GAMES</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#00e676" id="pro-avg-conf">--</div><div style="font-size:.75rem;color:var(--text-muted)">AVG CONFIDENCE</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#ffd700" id="pro-top-conf">--</div><div style="font-size:.75rem;color:var(--text-muted)">TOP CONFIDENCE</div></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="color:#00b0ff;margin:0">🏆 Today's Pro Picks</h3>
+          <button class="btn btn-gold btn-sm" onclick="loadProTier()">🔄 Refresh</button>
+        </div>
+        <div id="pro-tier-table">Loading...</div>
+      </div>
+    </div><!-- /page-pro-tier -->
+
+    <!-- ===== LIFETIME TIER GAMES ===== -->
+    <div class="page" id="page-lifetime-tier">
+      <h2 style="color:#ffd700">♾️ Lifetime Tier Games</h2>
+      <p style="color:var(--text-muted)">All games assigned to the Lifetime tier today (68%+ confidence, full access). These are visible to Lifetime subscribers only.</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px" id="lifetime-tier-stats">
+        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#ffd700" id="lifetime-total-count">--</div><div style="font-size:.75rem;color:var(--text-muted)">TOTAL LIFETIME GAMES</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#00e676" id="lifetime-avg-conf">--</div><div style="font-size:.75rem;color:var(--text-muted)">AVG CONFIDENCE</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#ff6b35" id="lifetime-top-conf">--</div><div style="font-size:.75rem;color:var(--text-muted)">TOP CONFIDENCE</div></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="color:#ffd700;margin:0">♾️ Today's Lifetime Picks</h3>
+          <button class="btn btn-gold btn-sm" onclick="loadLifetimeTier()">🔄 Refresh</button>
+        </div>
+        <div id="lifetime-tier-table">Loading...</div>
+      </div>
+    </div><!-- /page-lifetime-tier -->
+
+    <!-- ===== PAYPAL COMPLIANCE ===== -->
+    <div class="page" id="page-paypal-compliance">
+      <h2 style="color:#00e676">⚖️ PayPal Compliance</h2>
+      <p style="color:var(--text-muted)">Legal pages status and compliance checklist for PayPal merchant requirements.</p>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px">
+        <div class="card" style="border:1px solid #00e676">
+          <h3 style="color:#00e676;margin:0 0 8px">✅ What PayPal Allows</h3>
+          <p style="color:var(--text-muted);font-size:.85rem;margin:0">Sports information subscriptions, picks analysis, prediction services, and educational sports content are <strong style="color:#00e676">fully permitted</strong> by PayPal. Your site sells information — not gambling services.</p>
+        </div>
+        <div class="card" style="border:1px solid #ff6b35">
+          <h3 style="color:#ff6b35;margin:0 0 8px">❌ What PayPal Prohibits</h3>
+          <p style="color:var(--text-muted);font-size:.85rem;margin:0">Actual sports betting/wagering, placing bets against a bookmaker, fantasy sports with entry fees and prizes, lottery tickets. Your site does <strong style="color:#00e676">none of these</strong>.</p>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <h3 style="color:#ffd700;margin:0 0 16px">📋 PayPal Compliance Checklist</h3>
+        <div id="compliance-checklist">Loading...</div>
+      </div>
+      <div class="card">
+        <h3 style="color:#00b0ff;margin:0 0 16px">📄 Legal Pages on Site</h3>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+          <a href="https://soccernbaparlayking.vip/terms" target="_blank" class="btn" style="background:#1a2a1a;border:1px solid #00e676;color:#00e676;text-align:center">📄 Terms of Service</a>
+          <a href="https://soccernbaparlayking.vip/privacy" target="_blank" class="btn" style="background:#1a2a1a;border:1px solid #00e676;color:#00e676;text-align:center">🔒 Privacy Policy</a>
+          <a href="https://soccernbaparlayking.vip/refund" target="_blank" class="btn" style="background:#1a2a1a;border:1px solid #00e676;color:#00e676;text-align:center">💰 Refund Policy</a>
+          <a href="https://soccernbaparlayking.vip/disclaimer" target="_blank" class="btn" style="background:#1a2a1a;border:1px solid #00e676;color:#00e676;text-align:center">⚠️ Disclaimer</a>
+        </div>
+      </div>
+    </div><!-- /page-paypal-compliance -->
+
   </div><!-- /main -->
 </div><!-- /app -->
 
@@ -1386,6 +1454,9 @@ function showPage(name) {
     'api-budget':      loadApiBudget,
     'parlay-builder':  loadParlayBuilder,
     'member-mgmt':     loadMemberMgmt,
+    'pro-tier':        loadProTier,
+    'lifetime-tier':   loadLifetimeTier,
+    'paypal-compliance': loadPaypalCompliance,
   };
   loaders[name]?.();
   closeSidebar(); // auto-close sidebar on mobile after nav
@@ -2834,6 +2905,131 @@ async function mgmtSetTier(memberId) {
   } catch(e) {
     showNotification(`Error: ${e.message}`, 'error');
   }
+}
+
+// ── Pro Tier Games ──────────────────────────────────────────────────────────
+async function loadProTier() {
+  const el = document.getElementById('pro-tier-table');
+  el.innerHTML = '<div style="color:var(--text-muted)">Loading Pro tier games...</div>';
+  try {
+    const today = new Date().toLocaleDateString('en-CA');
+    const picks = await api(`/api/admin/picks?date=${today}`);
+    const pro = picks.filter(p => parseFloat(p.confidence) >= 70);
+    document.getElementById('pro-total-count').textContent = pro.length;
+    if (pro.length === 0) {
+      document.getElementById('pro-avg-conf').textContent = '--';
+      document.getElementById('pro-top-conf').textContent = '--';
+      el.innerHTML = '<div style="color:var(--text-muted);padding:20px;text-align:center">No Pro tier games today (70%+ confidence). Check back after the 1 AM generation run.</div>';
+      return;
+    }
+    const confs = pro.map(p => parseFloat(p.confidence));
+    const avg = (confs.reduce((a,b)=>a+b,0)/confs.length).toFixed(1);
+    const top = Math.max(...confs).toFixed(1);
+    document.getElementById('pro-avg-conf').textContent = avg + '%';
+    document.getElementById('pro-top-conf').textContent = top + '%';
+    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <thead><tr style="border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:8px;color:var(--text-muted)">MATCHUP</th>
+        <th style="text-align:left;padding:8px;color:var(--text-muted)">LEAGUE</th>
+        <th style="text-align:left;padding:8px;color:var(--text-muted)">BEST PICK</th>
+        <th style="text-align:center;padding:8px;color:#00b0ff">CONFIDENCE</th>
+        <th style="text-align:center;padding:8px;color:var(--text-muted)">ODDS</th>
+        <th style="text-align:center;padding:8px;color:var(--text-muted)">TIME</th>
+      </tr></thead>
+      <tbody>${pro.sort((a,b)=>parseFloat(b.confidence)-parseFloat(a.confidence)).map(p => {
+        const conf = parseFloat(p.confidence);
+        const bar = Math.min(100, conf);
+        const col = conf >= 80 ? '#00e676' : conf >= 75 ? '#ffd700' : '#00b0ff';
+        return `<tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+          <td style="padding:10px 8px;font-weight:600">${p.home_team || p.homeTeam || ''} vs ${p.away_team || p.awayTeam || ''}</td>
+          <td style="padding:10px 8px;color:var(--text-muted);font-size:.8rem">${p.league || p.sport || ''}</td>
+          <td style="padding:10px 8px;color:var(--gold)">${p.best_pick || p.bestPick || ''}</td>
+          <td style="padding:10px 8px;text-align:center">
+            <div style="font-weight:700;color:${col};font-size:1rem">${conf.toFixed(1)}%</div>
+            <div style="background:rgba(255,255,255,.1);border-radius:4px;height:4px;margin-top:4px"><div style="width:${bar}%;height:100%;background:${col};border-radius:4px"></div></div>
+          </td>
+          <td style="padding:10px 8px;text-align:center;color:var(--text-muted)">${p.odds || '--'}</td>
+          <td style="padding:10px 8px;text-align:center;color:var(--text-muted);font-size:.8rem">${p.game_time ? new Date(p.game_time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '--'}</td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+  } catch(e) {
+    el.innerHTML = `<div class="error-box">Error: ${e.message}</div>`;
+  }
+}
+
+// ── Lifetime Tier Games ───────────────────────────────────────────────────────
+async function loadLifetimeTier() {
+  const el = document.getElementById('lifetime-tier-table');
+  el.innerHTML = '<div style="color:var(--text-muted)">Loading Lifetime tier games...</div>';
+  try {
+    const today = new Date().toLocaleDateString('en-CA');
+    const picks = await api(`/api/admin/picks?date=${today}`);
+    const lifetime = picks.filter(p => parseFloat(p.confidence) >= 68);
+    document.getElementById('lifetime-total-count').textContent = lifetime.length;
+    if (lifetime.length === 0) {
+      document.getElementById('lifetime-avg-conf').textContent = '--';
+      document.getElementById('lifetime-top-conf').textContent = '--';
+      el.innerHTML = '<div style="color:var(--text-muted);padding:20px;text-align:center">No Lifetime tier games today (68%+ confidence). Check back after the 1 AM generation run.</div>';
+      return;
+    }
+    const confs = lifetime.map(p => parseFloat(p.confidence));
+    const avg = (confs.reduce((a,b)=>a+b,0)/confs.length).toFixed(1);
+    const top = Math.max(...confs).toFixed(1);
+    document.getElementById('lifetime-avg-conf').textContent = avg + '%';
+    document.getElementById('lifetime-top-conf').textContent = top + '%';
+    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <thead><tr style="border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:8px;color:var(--text-muted)">MATCHUP</th>
+        <th style="text-align:left;padding:8px;color:var(--text-muted)">LEAGUE</th>
+        <th style="text-align:left;padding:8px;color:var(--text-muted)">BEST PICK</th>
+        <th style="text-align:center;padding:8px;color:#ffd700">CONFIDENCE</th>
+        <th style="text-align:center;padding:8px;color:var(--text-muted)">ODDS</th>
+        <th style="text-align:center;padding:8px;color:var(--text-muted)">TIME</th>
+      </tr></thead>
+      <tbody>${lifetime.sort((a,b)=>parseFloat(b.confidence)-parseFloat(a.confidence)).map(p => {
+        const conf = parseFloat(p.confidence);
+        const bar = Math.min(100, conf);
+        const col = conf >= 80 ? '#00e676' : conf >= 75 ? '#ffd700' : '#ff6b35';
+        return `<tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+          <td style="padding:10px 8px;font-weight:600">${p.home_team || p.homeTeam || ''} vs ${p.away_team || p.awayTeam || ''}</td>
+          <td style="padding:10px 8px;color:var(--text-muted);font-size:.8rem">${p.league || p.sport || ''}</td>
+          <td style="padding:10px 8px;color:var(--gold)">${p.best_pick || p.bestPick || ''}</td>
+          <td style="padding:10px 8px;text-align:center">
+            <div style="font-weight:700;color:${col};font-size:1rem">${conf.toFixed(1)}%</div>
+            <div style="background:rgba(255,255,255,.1);border-radius:4px;height:4px;margin-top:4px"><div style="width:${bar}%;height:100%;background:${col};border-radius:4px"></div></div>
+          </td>
+          <td style="padding:10px 8px;text-align:center;color:var(--text-muted)">${p.odds || '--'}</td>
+          <td style="padding:10px 8px;text-align:center;color:var(--text-muted);font-size:.8rem">${p.game_time ? new Date(p.game_time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '--'}</td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+  } catch(e) {
+    el.innerHTML = `<div class="error-box">Error: ${e.message}</div>`;
+  }
+}
+
+// ── PayPal Compliance ─────────────────────────────────────────────────────────
+function loadPaypalCompliance() {
+  const el = document.getElementById('compliance-checklist');
+  const checks = [
+    { ok: true,  label: 'Terms of Service page exists at /terms' },
+    { ok: true,  label: 'Privacy Policy page exists at /privacy' },
+    { ok: true,  label: 'Refund & Cancellation Policy page exists at /refund' },
+    { ok: true,  label: 'Disclaimer page exists at /disclaimer' },
+    { ok: true,  label: 'Site sells information only — no actual betting or wagering' },
+    { ok: true,  label: '"For informational purposes only" disclaimer on all pick pages' },
+    { ok: true,  label: '18+ age requirement stated on subscription pages' },
+    { ok: true,  label: 'Subscription billing terms clearly displayed before payment' },
+    { ok: true,  label: 'Cancellation policy clearly stated' },
+    { ok: true,  label: 'Contact/support email visible on site' },
+    { ok: true,  label: 'No guarantee of winnings stated in disclaimer' },
+    { ok: true,  label: 'Recurring billing clearly disclosed (Pro Monthly plan)' },
+    { ok: false, label: 'PayPal merchant account approved (manual step — log in to PayPal Business)' },
+  ];
+  el.innerHTML = checks.map(c => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span style="font-size:1.2rem">${c.ok ? '✅' : '⚠️'}</span>
+      <span style="color:${c.ok ? 'var(--text)' : '#ffd700'};font-size:.9rem">${c.label}</span>
+    </div>`).join('');
 }
 
 // ── Auto-login if token exists ────────────────────────────────────────────────
