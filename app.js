@@ -39158,6 +39158,42 @@ var init_schema2 = __esm({
 });
 
 // server/storage.ts
+var storage_exports = {};
+__export(storage_exports, {
+  checkDbConnection: () => checkDbConnection,
+  createAlert: () => createAlert,
+  createAuditReport: () => createAuditReport,
+  createOrUpdateMember: () => createOrUpdateMember,
+  createPick: () => createPick,
+  createResult: () => createResult,
+  createRunLog: () => createRunLog,
+  deletePick: () => deletePick,
+  getActiveUsers: () => getActiveUsers,
+  getAlerts: () => getAlerts,
+  getAllPicks: () => getAllPicks,
+  getAuditReports: () => getAuditReports,
+  getDb: () => getDb,
+  getEngineConfig: () => getEngineConfig,
+  getMemberByEmail: () => getMemberByEmail,
+  getMembers: () => getMembers,
+  getParlaysByDate: () => getParlaysByDate,
+  getPicksByDate: () => getPicksByDate,
+  getPlayerStats: () => getPlayerStats,
+  getResults: () => getResults,
+  getRunLogs: () => getRunLogs,
+  getTierPricing: () => getTierPricing,
+  getWinLossSummary: () => getWinLossSummary,
+  initializeDatabase: () => initializeDatabase,
+  recordHeartbeat: () => recordHeartbeat,
+  resolveAlert: () => resolveAlert,
+  saveParlays: () => saveParlays,
+  savePlayerStat: () => savePlayerStat,
+  setEngineConfig: () => setEngineConfig,
+  setTierPricing: () => setTierPricing,
+  updatePick: () => updatePick,
+  updateResult: () => updateResult,
+  updateRunLog: () => updateRunLog
+});
 function getDb() {
   if (!db) {
     pool = new Pool({
@@ -39285,6 +39321,10 @@ async function createAlert(level, message) {
   const [alert] = await db2.insert(systemAlerts).values({ level, message }).returning();
   return alert;
 }
+async function resolveAlert(id) {
+  const db2 = getDb();
+  await db2.update(systemAlerts).set({ resolved: true }).where(eq(systemAlerts.id, id));
+}
 async function getEngineConfig() {
   const db2 = getDb();
   const rows = await db2.select().from(engineConfig);
@@ -39303,6 +39343,23 @@ async function getAuditReports(limit = 10) {
   const db2 = getDb();
   return db2.select().from(auditReports).orderBy(desc(auditReports.createdAt)).limit(limit);
 }
+async function createAuditReport(data) {
+  const db2 = getDb();
+  const [report] = await db2.insert(auditReports).values(data).returning();
+  return report;
+}
+async function getPlayerStats(date2, sport) {
+  const db2 = getDb();
+  if (sport) {
+    return db2.select().from(playerStats).where(and(eq(playerStats.date, date2), eq(playerStats.sport, sport)));
+  }
+  return db2.select().from(playerStats).where(eq(playerStats.date, date2));
+}
+async function savePlayerStat(data) {
+  const db2 = getDb();
+  const [stat] = await db2.insert(playerStats).values(data).returning();
+  return stat;
+}
 async function getTierPricing() {
   const db2 = getDb();
   return db2.select().from(tierPricing);
@@ -39313,6 +39370,15 @@ async function setTierPricing(tier, price, label) {
     target: tierPricing.tier,
     set: { price, label, updatedAt: /* @__PURE__ */ new Date() }
   });
+}
+async function checkDbConnection() {
+  try {
+    const db2 = getDb();
+    await db2.execute(sql`SELECT 1`);
+    return true;
+  } catch {
+    return false;
+  }
 }
 async function initializeDatabase() {
   try {
@@ -52200,6 +52266,56 @@ rawServer.listen(PORT, "0.0.0.0", () => {
 });
 async function initializeExpress() {
   try {
+    let buildSportsEventSchema = function(p, date2) {
+      const homeTeam = p.homeTeam || p.home_team || "";
+      const awayTeam = p.awayTeam || p.away_team || "";
+      const sport = (p.sport || "basketball").toLowerCase();
+      const isSoccer = sport === "soccer" || sport === "mls" || sport === "football";
+      const sportLabel = isSoccer ? "Soccer" : "Basketball";
+      const defaultTime = isSoccer ? "T19:00:00-05:00" : "T19:30:00-05:00";
+      const gameTime = p.metadata?.gameTime || "";
+      let startDate = date2 + defaultTime;
+      if (gameTime) {
+        const m = gameTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (m) {
+          let h = parseInt(m[1]);
+          const min = m[2];
+          const ampm = m[3].toUpperCase();
+          if (ampm === "PM" && h !== 12) h += 12;
+          if (ampm === "AM" && h === 12) h = 0;
+          startDate = `${date2}T${String(h).padStart(2, "0")}:${min}:00-05:00`;
+        }
+      }
+      const startMs = new Date(startDate).getTime();
+      const endDate = new Date(startMs + 3 * 60 * 60 * 1e3).toISOString();
+      const image = isSoccer ? "https://soccernbaparlayking.vip/images/parlay-king-logo.png" : "https://soccernbaparlayking.vip/images/knicks-lakers-hero.jpg";
+      return {
+        "@type": "SportsEvent",
+        "name": `${homeTeam} vs ${awayTeam}`,
+        "startDate": startDate,
+        "endDate": endDate,
+        "eventStatus": "https://schema.org/EventScheduled",
+        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+        "sport": sportLabel,
+        "description": p.metadata?.recommendation || `${p.prediction || p.pick} at ${Math.round(p.confidence ?? 0)}% confidence.`,
+        "image": { "@type": "ImageObject", "url": image, "width": 1200, "height": 630 },
+        "performer": [
+          { "@type": "SportsTeam", "name": homeTeam, "sport": sportLabel },
+          { "@type": "SportsTeam", "name": awayTeam, "sport": sportLabel }
+        ],
+        "organizer": { "@type": "Organization", "name": "Parlay King", "url": "https://soccernbaparlayking.vip" },
+        "offers": {
+          "@type": "Offer",
+          "url": "https://soccernbaparlayking.vip/pricing",
+          "price": "0",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock",
+          "validFrom": date2
+        },
+        "homeTeam": { "@type": "SportsTeam", "name": homeTeam, "sport": sportLabel },
+        "awayTeam": { "@type": "SportsTeam", "name": awayTeam, "sport": sportLabel }
+      };
+    };
     const dotenv = await Promise.resolve().then(() => __toESM(require_main()));
     dotenv.config();
     const express = (await Promise.resolve().then(() => __toESM(require_express2()))).default;
@@ -52264,11 +52380,42 @@ async function initializeExpress() {
     }
     const adminHtmlPath = path3.join(process.cwd(), "server/templates/admin.html");
     const clientHtmlPath = path3.join(process.cwd(), "server/templates/client.html");
-    app.get("/", (req, res) => {
+    app.get("/", async (req, res) => {
       const ua = req.headers["user-agent"] || "";
       if (!ua.includes("Mozilla")) return res.send("OK");
-      if (fs3.existsSync(clientHtmlPath)) return res.sendFile(clientHtmlPath);
-      res.redirect("/picks");
+      if (!fs3.existsSync(clientHtmlPath)) return res.redirect("/picks");
+      try {
+        const { storage } = await Promise.resolve().then(() => (init_storage(), storage_exports));
+        const date2 = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+        const picks2 = await storage.getPicksByDate(date2);
+        const activePicks = picks2.filter((p) => !p.isDisabled && (p.confidence ?? 0) >= 68 && p.tier !== "free");
+        const topPicks = activePicks.slice(0, 4);
+        if (topPicks.length > 0) {
+          const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "America/Moncton" });
+          const eventSchemas = topPicks.map((p) => buildSportsEventSchema(p, date2));
+          const dynamicSchema = {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": `Expert Sports Picks \u2014 ${today}`,
+            "description": `Today's top ${topPicks.length} expert picks from Parlay King Gold Standard V3 Titan XII.`,
+            "url": "https://soccernbaparlayking.vip",
+            "numberOfItems": topPicks.length,
+            "itemListElement": eventSchemas.map((ev, i) => ({
+              "@type": "ListItem",
+              "position": i + 1,
+              "item": ev
+            }))
+          };
+          const schemaTag = `<script type="application/ld+json">${JSON.stringify(dynamicSchema)}</script>`;
+          let html = fs3.readFileSync(clientHtmlPath, "utf8");
+          html = html.replace("<head>", `<head>
+${schemaTag}`);
+          res.setHeader("Content-Type", "text/html");
+          return res.send(html);
+        }
+      } catch (e) {
+      }
+      return res.sendFile(clientHtmlPath);
     });
     const publicPages = [
       "/picks",

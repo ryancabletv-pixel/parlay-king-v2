@@ -144,11 +144,100 @@ async function initializeExpress() {
     const clientHtmlPath = path.join(process.cwd(), 'server/templates/client.html');
 
     // ── PUBLIC SITE — root and all public pages ──
-    app.get('/', (req, res) => {
+    // Helper: build enriched SportsEvent JSON-LD from a pick object
+    function buildSportsEventSchema(p: any, date: string): object {
+      const homeTeam = p.homeTeam || p.home_team || '';
+      const awayTeam = p.awayTeam || p.away_team || '';
+      const sport = (p.sport || 'basketball').toLowerCase();
+      const isSoccer = sport === 'soccer' || sport === 'mls' || sport === 'football';
+      const sportLabel = isSoccer ? 'Soccer' : 'Basketball';
+      const defaultTime = isSoccer ? 'T19:00:00-05:00' : 'T19:30:00-05:00';
+      const gameTime = (p.metadata as any)?.gameTime || '';
+      // Parse gameTime like '3:30 PM ET' into ISO
+      let startDate = date + defaultTime;
+      if (gameTime) {
+        const m = gameTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (m) {
+          let h = parseInt(m[1]); const min = m[2]; const ampm = m[3].toUpperCase();
+          if (ampm === 'PM' && h !== 12) h += 12;
+          if (ampm === 'AM' && h === 12) h = 0;
+          startDate = `${date}T${String(h).padStart(2,'0')}:${min}:00-05:00`;
+        }
+      }
+      const startMs = new Date(startDate).getTime();
+      const endDate = new Date(startMs + 3 * 60 * 60 * 1000).toISOString();
+      const image = isSoccer
+        ? 'https://soccernbaparlayking.vip/images/parlay-king-logo.png'
+        : 'https://soccernbaparlayking.vip/images/knicks-lakers-hero.jpg';
+      return {
+        '@type': 'SportsEvent',
+        'name': `${homeTeam} vs ${awayTeam}`,
+        'startDate': startDate,
+        'endDate': endDate,
+        'eventStatus': 'https://schema.org/EventScheduled',
+        'eventAttendanceMode': 'https://schema.org/OfflineEventAttendanceMode',
+        'sport': sportLabel,
+        'description': (p.metadata as any)?.recommendation || `${p.prediction || p.pick} at ${Math.round(p.confidence ?? 0)}% confidence.`,
+        'image': { '@type': 'ImageObject', 'url': image, 'width': 1200, 'height': 630 },
+        'performer': [
+          { '@type': 'SportsTeam', 'name': homeTeam, 'sport': sportLabel },
+          { '@type': 'SportsTeam', 'name': awayTeam, 'sport': sportLabel },
+        ],
+        'organizer': { '@type': 'Organization', 'name': 'Parlay King', 'url': 'https://soccernbaparlayking.vip' },
+        'offers': {
+          '@type': 'Offer',
+          'url': 'https://soccernbaparlayking.vip/pricing',
+          'price': '0',
+          'priceCurrency': 'USD',
+          'availability': 'https://schema.org/InStock',
+          'validFrom': date,
+        },
+        'homeTeam': { '@type': 'SportsTeam', 'name': homeTeam, 'sport': sportLabel },
+        'awayTeam': { '@type': 'SportsTeam', 'name': awayTeam, 'sport': sportLabel },
+      };
+    }
+
+    app.get('/', async (req, res) => {
       const ua = req.headers['user-agent'] || '';
       if (!ua.includes('Mozilla')) return res.send('OK');
-      if (fs.existsSync(clientHtmlPath)) return res.sendFile(clientHtmlPath);
-      res.redirect('/picks');
+      if (!fs.existsSync(clientHtmlPath)) return res.redirect('/picks');
+
+      try {
+        // Build enriched SportsEvent schema from today's live picks (server-side for Googlebot)
+        const { storage } = await import('./storage.js');
+        const date = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+        const picks = await storage.getPicksByDate(date);
+        const activePicks = picks.filter((p: any) => !p.isDisabled && (p.confidence ?? 0) >= 68 && p.tier !== 'free');
+        const topPicks = activePicks.slice(0, 4);
+
+        if (topPicks.length > 0) {
+          const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Moncton' });
+          const eventSchemas = topPicks.map((p: any) => buildSportsEventSchema(p, date));
+          const dynamicSchema = {
+            '@context': 'https://schema.org',
+            '@type': 'ItemList',
+            'name': `Expert Sports Picks — ${today}`,
+            'description': `Today's top ${topPicks.length} expert picks from Parlay King Gold Standard V3 Titan XII.`,
+            'url': 'https://soccernbaparlayking.vip',
+            'numberOfItems': topPicks.length,
+            'itemListElement': eventSchemas.map((ev: any, i: number) => ({
+              '@type': 'ListItem',
+              'position': i + 1,
+              'item': ev,
+            })),
+          };
+          const schemaTag = `<script type="application/ld+json">${JSON.stringify(dynamicSchema)}</script>`;
+          let html = fs.readFileSync(clientHtmlPath, 'utf8');
+          // Inject dynamic schema right after <head>
+          html = html.replace('<head>', `<head>\n${schemaTag}`);
+          res.setHeader('Content-Type', 'text/html');
+          return res.send(html);
+        }
+      } catch (e) {
+        // Fall through to static file if schema injection fails
+      }
+
+      return res.sendFile(clientHtmlPath);
     });
 
     // Public pages — all serve the client SPA

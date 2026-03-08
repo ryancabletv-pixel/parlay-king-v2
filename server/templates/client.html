@@ -962,7 +962,7 @@
   margin: 16px 0 20px 0;
 }
 
-</style><script type="application/ld+json">{"@context":"https://schema.org","@type":"AnalysisNewsArticle","headline":"NBA Game Predictions — Expert Analysis for 2026-03-01","description":"Data-driven NBA predictions featuring OKC Thunder vs Dallas (ML -1150, 78%), Cavaliers vs Nets (-11, 66%), and SGA Over 29.5 Points (74%). Powered by the Gold Standard V2 analytics engine.","datePublished":"2026-03-01","dateModified":"2026-03-01","url":"https://soccernbaparlayking.vip/#nba","author":{"@type":"Organization","name":"Parlay King","url":"https://soccernbaparlayking.vip"},"publisher":{"@type":"Organization","name":"Parlay King — Gold Standard V2","url":"https://soccernbaparlayking.vip"},"mainEntityOfPage":"https://soccernbaparlayking.vip/#nba","about":[{"@type":"SportsEvent","name":"Oklahoma City Thunder vs Dallas Mavericks","homeTeam":{"@type":"SportsTeam","name":"Dallas Mavericks","sport":"Basketball"},"awayTeam":{"@type":"SportsTeam","name":"Oklahoma City Thunder","sport":"Basketball"},"description":"OKC Thunder ML at 78% confidence. Personnel Delta: OKC at full strength vs Dallas 12th in West.","sport":"Basketball"},{"@type":"SportsEvent","name":"Cleveland Cavaliers vs Brooklyn Nets","homeTeam":{"@type":"SportsTeam","name":"Brooklyn Nets","sport":"Basketball"},"awayTeam":{"@type":"SportsTeam","name":"Cleveland Cavaliers","sport":"Basketball"},"description":"Cleveland -11 at 66% confidence. Brooklyn in tank mode at 15-44.","sport":"Basketball"}],"keywords":["NBA game predictions","OKC Thunder prediction","SGA points prop","Cavaliers vs Nets prediction","NBA analysis today","best NBA picks today","Gold Standard V2 NBA"]}</script>
+</style><script type="application/ld+json">{"@context":"https://schema.org","@type":"AnalysisNewsArticle","headline":"NBA Game Predictions — Expert Analysis for 2026-03-08","description":"Data-driven NBA predictions featuring New York Knicks vs LA Lakers (ML 72.6%), Milwaukee Bucks vs Orlando Magic (ML 74.3%), and Miami Heat vs Detroit Pistons (ML 70.5%). Powered by the Gold Standard V3 Titan XII analytics engine.","datePublished":"2026-03-08","dateModified":"2026-03-08","url":"https://soccernbaparlayking.vip/#nba","author":{"@type":"Organization","name":"Parlay King","url":"https://soccernbaparlayking.vip"},"publisher":{"@type":"Organization","name":"Parlay King — Gold Standard V3 Titan XII","url":"https://soccernbaparlayking.vip"},"mainEntityOfPage":"https://soccernbaparlayking.vip/#nba","about":[{"@type":"SportsEvent","name":"New York Knicks vs LA Lakers","startDate":"2026-03-08T20:30:00-05:00","endDate":"2026-03-08T23:30:00-05:00","eventStatus":"https://schema.org/EventScheduled","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","location":{"@type":"Place","name":"Crypto.com Arena","address":{"@type":"PostalAddress","addressLocality":"Los Angeles","addressRegion":"CA","addressCountry":"US"}},"image":{"@type":"ImageObject","url":"https://soccernbaparlayking.vip/images/knicks-lakers-hero.jpg","width":1200,"height":630},"performer":[{"@type":"SportsTeam","name":"New York Knicks","sport":"Basketball","url":"https://www.nba.com/knicks"},{"@type":"SportsTeam","name":"LA Lakers","sport":"Basketball","url":"https://www.nba.com/lakers"}],"organizer":{"@type":"Organization","name":"Parlay King","url":"https://soccernbaparlayking.vip"},"offers":{"@type":"Offer","url":"https://soccernbaparlayking.vip/pricing","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock","validFrom":"2026-03-08"},"homeTeam":{"@type":"SportsTeam","name":"LA Lakers","sport":"Basketball"},"awayTeam":{"@type":"SportsTeam","name":"New York Knicks","sport":"Basketball"},"description":"New York Knicks Moneyline at 72.6% confidence. Sharp money moved line from -2.5 to -3.5. Knicks coming off dominant 142-103 win in Denver.","sport":"Basketball"},{"@type":"SportsEvent","name":"Milwaukee Bucks vs Orlando Magic","startDate":"2026-03-08T19:00:00-05:00","endDate":"2026-03-08T22:00:00-05:00","eventStatus":"https://schema.org/EventScheduled","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","location":{"@type":"Place","name":"Fiserv Forum","address":{"@type":"PostalAddress","addressLocality":"Milwaukee","addressRegion":"WI","addressCountry":"US"}},"image":{"@type":"ImageObject","url":"https://soccernbaparlayking.vip/images/parlay-king-logo.png","width":400,"height":400},"performer":[{"@type":"SportsTeam","name":"Milwaukee Bucks","sport":"Basketball","url":"https://www.nba.com/bucks"},{"@type":"SportsTeam","name":"Orlando Magic","sport":"Basketball","url":"https://www.nba.com/magic"}],"organizer":{"@type":"Organization","name":"Parlay King","url":"https://soccernbaparlayking.vip"},"offers":{"@type":"Offer","url":"https://soccernbaparlayking.vip/pricing","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock","validFrom":"2026-03-08"},"homeTeam":{"@type":"SportsTeam","name":"Milwaukee Bucks","sport":"Basketball"},"awayTeam":{"@type":"SportsTeam","name":"Orlando Magic","sport":"Basketball"},"description":"Milwaukee Bucks Moneyline at 74.3% confidence. Bucks Factor 12 Venue Pressure at Fiserv Forum remains elite. Orlando has struggled with defensive discipline on the road.","sport":"Basketball"}],"keywords":["NBA game predictions","Knicks vs Lakers prediction","Milwaukee Bucks prediction","NBA picks today","NBA expert picks Sunday","best NBA parlay today","Gold Standard V3 Titan XII NBA"]}</script>
 </head>
 <body>
 <!-- Navigation -->
@@ -2396,10 +2396,92 @@ function pkDoLogin() {
 
 
 <script>
-// Auto-update schema datePublished and dateModified to today
+// Auto-update schema datePublished, dateModified, and enrich SportsEvent fields
 (function() {
     var now = new Date();
     var iso = now.toISOString().split('T')[0] + 'T00:00:00Z';
+    var todayDate = now.toISOString().split('T')[0];
+
+    // Helper: enrich a single SportsEvent object with all required fields
+    function enrichSportsEvent(ev) {
+        if (!ev || ev['@type'] !== 'SportsEvent') return ev;
+
+        // Determine sport for image selection
+        var sport = (ev.sport || '').toLowerCase();
+        var isSoccer = (sport === 'soccer' || sport === 'mls' || sport === 'football');
+
+        // Build team names from homeTeam / awayTeam
+        var homeTeamName = (ev.homeTeam && ev.homeTeam.name) ? ev.homeTeam.name : '';
+        var awayTeamName = (ev.awayTeam && ev.awayTeam.name) ? ev.awayTeam.name : '';
+
+        // endDate: 3 hours after startDate (or 3 hours from midnight today if no startDate)
+        if (!ev.endDate) {
+            var startMs;
+            if (ev.startDate) {
+                startMs = new Date(ev.startDate).getTime();
+            } else {
+                // Default: 7:30 PM ET today
+                startMs = new Date(todayDate + 'T19:30:00-05:00').getTime();
+                ev.startDate = todayDate + 'T19:30:00-05:00';
+            }
+            var endMs = startMs + (3 * 60 * 60 * 1000);
+            ev.endDate = new Date(endMs).toISOString();
+        }
+
+        // eventStatus
+        if (!ev.eventStatus) {
+            ev.eventStatus = 'https://schema.org/EventScheduled';
+        }
+
+        // eventAttendanceMode
+        if (!ev.eventAttendanceMode) {
+            ev.eventAttendanceMode = 'https://schema.org/OfflineEventAttendanceMode';
+        }
+
+        // image — use site logo as fallback
+        if (!ev.image) {
+            ev.image = {
+                '@type': 'ImageObject',
+                'url': isSoccer
+                    ? 'https://soccernbaparlayking.vip/images/parlay-king-logo.png'
+                    : 'https://soccernbaparlayking.vip/images/knicks-lakers-hero.jpg',
+                'width': 1200,
+                'height': 630
+            };
+        }
+
+        // performer — home and away teams
+        if (!ev.performer) {
+            var performers = [];
+            if (homeTeamName) performers.push({ '@type': 'SportsTeam', 'name': homeTeamName, 'sport': ev.homeTeam.sport || (isSoccer ? 'Soccer' : 'Basketball') });
+            if (awayTeamName) performers.push({ '@type': 'SportsTeam', 'name': awayTeamName, 'sport': ev.awayTeam.sport || (isSoccer ? 'Soccer' : 'Basketball') });
+            if (performers.length > 0) ev.performer = performers;
+        }
+
+        // organizer — site name
+        if (!ev.organizer) {
+            ev.organizer = {
+                '@type': 'Organization',
+                'name': 'Parlay King',
+                'url': 'https://soccernbaparlayking.vip'
+            };
+        }
+
+        // offers — free access to picks
+        if (!ev.offers) {
+            ev.offers = {
+                '@type': 'Offer',
+                'url': 'https://soccernbaparlayking.vip/pricing',
+                'price': '0',
+                'priceCurrency': 'USD',
+                'availability': 'https://schema.org/InStock',
+                'validFrom': todayDate
+            };
+        }
+
+        return ev;
+    }
+
     var scripts = document.querySelectorAll('script[type="application/ld+json"]');
     scripts.forEach(function(s) {
         try {
@@ -2408,10 +2490,17 @@ function pkDoLogin() {
                 data.forEach(function(d) {
                     if (d.datePublished) d.datePublished = iso;
                     if (d.dateModified)  d.dateModified  = iso;
+                    enrichSportsEvent(d);
                 });
             } else {
                 if (data.datePublished) data.datePublished = iso;
                 if (data.dateModified)  data.dateModified  = iso;
+                // Enrich top-level SportsEvent
+                enrichSportsEvent(data);
+                // Enrich SportsEvents nested in 'about' array
+                if (Array.isArray(data.about)) {
+                    data.about.forEach(function(item) { enrichSportsEvent(item); });
+                }
             }
             s.textContent = JSON.stringify(data, null, 2);
         } catch(e) {}
