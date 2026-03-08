@@ -185,10 +185,10 @@ export const DEFAULT_WEIGHTS: EngineWeights = {
 
 // Confidence thresholds
 export const CONFIDENCE_THRESHOLDS = {
-  MINIMUM:    68,   // Below this -> pick is discarded
-  FREE_TIER:  68,   // 68-71%
-  VIP_TIER:   72,   // 72-74%
-  PRO_TIER:   75,   // 75-79%
+  MINIMUM:    64,   // Below this -> pick is discarded (Free tier starts at 64%)
+  FREE_TIER:  64,   // 64-67% — Free tier (dashboard only, NOT on main site)
+  VIP_TIER:   68,   // 68-69% — Pro tier minimum (shown on main site)
+  PRO_TIER:   70,   // 70-79% — Lifetime tier minimum
   POWER_PICK: 80,   // 80%+
 } as const;
 
@@ -464,6 +464,9 @@ export function runTitanXII(
   const [topPick, topConfidence] = outcomes[0];
 
   // --- Tier assignment ---
+  // free:     64-67% — Free tier (dashboard only)
+  // vip:      68-69% — Pro tier minimum (shown on main site)
+  // pro:      70%+   — Lifetime tier minimum
   let tier: 'free' | 'vip' | 'pro' = 'free';
   if (topConfidence >= CONFIDENCE_THRESHOLDS.PRO_TIER)       tier = 'pro';
   else if (topConfidence >= CONFIDENCE_THRESHOLDS.VIP_TIER)  tier = 'vip';
@@ -535,7 +538,8 @@ export function runTitanXII(
 // =============================================================================
 // BATCH PROCESSING
 // =============================================================================
-// Runs all fixtures through the engine and filters by the 68% minimum threshold.
+// Runs all fixtures through the engine and filters by the 64% minimum threshold.
+// Free tier: 64-67% | Pro tier: 68%+ | Lifetime tier: 70%+
 // Results sorted by confidence descending.
 export function runBatchPredictions(
   fixtures: FixtureData[],

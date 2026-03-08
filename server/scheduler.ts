@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { createRunLog, updateRunLog, createAlert, getRunLogs } from './storage.js';
+import { createRunLog, updateRunLog, createAlert, getRunLogs, getPicksByDate } from './storage.js';
 import { generateDailyPicks } from './routes.js';
 import { pingGoogleAfterUpdate } from './seo.js';
 import { autoSettleResults } from './resultsSettler.js';
@@ -272,6 +272,47 @@ export function startScheduler() {
   console.log('[Scheduler] Timezone: America/Moncton (AST UTC-4 / ADT UTC-3)');
   console.log('[Scheduler] Primary generation: 1:00 AM AST with 4-layer retry cascade');
   console.log('[Scheduler] Google/Bing ping: after every pick update');
+
+  // ── Startup Catch-Up Check ────────────────────────────────────────────────
+  // If the container restarted after 1:00 AM and today's picks are missing,
+  // trigger generation immediately (fixes Railway restart issue).
+  // Uses a 15-second delay to allow the database connection to stabilize.
+  setTimeout(async () => {
+    try {
+      const today = todayStr();
+      // Get the current hour in AST timezone
+      const nowHour = parseInt(
+        new Date().toLocaleString('en-US', { timeZone: TZ, hour: 'numeric', hour12: false }),
+        10
+      );
+
+      // Only run catch-up between 1:00 AM and 11:59 PM AST
+      // (before 1 AM the 1:00 AM cron will handle it normally)
+      if (nowHour >= 1 && nowHour <= 23) {
+        const existingPicks = await getPicksByDate(today);
+        if (existingPicks.length === 0) {
+          console.log(`[Scheduler] STARTUP CATCH-UP: No picks found for ${today} (hour=${nowHour} AST) — triggering generation now`);
+          await createAlert('warning', `Startup catch-up triggered: no picks found for ${today} at hour ${nowHour} AST`);
+          const success = await runDailyGeneration('startup-catchup');
+          if (success) {
+            console.log(`[Scheduler] Startup catch-up SUCCEEDED for ${today}`);
+          } else {
+            console.error(`[Scheduler] Startup catch-up FAILED for ${today}`);
+            await createAlert('critical', `Startup catch-up failed for ${today} — picks may be missing`);
+          }
+        } else {
+          console.log(`[Scheduler] Startup check: ${existingPicks.length} picks already exist for ${today} — no catch-up needed`);
+          // Mark as completed so retry cascade doesn't fire unnecessarily
+          dailyRunCompleted = true;
+          lastRunDate = today;
+        }
+      } else {
+        console.log(`[Scheduler] Startup check: hour=${nowHour} AST — before 1:00 AM, no catch-up needed`);
+      }
+    } catch (err) {
+      console.error('[Scheduler] Startup catch-up check failed:', err);
+    }
+  }, 15000); // 15 second delay to allow DB connection to stabilize
 }
 
 export { runDailyGeneration };

@@ -32,21 +32,29 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
 // Safety filter: only picks with confidence >= threshold AND positive value.
 
 const CONFIDENCE_THRESHOLDS = {
-  MINIMUM:    68,   // All picks must pass this
-  FREE_TIER:  68,
-  VIP_TIER:   72,
-  PRO_TIER:   75,
+  FREE_MIN:   64,   // Free tier: 64-67%
+  FREE_MAX:   67,   // Free tier ceiling
+  PRO_MIN:    68,   // Pro tier: 68%+
+  LIFETIME_MIN: 70, // Lifetime tier: 70%+
   POWER_PICK: 80,   // Power Pick badge
+} as const;
+
+// Tier pick counts
+const TIER_PICK_COUNTS = {
+  free:     2,   // 2 picks at 64-67%
+  pro:      6,   // 6 picks at 68%+
+  lifetime: 10,  // 10 picks at 70%+
 } as const;
 
 function selectBestLegs(
   predictions: PredictionResult[],
   count: number,
-  minConfidence = CONFIDENCE_THRESHOLDS.MINIMUM
+  minConfidence = CONFIDENCE_THRESHOLDS.PRO_MIN,
+  maxConfidence = 100
 ): PredictionResult[] {
   // Filter: must pass threshold, must not be a draw pick (draws are low-value)
   const qualified = predictions
-    .filter(p => p.topConfidence >= minConfidence)
+    .filter(p => p.topConfidence >= minConfidence && p.topConfidence <= maxConfidence)
     .filter(p => !p.topPick.toLowerCase().includes('draw'))
     .sort((a, b) => {
       // Primary sort: confidence descending
@@ -139,27 +147,44 @@ export async function generateDailyPicks(date: string): Promise<{
 
   console.log(`[Engine] Predictions: ${soccerPreds.length} soccer, ${mlsPreds.length} MLS, ${nbaPreds.length} NBA`);
 
-  // ── Select exactly 3 legs per category ───────────────────────────────────
-  const soccerLegs = selectBestLegs(soccerPreds, 3, CONFIDENCE_THRESHOLDS.MINIMUM);
-  const mlsLegs    = selectBestLegs(mlsPreds,    3, CONFIDENCE_THRESHOLDS.MINIMUM);
-  const nbaLegs    = selectBestLegs(nbaPreds,    3, CONFIDENCE_THRESHOLDS.MINIMUM);
-
-  // ── Select 1 Power Pick (highest confidence across ALL sports ≥68%) ───────
+  // ── Select tiered picks from all predictions ────────────────────────────
+  // All predictions combined for cross-sport tier selection
   const allPreds = [...soccerPreds, ...mlsPreds, ...nbaPreds];
+
+  // FREE TIER: 2 picks at 64-67% (below the pro threshold)
+  const freePicks = selectBestLegs(allPreds, TIER_PICK_COUNTS.free,
+    CONFIDENCE_THRESHOLDS.FREE_MIN, CONFIDENCE_THRESHOLDS.FREE_MAX);
+
+  // PRO TIER: 6 picks at 68%+ (sorted by confidence, best first)
+  const proPicks = selectBestLegs(allPreds, TIER_PICK_COUNTS.pro,
+    CONFIDENCE_THRESHOLDS.PRO_MIN, 100);
+
+  // LIFETIME TIER: 10 picks at 70%+ (top picks only)
+  const lifetimePicks = selectBestLegs(allPreds, TIER_PICK_COUNTS.lifetime,
+    CONFIDENCE_THRESHOLDS.LIFETIME_MIN, 100);
+
+  // For display compatibility: soccer/mls/nba legs for the parlay builder
+  // Use Pro-tier picks (68%+) for the sport-specific parlays
+  const soccerLegs = selectBestLegs(soccerPreds, 3, CONFIDENCE_THRESHOLDS.PRO_MIN);
+  const mlsLegs    = selectBestLegs(mlsPreds,    3, CONFIDENCE_THRESHOLDS.PRO_MIN);
+  const nbaLegs    = selectBestLegs(nbaPreds,    3, CONFIDENCE_THRESHOLDS.PRO_MIN);
+
+  // ── Select 1 Power Pick (highest confidence across ALL sports ≥70%) ───────
   const powerCandidates = allPreds
-    .filter(p => p.topConfidence >= CONFIDENCE_THRESHOLDS.MINIMUM)
+    .filter(p => p.topConfidence >= CONFIDENCE_THRESHOLDS.LIFETIME_MIN)
     .filter(p => !p.topPick.toLowerCase().includes('draw'))
     .sort((a, b) => b.topConfidence - a.topConfidence);
   const powerPick = powerCandidates[0] || null;
 
-  console.log(`[Engine] Selected: ${soccerLegs.length} soccer legs, ${mlsLegs.length} MLS legs, ${nbaLegs.length} NBA legs`);
+  console.log(`[Engine] Tiered picks: ${freePicks.length} Free (64-67%), ${proPicks.length} Pro (68%+), ${lifetimePicks.length} Lifetime (70%+)`);
+  console.log(`[Engine] Sport parlays: ${soccerLegs.length} soccer, ${mlsLegs.length} MLS, ${nbaLegs.length} NBA`);
   console.log(`[Engine] Power Pick: ${powerPick ? `${powerPick.homeTeam} vs ${powerPick.awayTeam} (${powerPick.topConfidence.toFixed(1)}%)` : 'none'}`);
 
   // ── Log threshold filter results ──────────────────────────────────────────
-  const totalScored = soccerPreds.length + mlsPreds.length + nbaPreds.length;
-  const totalPassed = soccerLegs.length + mlsLegs.length + nbaLegs.length;
+  const totalScored = allPreds.length;
+  const totalPassed = freePicks.length + proPicks.length;
   const totalDiscarded = totalScored - totalPassed;
-  console.log(`[Titan XII] Threshold filter: ${totalPassed} passed | ${totalDiscarded} discarded (< ${CONFIDENCE_THRESHOLDS.MINIMUM}%)`);
+  console.log(`[Titan XII] Threshold filter: Free=${freePicks.length} (64-67%) | Pro=${proPicks.length} (68%+) | Lifetime=${lifetimePicks.length} (70%+) | Discarded=${totalDiscarded}`);
 
   // ── Delete today's existing picks (fresh generation) ─────────────────────
   // NOTE: We only delete picks for today's date — never touch other dates
@@ -222,6 +247,21 @@ export async function generateDailyPicks(date: string): Promise<{
     console.log(`[Engine] ℹ️  MLS tab: No MLS games on ${date} — tab will show blank`);
   }
 
+  // Save Free Tier picks (64-67%) — dashboard only, NOT on main site
+  // These are saved with tier='free' so the /picks.json endpoint can filter them out
+  let freeCount = 0;
+  for (const pred of freePicks) {
+    // Skip if this game is already saved as a sport leg (avoid duplicates)
+    const alreadySaved = [...soccerLegs, ...nbaLegs, ...mlsLegs].some(
+      p => p.homeTeam === pred.homeTeam && p.awayTeam === pred.awayTeam
+    );
+    if (!alreadySaved) {
+      await savePick(pred, pred.sport, 'free');
+      freeCount++;
+      console.log(`[Engine] 🔓 Free pick: ${pred.homeTeam} vs ${pred.awayTeam} — ${pred.topPick} (${pred.topConfidence.toFixed(1)}%) [dashboard only]`);
+    }
+  }
+
   // Save Power Pick (isPowerPick = true)
   if (powerPick) {
     await savePick(powerPick, powerPick.sport, powerPick.tier, true);
@@ -273,13 +313,11 @@ export async function generateDailyPicks(date: string): Promise<{
   } catch (err) {
     console.warn('[Engine] FTP upload failed (non-critical):', err);
   }
-
-  const total = soccerCount + nbaCount + mlsCount + powerCount;
-  console.log(`[Engine] ═══════════════════════════════════════════════`);
+  const total = soccerCount + nbaCount + mlsCount + powerCount + freeCount;
+  console.log(`[Engine] ═══════════════════════════════════════════════════`);
   console.log(`[Engine] COMPLETE: ${total} picks saved for ${date}`);
-  console.log(`[Engine]   Soccer: ${soccerCount}/3 | NBA: ${nbaCount}/3 | MLS: ${mlsCount}/3 | Power: ${powerCount}/1`);
-  console.log(`[Engine] ═══════════════════════════════════════════════\n`);
-
+  console.log(`[Engine]   Soccer: ${soccerCount}/3 | NBA: ${nbaCount}/3 | MLS: ${mlsCount}/3 | Power: ${powerCount}/1 | Free: ${freeCount}/2`);
+  console.log(`[Engine] ═══════════════════════════════════════════════════\n`);
   return { total, soccer: soccerCount, nba: nbaCount, mls: mlsCount, powerPick: powerCount, ftpUploaded };
 }
 
@@ -516,13 +554,15 @@ export async function registerRoutes(app: Express) {
       const date = (req.query.date as string) || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
       const picks = await storage.getPicksByDate(date);
       const active = picks.filter(p => !p.isDisabled && p.status === 'pending');
+      // Public site only shows picks at 68%+ confidence (Pro tier and above)
+      const publicActive = active.filter(p => (p.confidence ?? 0) >= 68 && p.tier !== 'free');
       res.json({
         date,
-        nba:    active.filter(p => p.sport === 'nba').slice(0, 3),
-        mls:    active.filter(p => p.sport === 'mls').slice(0, 3),
-        soccer: active.filter(p => p.sport === 'soccer').slice(0, 3),
-        power:  active.filter(p => p.isPowerPick).slice(0, 1),
-        total:  active.length,
+        nba:    publicActive.filter(p => p.sport === 'nba').slice(0, 3),
+        mls:    publicActive.filter(p => p.sport === 'mls').slice(0, 3),
+        soccer: publicActive.filter(p => p.sport === 'soccer').slice(0, 3),
+        power:  publicActive.filter(p => p.isPowerPick).slice(0, 1),
+        total:  publicActive.length,
       });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -535,14 +575,16 @@ export async function registerRoutes(app: Express) {
   app.get('/picks.json', async (req, res) => {
     try {
       const date = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
-      const picks = await storage.getPicksByDate(date);
+       const picks = await storage.getPicksByDate(date);
       const active = picks.filter(p => !p.isDisabled);
-
-      const soccerPicks = active.filter(p => p.sport === 'soccer').slice(0, 3);
-      const mlsPicks    = active.filter(p => p.sport === 'mls').slice(0, 3);
-      const nbaPicks    = active.filter(p => p.sport === 'nba').slice(0, 3);
-      const powerPick   = active.find(p => p.isPowerPick) ||
-                          [...active].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
+      // Public site only shows picks at 68%+ confidence (Pro tier and above)
+      // Free tier picks (64-67%) are filtered out from the main site display
+      const publicActive = active.filter(p => (p.confidence ?? 0) >= 68 && p.tier !== 'free');
+      const soccerPicks = publicActive.filter(p => p.sport === 'soccer').slice(0, 3);
+      const mlsPicks    = publicActive.filter(p => p.sport === 'mls').slice(0, 3);
+      const nbaPicks    = publicActive.filter(p => p.sport === 'nba').slice(0, 3);
+      const powerPick   = publicActive.find(p => p.isPowerPick) ||
+                          [...publicActive].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
 
       const now = new Date().toISOString();
       const dateDisplay = new Date().toLocaleDateString('en-US', {
@@ -668,7 +710,7 @@ export async function registerRoutes(app: Express) {
         },
         manual_lock: false,
         locked_sections: [],
-        featured_games: active.slice(0, 3).map((p, i) => ({
+        featured_games: publicActive.slice(0, 3).map((p, i) => ({
           rank: i + 1,
           game: `${p.homeTeam} vs ${p.awayTeam}`,
           league: p.league || 'Unknown',

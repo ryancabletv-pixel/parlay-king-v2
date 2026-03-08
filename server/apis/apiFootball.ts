@@ -209,7 +209,32 @@ export async function fetchSoccerFixtures(date: string): Promise<FixtureData[]> 
         continue;
       }
 
-      const sport: 'soccer' | 'mls' = leagueInfo.sport;
+      // Determine sport: use leagueInfo.sport first, then fall back to MLS team name detection
+      let sport: 'soccer' | 'mls' = leagueInfo.sport;
+      // MLS team name fallback: if leagueId is 253 OR team names match known MLS clubs,
+      // override sport to 'mls' to ensure correct tab display
+      if (leagueId === 253) {
+        sport = 'mls';
+      } else if (sport === 'soccer') {
+        // Additional MLS team name detection as fallback
+        const homeName = (f.teams?.home?.name || '').toLowerCase();
+        const awayName = (f.teams?.away?.name || '').toLowerCase();
+        const mlsKeywords = [
+          'fc cincinnati', 'toronto fc', 'cf montreal', 'new england revolution',
+          'new york city', 'new york red bulls', 'philadelphia union', 'dc united',
+          'chicago fire', 'columbus crew', 'nashville sc', 'atlanta united',
+          'charlotte fc', 'inter miami', 'orlando city', 'miami cf',
+          'austin fc', 'fc dallas', 'houston dynamo', 'sporting kansas city',
+          'minnesota united', 'colorado rapids', 'real salt lake', 'portland timbers',
+          'seattle sounders', 'san jose earthquakes', 'la galaxy', 'lafc',
+          'los angeles fc', 'vancouver whitecaps', 'st. louis city', 'st louis city',
+          'san diego fc',
+        ];
+        if (mlsKeywords.some(k => homeName.includes(k) || awayName.includes(k))) {
+          sport = 'mls';
+          console.log(`[API-Football] MLS team name detected: ${f.teams?.home?.name} vs ${f.teams?.away?.name} — overriding sport to 'mls'`);
+        }
+      }
 
       const fixture: FixtureData = {
         fixtureId: f.fixture.id,
