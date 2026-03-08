@@ -1365,6 +1365,35 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // ── SEO Ping ─────────────────────────────────────────────────────────────────
+  app.post('/api/admin/seo-ping', requireAuth, async (req, res) => {
+    try {
+      const siteUrl = 'https://soccernbaparlayking.vip';
+      const sitemapUrl = encodeURIComponent(`${siteUrl}/sitemap.xml`);
+      const results: string[] = [];
+
+      // Ping Google
+      try {
+        const gRes = await fetch(`https://www.google.com/ping?sitemap=${sitemapUrl}`);
+        results.push(`Google: ${gRes.status === 200 ? 'OK' : gRes.status}`);
+      } catch {
+        results.push('Google: unreachable');
+      }
+
+      // Ping Bing
+      try {
+        const bRes = await fetch(`https://www.bing.com/ping?sitemap=${sitemapUrl}`);
+        results.push(`Bing: ${bRes.status === 200 ? 'OK' : bRes.status}`);
+      } catch {
+        results.push('Bing: unreachable');
+      }
+
+      res.json({ success: true, results, message: results.join(' | ') });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ── Members ─────────────────────────────────────────────────────────────────
   app.get('/api/admin/members', requireAuth, async (req, res) => {
     try {
