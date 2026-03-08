@@ -1256,7 +1256,7 @@
         dateEl.textContent = 'Lower risk with proven favorites — ' + data.last_updated_display;
       }
       if (!top.length) {
-        legsEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;font-size:1rem;">No qualifying soccer picks today (68%+ threshold). Check back tomorrow.</div>';
+        legsEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;font-size:1rem;">No qualifying soccer picks today (68%+ threshold). Check back tomorrow.<\/div>';
         return;
       }
       var totalOdds = 1;
@@ -1283,19 +1283,19 @@
         var gameTime = pick.time_display || pick.time || (pick.commence_time ? pick.commence_time.substring(11,16) + ' UTC' : 'Today');
         html += '<div class="leg">' +
           '<div class="leg-header">' +
-          '<div class="leg-number">Leg ' + (i+1) + '</div>' +
+          '<div class="leg-number">Leg ' + (i+1) + '<\/div>' +
           '<div class="leg-content">' +
-          '<div class="leg-info"><span class="leg-label">League</span><span class="leg-value">' + (pick.league||'Soccer') + '</span></div>' +
-          '<div class="leg-info"><span class="leg-label">Match</span><span class="leg-value">' + (pick.game||'TBD') + '</span></div>' +
-          '<div class="leg-info"><span class="leg-label">Time</span><span class="leg-value">' + gameTime + '</span></div>' +
-          '<div class="leg-info"><span class="leg-label">Pick</span><span class="leg-value">' + (pick.pick||'TBD') + '</span></div>' +
-          '<div class="leg-info"><span class="leg-label">Odds</span><span class="leg-odds">' + (pick.odds ? pick.odds : toAmericanOdds(realOdds)) + '</span></div>' +
-          '<div class="leg-info"><span class="leg-label">Probability</span><span class="leg-probability">' + prob + '%</span></div>' +
-          '</div></div>' +
-          '<div class="leg-reasoning"><strong>Analysis:</strong> ' + (pick.analysis || pick.confidence + ' confidence pick based on 9-Factor Composite model.') + '</div>' +
-          '</div>';
+          '<div class="leg-info"><span class="leg-label">League<\/span><span class="leg-value">' + (pick.league||'Soccer') + '<\/span><\/div>' +
+          '<div class="leg-info"><span class="leg-label">Match<\/span><span class="leg-value">' + (pick.game||'TBD') + '<\/span><\/div>' +
+          '<div class="leg-info"><span class="leg-label">Time<\/span><span class="leg-value">' + gameTime + '<\/span><\/div>' +
+          '<div class="leg-info"><span class="leg-label">Pick<\/span><span class="leg-value">' + (pick.pick||'TBD') + '<\/span><\/div>' +
+          '<div class="leg-info"><span class="leg-label">Odds<\/span><span class="leg-odds">' + (pick.odds ? pick.odds : toAmericanOdds(realOdds)) + '<\/span><\/div>' +
+          '<div class="leg-info"><span class="leg-label">Probability<\/span><span class="leg-probability">' + prob + '%<\/span><\/div>' +
+          '<\/div><\/div>' +
+          '<div class="leg-reasoning"><strong>Analysis:</strong> ' + (pick.analysis || pick.confidence + ' confidence pick based on 9-Factor Composite model.') + '<\/div>' +
+          '<\/div>';
       });
-      legsEl.innerHTML = '<div class="legs">' + html + '</div>';
+      legsEl.innerHTML = '<div class="legs">' + html + '<\/div>';
       var oddsEl = document.getElementById('conservative_total_odds');
       var probEl = document.getElementById('conservative_avg_prob');
       if (oddsEl) oddsEl.textContent = toAmericanOdds(totalOdds);
@@ -1303,7 +1303,7 @@
     })
     .catch(function(e) {
       var legsEl = document.getElementById('conservative-legs');
-      if (legsEl) legsEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">Unable to load picks. Please refresh.</div>';
+      if (legsEl) legsEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">Unable to load picks. Please refresh.<\/div>';
     });
 })();
 </script>
@@ -1410,13 +1410,13 @@
       if (dateEl) dateEl.textContent = 'MLS Match Winner & Over/Under — ' + dateStr;
       if (data.mls_no_slate) {
         var nextDate = data.mls_next_slate_date || 'this weekend';
-        if (legsEl) legsEl.innerHTML = '<div class="leg" style="text-align:center; padding:24px; color:#d4af37; font-style:italic; font-size:1.05em;">MLS Season Update: Next Full Slate Scheduled for ' + nextDate + '.<br>Check back for the 3-Leg Power Play.</div>';
+        if (legsEl) legsEl.innerHTML = '<div class="leg" style="text-align:center; padding:24px; color:#d4af37; font-style:italic; font-size:1.05em;">MLS Season Update: Next Full Slate Scheduled for ' + nextDate + '.<br>Check back for the 3-Leg Power Play.<\/div>';
         if (cntEl) cntEl.textContent = '0';
         if (probEl) probEl.textContent = '—';
         return;
       }
       if (!mp || !mp.legs || mp.legs.length === 0) {
-        if (legsEl) legsEl.innerHTML = '<div class="leg" style="text-align:center; padding:20px; color:#888; font-style:italic;">No MLS picks meet the Gold Standard threshold today.<br>MLS Matchday picks will appear when games are available.</div>';
+        if (legsEl) legsEl.innerHTML = '<div class="leg" style="text-align:center; padding:20px; color:#888; font-style:italic;">No MLS picks meet the Gold Standard threshold today.<br>MLS Matchday picks will appear when games are available.<\/div>';
         if (cntEl) cntEl.textContent = '0';
         if (probEl) probEl.textContent = '—';
         return;
@@ -1426,15 +1426,15 @@
       var h = '';
       mp.legs.forEach(function(leg, i) {
         var conf = leg.confidence || (leg.probability ? Math.round(leg.probability * 100) : 0);
-        h += '<div class="leg"><div class="leg-header"><div class="leg-number">Leg ' + (i+1) + '</div>';
+        h += '<div class="leg"><div class="leg-header"><div class="leg-number">Leg ' + (i+1) + '<\/div>';
         h += '<div class="leg-content">';
-        h += '<div class="leg-info"><span class="leg-label">League</span><span class="leg-value">' + (leg.league || 'MLS') + '</span></div>';
-        h += '<div class="leg-info"><span class="leg-label">Match</span><span class="leg-value" style="color:#fff; font-weight:700;">' + (leg.game || leg.match || '') + '</span></div>';
-        h += '<div class="leg-info"><span class="leg-label">Pick</span><span class="leg-value" style="color:#00cc66; font-weight:700;">' + (leg.pick || '') + '</span></div>';
-        h += '<div class="leg-info"><span class="leg-label">Confidence</span><span class="leg-value" style="color:#d4af37; font-weight:700;">' + conf + '%</span></div>';
-        if (leg.time_display) h += '<div class="leg-info"><span class="leg-label">Time</span><span class="leg-value">' + leg.time_display + '</span></div>';
-        if (leg.analysis) h += '<div class="leg-reasoning"><strong>Analysis:</strong> ' + leg.analysis + '</div>';
-        h += '</div></div></div>';
+        h += '<div class="leg-info"><span class="leg-label">League<\/span><span class="leg-value">' + (leg.league || 'MLS') + '<\/span><\/div>';
+        h += '<div class="leg-info"><span class="leg-label">Match<\/span><span class="leg-value" style="color:#fff; font-weight:700;">' + (leg.game || leg.match || '') + '<\/span><\/div>';
+        h += '<div class="leg-info"><span class="leg-label">Pick<\/span><span class="leg-value" style="color:#00cc66; font-weight:700;">' + (leg.pick || '') + '<\/span><\/div>';
+        h += '<div class="leg-info"><span class="leg-label">Confidence<\/span><span class="leg-value" style="color:#d4af37; font-weight:700;">' + conf + '%<\/span><\/div>';
+        if (leg.time_display) h += '<div class="leg-info"><span class="leg-label">Time<\/span><span class="leg-value">' + leg.time_display + '<\/span><\/div>';
+        if (leg.analysis) h += '<div class="leg-reasoning"><strong>Analysis:</strong> ' + leg.analysis + '<\/div>';
+        h += '<\/div><\/div><\/div>';
       });
       if (legsEl) legsEl.innerHTML = h;
     })
@@ -1499,7 +1499,7 @@
       if (dateEl) dateEl.textContent = 'Power Pick of the Day — ' + dateStr;
       var pick = data.power_pick;
       if (!pick || !pick.pick) {
-        if (legsEl) legsEl.innerHTML = '<div class="leg" style="text-align:center; padding:20px; color:#888; font-style:italic;">No Power Pick available today.<br>Check back tomorrow at 4:00 AM.</div>';
+        if (legsEl) legsEl.innerHTML = '<div class="leg" style="text-align:center; padding:20px; color:#888; font-style:italic;">No Power Pick available today.<br>Check back tomorrow at 4:00 AM.<\/div>';
         if (mktEl) mktEl.textContent = '0';
         if (probEl) probEl.textContent = '—';
         return;
@@ -1508,21 +1508,21 @@
       if (mktEl) mktEl.textContent = '1';
       if (probEl) probEl.textContent = prob;
       var h = '<div class="leg" style="border-left-color:#d4af37; background:rgba(212,175,55,0.08);">';
-      h += '<div class="leg-header"><div class="leg-number" style="color:#d4af37;">⚡</div>';
+      h += '<div class="leg-header"><div class="leg-number" style="color:#d4af37;">⚡<\/div>';
       h += '<div class="leg-content">';
-      h += '<div class="leg-info"><span class="leg-label">Game</span><span class="leg-value" style="color:#fff; font-weight:700;">' + pick.game + '</span></div>';
-      h += '<div class="leg-info"><span class="leg-label">League</span><span class="leg-value">' + (pick.league || '') + '</span></div>';
-      h += '<div class="leg-info"><span class="leg-label">Pick</span><span class="leg-value" style="color:#00cc66; font-weight:700;">' + pick.pick + '</span></div>';
-      h += '<div class="leg-info"><span class="leg-label">Probability</span><span class="leg-value" style="color:#d4af37; font-weight:700;">' + prob + '</span></div>';
-      h += '<div class="leg-info"><span class="leg-label">Odds</span><span class="leg-value">' + (pick.odds || '—') + '</span></div>';
-      h += '<div class="leg-info"><span class="leg-label">Time</span><span class="leg-value">' + (pick.time || '—') + '</span></div>';
-      if (pick.analysis) h += '<div class="leg-reasoning"><strong>Analysis:</strong> ' + pick.analysis + '</div>';
-      h += '</div></div></div>';
+      h += '<div class="leg-info"><span class="leg-label">Game<\/span><span class="leg-value" style="color:#fff; font-weight:700;">' + pick.game + '<\/span><\/div>';
+      h += '<div class="leg-info"><span class="leg-label">League<\/span><span class="leg-value">' + (pick.league || '') + '<\/span><\/div>';
+      h += '<div class="leg-info"><span class="leg-label">Pick<\/span><span class="leg-value" style="color:#00cc66; font-weight:700;">' + pick.pick + '<\/span><\/div>';
+      h += '<div class="leg-info"><span class="leg-label">Probability<\/span><span class="leg-value" style="color:#d4af37; font-weight:700;">' + prob + '<\/span><\/div>';
+      h += '<div class="leg-info"><span class="leg-label">Odds<\/span><span class="leg-value">' + (pick.odds || '—') + '<\/span><\/div>';
+      h += '<div class="leg-info"><span class="leg-label">Time<\/span><span class="leg-value">' + (pick.time || '—') + '<\/span><\/div>';
+      if (pick.analysis) h += '<div class="leg-reasoning"><strong>Analysis:</strong> ' + pick.analysis + '<\/div>';
+      h += '<\/div><\/div><\/div>';
       if (legsEl) legsEl.innerHTML = h;
     })
     .catch(function() {
       var legsEl = document.getElementById('powerpick-legs');
-      if (legsEl) legsEl.innerHTML = '<div class="leg" style="text-align:center; padding:20px; color:#888; font-style:italic;">Loading Power Pick...</div>';
+      if (legsEl) legsEl.innerHTML = '<div class="leg" style="text-align:center; padding:20px; color:#888; font-style:italic;">Loading Power Pick...<\/div>';
     });
 })();
 </script>
@@ -1632,7 +1632,7 @@
       if (dateEl) dateEl.textContent = 'NBA Picks — ' + dateStr;
       var nbaP = data.nba_parlay; var picks = (nbaP && nbaP.legs && nbaP.legs.length > 0) ? nbaP.legs : (data.nba_picks || []);
       if (picks.length === 0) {
-        if (legsEl) legsEl.innerHTML = '<div class="leg" style="text-align:center; padding:20px; color:#888; font-style:italic;">No NBA picks available today.<br>Check back tomorrow at 4:00 AM.</div>';
+        if (legsEl) legsEl.innerHTML = '<div class="leg" style="text-align:center; padding:20px; color:#888; font-style:italic;">No NBA picks available today.<br>Check back tomorrow at 4:00 AM.<\/div>';
         if (cntEl) cntEl.textContent = '0';
         if (avgEl) avgEl.textContent = '—';
         return;
@@ -1644,14 +1644,14 @@
         var conf = np.confidence || (np.probability ? Math.round(np.probability * 100) : 0);
         totalConf += conf;
         h += '<div class="leg">';
-        h += '<div class="leg-header"><div class="leg-number">' + (i + 1) + '</div>';
+        h += '<div class="leg-header"><div class="leg-number">' + (i + 1) + '<\/div>';
         h += '<div class="leg-content">';
-        h += '<div class="leg-info"><span class="leg-label">Game</span><span class="leg-value" style="color:#fff; font-weight:700;">' + (np.match || np.game || '') + '</span></div>';
-        h += '<div class="leg-info"><span class="leg-label">Pick</span><span class="leg-value" style="color:#00cc66; font-weight:700;">' + (np.pick || '') + '</span></div>';
-        h += '<div class="leg-info"><span class="leg-label">Confidence</span><span class="leg-value" style="color:#d4af37; font-weight:700;">' + conf + '%</span></div>';
-        h += '<div class="leg-info"><span class="leg-label">Odds</span><span class="leg-value">' + (np.odds || '—') + '</span></div>';
-        var nbaAnalysis = np.reasoning || np.analysis || ''; if (nbaAnalysis) h += '<div class="leg-reasoning"><strong>Analysis:</strong> ' + nbaAnalysis + '</div>';
-        h += '</div></div></div>';
+        h += '<div class="leg-info"><span class="leg-label">Game<\/span><span class="leg-value" style="color:#fff; font-weight:700;">' + (np.match || np.game || '') + '<\/span><\/div>';
+        h += '<div class="leg-info"><span class="leg-label">Pick<\/span><span class="leg-value" style="color:#00cc66; font-weight:700;">' + (np.pick || '') + '<\/span><\/div>';
+        h += '<div class="leg-info"><span class="leg-label">Confidence<\/span><span class="leg-value" style="color:#d4af37; font-weight:700;">' + conf + '%<\/span><\/div>';
+        h += '<div class="leg-info"><span class="leg-label">Odds<\/span><span class="leg-value">' + (np.odds || '—') + '<\/span><\/div>';
+        var nbaAnalysis = np.reasoning || np.analysis || ''; if (nbaAnalysis) h += '<div class="leg-reasoning"><strong>Analysis:</strong> ' + nbaAnalysis + '<\/div>';
+        h += '<\/div><\/div><\/div>';
       });
       if (avgEl) avgEl.textContent = Math.round(totalConf / picks.length) + '%';
       if (legsEl) legsEl.innerHTML = h;
@@ -1711,7 +1711,7 @@ Today's Full Slate — March 6, 2026:
                     if (!grid) return;
                     var results = data.results;
                     if (!results || !results.entries || results.entries.length === 0) {
-                        grid.innerHTML = '<p style="color: #b0b8c1; text-align: center;">No results available yet.</p>';
+                        grid.innerHTML = '<p style="color: #b0b8c1; text-align: center;">No results available yet.<\/p>';
                         return;
                     }
                     if (resDateEl && results.date_display) resDateEl.textContent = results.date_display;
@@ -1725,16 +1725,16 @@ Today's Full Slate — March 6, 2026:
                         var glowStyle = isWin ? 'box-shadow: 0 0 16px 2px rgba(45, 134, 89, 0.25), 0 0 4px rgba(45, 134, 89, 0.15);' : '';
                         html += '<div style="background: #1a1f2e; border: 2px solid ' + borderColor + '; border-radius: 8px; padding: 20px; text-align: center; transition: transform 0.2s ease, box-shadow 0.2s ease; ' + glowStyle + '" onmouseover="this.style.transform=\'translateY(-3px)\'" onmouseout="this.style.transform=\'translateY(0)\'">';
                         html += '<h3 style="color: #d4af37; margin-bottom: 10px;">' + icon + ' ' + r.title + '</h3>';
-                        html += '<p style="color: #b0b8c1; margin-bottom: 8px;">' + r.subtitle + '</p>';
-                        html += '<p style="color: ' + textColor + '; font-size: 20px; font-weight: bold;">' + r.detail + '</p>';
-                        html += '<p style="color: ' + textColor + '; font-size: 14px; margin-top: 8px;">' + r.outcome + '</p>';
-                        html += '</div>';
+                        html += '<p style="color: #b0b8c1; margin-bottom: 8px;">' + r.subtitle + '<\/p>';
+                        html += '<p style="color: ' + textColor + '; font-size: 20px; font-weight: bold;">' + r.detail + '<\/p>';
+                        html += '<p style="color: ' + textColor + '; font-size: 14px; margin-top: 8px;">' + r.outcome + '<\/p>';
+                        html += '<\/div>';
                     });
                     grid.innerHTML = html;
                 })
                 .catch(function() {
                     var grid = document.getElementById('results-grid');
-                    if (grid) grid.innerHTML = '<p style="color: #b0b8c1; text-align: center;">Results unavailable.</p>';
+                    if (grid) grid.innerHTML = '<p style="color: #b0b8c1; text-align: center;">Results unavailable.<\/p>';
                 });
         })();
         </script>
@@ -1798,7 +1798,7 @@ Today's Full Slate — March 6, 2026:
   fetch('/api/results?limit=200').then(function(r){return r.json();}).then(function(d){
     var results = d.results || d;
     if(!results || !results.length) {
-      document.getElementById('results-history-table').innerHTML = '<div style="padding:30px;text-align:center;color:#888;">No results recorded yet.</div>';
+      document.getElementById('results-history-table').innerHTML = '<div style="padding:30px;text-align:center;color:#888;">No results recorded yet.<\/div>';
       return;
     }
     var html = '<table style="width:100%;border-collapse:collapse;">';
@@ -1808,7 +1808,7 @@ Today's Full Slate — March 6, 2026:
     html += '<th style="padding:12px;text-align:left;color:#d4af37;font-size:0.8rem;text-transform:uppercase;">Pick</th>';
     html += '<th style="padding:12px;text-align:left;color:#d4af37;font-size:0.8rem;text-transform:uppercase;">Conf</th>';
     html += '<th style="padding:12px;text-align:left;color:#d4af37;font-size:0.8rem;text-transform:uppercase;">Result</th>';
-    html += '</tr></thead><tbody>';
+    html += '<\/tr></thead><tbody>';
     results.forEach(function(r, i) {
       var isWon = r.result === 'won' || r.result === 'Won';
       var isLost = r.result === 'lost' || r.result === 'Lost';
@@ -1820,16 +1820,16 @@ Today's Full Slate — March 6, 2026:
       var match = (r.homeTeam || r.home_team || '') + ' vs ' + (r.awayTeam || r.away_team || '');
       var conf = r.confidence ? r.confidence + '%' : '—';
       html += '<tr style="background:' + bg + ';border-bottom:1px solid rgba(255,255,255,0.05);">';
-      html += '<td style="padding:10px 12px;color:#888;font-size:0.85rem;">' + (r.date || '') + '</td>';
-      html += '<td style="padding:10px 12px;color:#fff;font-size:0.85rem;">' + match + '</td>';
-      html += '<td style="padding:10px 12px;color:#00cc66;font-size:0.85rem;font-weight:600;">' + (r.prediction || r.pick || '') + '</td>';
-      html += '<td style="padding:10px 12px;color:#d4af37;font-size:0.85rem;">' + conf + '</td>';
-      html += '<td style="padding:10px 12px;"><span style="color:' + resColor + ';font-weight:700;font-size:0.85rem;">' + resIcon + ' ' + resLabel + '</span></td>';
-      html += '</tr>';
+      html += '<td style="padding:10px 12px;color:#888;font-size:0.85rem;">' + (r.date || '') + '<\/td>';
+      html += '<td style="padding:10px 12px;color:#fff;font-size:0.85rem;">' + match + '<\/td>';
+      html += '<td style="padding:10px 12px;color:#00cc66;font-size:0.85rem;font-weight:600;">' + (r.prediction || r.pick || '') + '<\/td>';
+      html += '<td style="padding:10px 12px;color:#d4af37;font-size:0.85rem;">' + conf + '<\/td>';
+      html += '<td style="padding:10px 12px;"><span style="color:' + resColor + ';font-weight:700;font-size:0.85rem;">' + resIcon + ' ' + resLabel + '<\/span><\/td>';
+      html += '<\/tr>';
     });
-    html += '</tbody></table>';
+    html += '</tbody><\/table>';
     document.getElementById('results-history-table').innerHTML = html;
-  }).catch(function(e){ document.getElementById('results-history-table').innerHTML = '<div style="padding:30px;text-align:center;color:#ff4444;">Error loading results: ' + e.message + '</div>'; });
+  }).catch(function(e){ document.getElementById('results-history-table').innerHTML = '<div style="padding:30px;text-align:center;color:#ff4444;">Error loading results: ' + e.message + '<\/div>'; });
 })();
 </script>
 </div>
