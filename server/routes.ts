@@ -1,5 +1,7 @@
 import { Express, Request, Response, NextFunction } from 'express';
 import * as storage from './storage.js';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { runTitanXII, runBatchPredictions, FixtureData, PredictionResult } from './goldStandardV2.js';
 import { runDailyGeneration } from './scheduler.js';
 import * as path from 'path';
@@ -1101,6 +1103,101 @@ export async function registerRoutes(app: Express) {
       return res.json({ tier: 'free' });
     } catch {
       return res.json({ tier: 'free' });
+    }
+  });
+
+  const JWT_SECRET = process.env.SESSION_SECRET || 'parlay-king-secret-2025';
+
+  // POST /api/auth/register — create username+password after payment
+  app.post('/api/auth/register', async (req: Request, res: Response) => {
+    try {
+      const { email, username, password, plan } = req.body;
+      if (!email || !username || !password) {
+        return res.status(400).json({ error: 'Email, username, and password are required.' });
+      }
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+      }
+      // Check if username already taken
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const existing = await pool.query('SELECT id FROM members WHERE username = $1', [username]);
+      if (existing.rows.length > 0) {
+        await pool.end();
+        return res.status(409).json({ error: 'Username already taken. Please choose another.' });
+      }
+      const passwordHash = await bcrypt.hash(password, 10);
+      const tier = plan === 'lifetime' ? 'lifetime' : plan === 'vip-monthly' ? 'vip' : 'free';
+      // Upsert member with username and password
+      await pool.query(
+        `INSERT INTO members (email, username, password_hash, tier, token, is_active, created_at)
+         VALUES ($1, $2, $3, $4, $5, true, NOW())
+         ON CONFLICT (email) DO UPDATE SET
+           username = EXCLUDED.username,
+           password_hash = EXCLUDED.password_hash,
+           tier = EXCLUDED.tier,
+           is_active = true`,
+        [email, username, passwordHash, tier, generateToken()]
+      );
+      await pool.end();
+      // Issue JWT
+      const token = jwt.sign({ email, username, tier }, JWT_SECRET, { expiresIn: '90d' });
+      return res.json({ success: true, token, tier, username });
+    } catch (err: any) {
+      console.error('[Auth Register]', err.message);
+      return res.status(500).json({ error: 'Registration failed. Please try again.' });
+    }
+  });
+
+  // POST /api/auth/login — login with username+password
+  app.post('/api/auth/login', async (req: Request, res: Response) => {
+    try {
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required.' });
+      }
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const result = await pool.query(
+        'SELECT * FROM members WHERE username = $1 AND is_active = true',
+        [username]
+      );
+      await pool.end();
+      if (result.rows.length === 0) {
+        return res.status(401).json({ error: 'Invalid username or password.' });
+      }
+      const member = result.rows[0];
+      if (!member.password_hash) {
+        return res.status(401).json({ error: 'Account not set up yet. Please complete registration.' });
+      }
+      const valid = await bcrypt.compare(password, member.password_hash);
+      if (!valid) {
+        return res.status(401).json({ error: 'Invalid username or password.' });
+      }
+      const token = jwt.sign(
+        { email: member.email, username: member.username, tier: member.tier },
+        JWT_SECRET,
+        { expiresIn: '90d' }
+      );
+      return res.json({ success: true, token, tier: member.tier, username: member.username, email: member.email });
+    } catch (err: any) {
+      console.error('[Auth Login]', err.message);
+      return res.status(500).json({ error: 'Login failed. Please try again.' });
+    }
+  });
+
+  // GET /api/auth/me — verify JWT and return current user info
+  app.get('/api/auth/me', async (req: Request, res: Response) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Not authenticated.' });
+      }
+      const token = authHeader.slice(7);
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      return res.json({ success: true, email: decoded.email, username: decoded.username, tier: decoded.tier });
+    } catch {
+      return res.status(401).json({ error: 'Invalid or expired session. Please log in again.' });
     }
   });
 }

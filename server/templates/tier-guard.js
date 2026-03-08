@@ -84,48 +84,28 @@
     showPaymentSuccessModal(planName, tier);
   }
 
-  // ── Show payment success modal ───────────────────────────────────────────────
+  // -- Show payment success -- redirects to registration form
   function showPaymentSuccessModal(planName, tier) {
     var overlay = document.createElement('div');
     overlay.id = 'pk-payment-success-modal';
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);display:flex;justify-content:center;align-items:center;z-index:99999;';
-
-    var tierColor = tier === 'lifetime' ? '#00cc66' : '#d4af37';
-    var tierIcon = tier === 'lifetime' ? '👑👑' : '👑';
-
+    var tierColor = (tier === 'lifetime') ? '#00cc66' : '#d4af37';
     var box = document.createElement('div');
-    box.style.cssText = 'background:linear-gradient(135deg,#0f1419 0%,#1a2332 100%);border:3px solid ' + tierColor + ';border-radius:16px;padding:2.5rem;max-width:480px;width:90%;text-align:center;color:white;box-shadow:0 20px 60px rgba(212,175,55,0.4);';
-    box.innerHTML = '<div style="font-size:3rem;margin-bottom:1rem;">' + tierIcon + '</div>'
-      + '<h1 style="font-size:1.8rem;margin-bottom:0.5rem;color:' + tierColor + ';">Payment Successful!</h1>'
-      + '<p style="font-size:1.1rem;margin-bottom:1rem;color:#fff;">Welcome to <strong style="color:' + tierColor + ';">' + planName + '</strong>!</p>'
-      + '<p style="font-size:0.9rem;color:#888;margin-bottom:1.5rem;">Your dashboard is now unlocked. NBA, MLS, and Power Pick tabs are active.</p>'
-      + '<div style="background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:1rem;margin-bottom:1.5rem;">'
-      + '<p style="color:#ccc;font-size:0.85rem;margin:0;">Redirecting to dashboard in <span id="pk-countdown" style="color:' + tierColor + ';font-weight:bold;">5</span> seconds...</p>'
-      + '</div>'
-      + '<button id="pk-go-dashboard" style="background:' + tierColor + ';color:#0f1419;border:none;padding:14px 32px;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;width:100%;">Go to Dashboard Now</button>';
-
+    box.style.cssText = 'background:linear-gradient(135deg,#0f1419 0%,#1a2332 100%);border:3px solid ' + tierColor + ';border-radius:16px;padding:2.5rem;max-width:480px;width:90%;text-align:center;color:white;';
+    box.innerHTML = '<div style="font-size:3rem;margin-bottom:1rem;">&#128081;</div>'
+      + '<h1 style="font-size:1.8rem;margin-bottom:0.5rem;color:' + tierColor + ';">Payment Confirmed!</h1>'
+      + '<p style="font-size:1.1rem;margin-bottom:0.5rem;color:#fff;">Welcome to <strong style="color:' + tierColor + ';">' + planName + '</strong>!</p>'
+      + '<p style="font-size:0.9rem;color:#aaa;margin-bottom:1.5rem;">Create your account to access your dashboard and log back in anytime.</p>'
+      + '<button id="pk-go-register" style="background:' + tierColor + ';color:#0f1419;border:none;padding:14px 32px;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;width:100%;margin-bottom:12px;">&#9989; Create My Account</button>'
+      + '<p style="color:#666;font-size:0.8rem;">Takes 30 seconds - secure your access now</p>';
     overlay.appendChild(box);
     document.body.appendChild(overlay);
-
-    document.getElementById('pk-go-dashboard').addEventListener('click', function() {
+    document.getElementById('pk-go-register').addEventListener('click', function() {
       overlay.remove();
-      if (typeof showPage === 'function') showPage('home');
-      applyTierGating();
+      if (typeof showPage === 'function') showPage('register');
     });
-
-    var countdown = 5;
-    var timer = setInterval(function() {
-      countdown--;
-      var el = document.getElementById('pk-countdown');
-      if (el) el.textContent = countdown;
-      if (countdown <= 0) {
-        clearInterval(timer);
-        overlay.remove();
-        if (typeof showPage === 'function') showPage('home');
-        applyTierGating();
-      }
-    }, 1000);
   }
+
 
   // ── Apply tier gating to NBA/MLS/Power Pick tabs ────────────────────────────
   function applyTierGating() {
