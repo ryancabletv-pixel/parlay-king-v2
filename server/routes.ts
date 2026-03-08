@@ -662,6 +662,8 @@ export async function registerRoutes(app: Express) {
       const nbaPicks    = sportOnly.filter(p => p.sport === 'nba').slice(0, 3);
       const powerPick   = publicActive.find(p => p.isPowerPick) ||
                           [...publicActive].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
+      // Featured Mega-Pick: isFeatured=true takes priority over powerPick for hero section
+      const featuredMegaPick = publicActive.find(p => p.isFeatured) || powerPick;
 
       const now = new Date().toISOString();
       const dateDisplay = new Date().toLocaleDateString('en-US', {
@@ -728,21 +730,24 @@ export async function registerRoutes(app: Express) {
           time: `${date} — Today`,
           analysis: `Gold Standard V3 Titan XII — Top pick at ${Math.round(powerPick.confidence ?? 0)}%.`,
         } : null,
-        featured_pick: powerPick ? {
-          game: `${powerPick.homeTeam} vs ${powerPick.awayTeam}`,
-          league: powerPick.league || 'Unknown',
-          pick: powerPick.prediction || powerPick.pick,
-          pick_type: powerPick.prediction || powerPick.pick,
-          confidence: Math.round(powerPick.confidence ?? 0),
-          probability: parseFloat(((powerPick.confidence ?? 0) / 100).toFixed(2)),
-          confidence_pct: `${Math.round(powerPick.confidence ?? 0)}%`,
-          odds: powerPick.odds || '-110',
+        featured_pick: featuredMegaPick ? {
+          game: `${featuredMegaPick.homeTeam} vs ${featuredMegaPick.awayTeam}`,
+          league: featuredMegaPick.league || 'Unknown',
+          pick: featuredMegaPick.prediction || featuredMegaPick.pick,
+          pick_type: featuredMegaPick.prediction || featuredMegaPick.pick,
+          confidence: Math.round(featuredMegaPick.confidence ?? 0),
+          probability: parseFloat(((featuredMegaPick.confidence ?? 0) / 100).toFixed(2)),
+          confidence_pct: `${Math.round(featuredMegaPick.confidence ?? 0)}%`,
+          odds: featuredMegaPick.odds || '-110',
           time_display: date,
-          label: 'POWER PICK',
-          pick_label: powerPick.prediction || powerPick.pick,
-          reasoning: `Gold Standard V3 Titan XII — Top pick at ${Math.round(powerPick.confidence ?? 0)}%.`,
+          label: featuredMegaPick.isFeatured ? 'SUNDAY MEGA-PICK' : 'POWER PICK',
+          pick_label: featuredMegaPick.prediction || featuredMegaPick.pick,
+          reasoning: (featuredMegaPick.metadata as any)?.recommendation || `Gold Standard V3 Titan XII — Top pick at ${Math.round(featuredMegaPick.confidence ?? 0)}%.`,
+          game_time: (featuredMegaPick.metadata as any)?.gameTime || '',
+          hero_title: featuredMegaPick.isFeatured ? `SUNDAY MEGA-PICK: ${featuredMegaPick.awayTeam?.toUpperCase()} vs ${featuredMegaPick.homeTeam?.toUpperCase()} — ${Math.round(featuredMegaPick.confidence ?? 0)}% CONFIDENCE` : '',
+          seo_title: featuredMegaPick.isFeatured ? `March 8 NBA Expert Picks: Knicks vs Lakers Prediction & 12-Factor Analysis` : '',
           auto_generated: true,
-          tag: 'POWER PICK',
+          tag: featuredMegaPick.isFeatured ? 'MEGA-PICK' : 'POWER PICK',
           disclaimer: 'For entertainment purposes only.',
         } : null,
         featured_soccer: soccerPicks[0] ? {
