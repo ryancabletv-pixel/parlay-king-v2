@@ -110,28 +110,24 @@ export async function generateDailyPicks(date: string): Promise<{
     const { fetchSoccerFixtures, fetchNBAFixtures } = await import('./apis/apiFootball.js');
     [soccerFixtures, nbaFixtures] = await Promise.all([
       fetchSoccerFixtures(date).catch(err => {
-        console.warn('[Engine] Soccer fetch failed, using mock:', err.message);
-        return getMockSoccerFixtures(date);
+        console.error('[Engine] CRITICAL: Soccer API fetch failed:', err.message);
+        return [] as FixtureData[];
       }),
       fetchNBAFixtures(date).catch(err => {
-        console.warn('[Engine] NBA fetch failed, using mock:', err.message);
-        return getMockNBAFixtures(date);
+        console.error('[Engine] CRITICAL: NBA API fetch failed:', err.message);
+        return [] as FixtureData[];
       }),
     ]);
   } catch (err) {
-    console.warn('[Engine] API fetch failed, using full mock data:', err);
-    soccerFixtures = getMockSoccerFixtures(date);
-    nbaFixtures    = getMockNBAFixtures(date);
+    console.error('[Engine] CRITICAL: API fetch completely failed:', err);
   }
 
-  // Fallback to mock if API returned nothing
+  console.log(`[Engine] LIVE API data: ${soccerFixtures.length} soccer fixtures, ${nbaFixtures.length} NBA fixtures`);
   if (soccerFixtures.length === 0) {
-    console.log('[Engine] No live soccer fixtures — using mock data');
-    soccerFixtures = getMockSoccerFixtures(date);
+    console.error('[Engine] WARNING: No live soccer fixtures returned by API-Football for', date);
   }
   if (nbaFixtures.length === 0) {
-    console.log('[Engine] No live NBA fixtures — using mock data');
-    nbaFixtures = getMockNBAFixtures(date);
+    console.error('[Engine] WARNING: No live NBA fixtures returned by API-Basketball for', date);
   }
 
   // Separate MLS from soccer
@@ -170,28 +166,19 @@ export async function generateDailyPicks(date: string): Promise<{
   let mlsLegs    = selectBestLegs(mlsPreds,    3, CONFIDENCE_THRESHOLDS.PRO_MIN);
   let nbaLegs    = selectBestLegs(nbaPreds,    3, CONFIDENCE_THRESHOLDS.PRO_MIN);
 
-  // ── Smart fallback: blend mock data when real API doesn't produce enough legs ──
-  // This guarantees the site always has picks even when real API data is sparse
+  // ── Log real API leg counts ──────────────────────────────────────────────
+  console.log(`[Engine] LIVE legs at 68%+: Soccer=${soccerLegs.length}/3, NBA=${nbaLegs.length}/3, MLS=${mlsLegs.length}/3`);
   if (soccerLegs.length < 3) {
-    console.log(`[Engine] Soccer legs short (${soccerLegs.length}/3) — blending mock data`);
-    const mockSoccer = runBatchPredictions(getMockSoccerFixtures(date));
-    const mockLegs = selectBestLegs(mockSoccer, 3 - soccerLegs.length, CONFIDENCE_THRESHOLDS.PRO_MIN);
-    soccerLegs = [...soccerLegs, ...mockLegs].slice(0, 3);
+    console.error(`[Engine] CRITICAL: Only ${soccerLegs.length}/3 soccer legs passed 68% threshold from LIVE API data`);
+    console.error(`[Engine] Soccer fixtures scored: ${soccerPreds.map(p => p.homeTeam + ' vs ' + p.awayTeam + ' @ ' + p.topConfidence + '%').join(', ')}`);
   }
   if (nbaLegs.length < 3) {
-    console.log(`[Engine] NBA legs short (${nbaLegs.length}/3) — blending mock data`);
-    const mockNBA = runBatchPredictions(getMockNBAFixtures(date));
-    const mockLegs = selectBestLegs(mockNBA, 3 - nbaLegs.length, CONFIDENCE_THRESHOLDS.PRO_MIN);
-    nbaLegs = [...nbaLegs, ...mockLegs].slice(0, 3);
+    console.error(`[Engine] CRITICAL: Only ${nbaLegs.length}/3 NBA legs passed 68% threshold from LIVE API data`);
+    console.error(`[Engine] NBA fixtures scored: ${nbaPreds.map(p => p.homeTeam + ' vs ' + p.awayTeam + ' @ ' + p.topConfidence + '%').join(', ')}`);
   }
   if (mlsLegs.length < 3) {
-    // MLS: always blend mock data when real MLS legs are short
-    // (real MLS games may exist but score below 68% threshold)
-    const reason = mlsFixtures.length === 0 ? 'no real MLS games today' : `only ${mlsLegs.length}/3 real MLS legs scored 68%+`;
-    console.log(`[Engine] MLS fallback: ${reason} — using mock MLS data`);
-    const mockMLS = runBatchPredictions(getMockMLSFixtures(date));
-    const mockLegs = selectBestLegs(mockMLS, 3 - mlsLegs.length, CONFIDENCE_THRESHOLDS.PRO_MIN);
-    mlsLegs = [...mlsLegs, ...mockLegs].slice(0, 3);
+    console.error(`[Engine] CRITICAL: Only ${mlsLegs.length}/3 MLS legs passed 68% threshold from LIVE API data`);
+    console.error(`[Engine] MLS fixtures scored: ${mlsPreds.map(p => p.homeTeam + ' vs ' + p.awayTeam + ' @ ' + p.topConfidence + '%').join(', ')}`);
   }
 
    // ── Select 1 Power Pick (highest confidence across ALL sports ≥70%) ─────
