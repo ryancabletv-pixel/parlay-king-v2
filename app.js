@@ -49062,14 +49062,14 @@ async function registerRoutes(app) {
       const passwordHash = await import_bcryptjs.default.hash(password, 10);
       const tier = plan === "lifetime" ? "lifetime" : plan === "vip-monthly" ? "vip" : "free";
       await pool2.query(
-        `INSERT INTO members (email, username, password_hash, tier, token, is_active, created_at)
-         VALUES ($1, $2, $3, $4, $5, true, NOW())
+        `INSERT INTO members (email, username, password_hash, tier, is_active, created_at)
+         VALUES ($1, $2, $3, $4, true, NOW())
          ON CONFLICT (email) DO UPDATE SET
            username = EXCLUDED.username,
            password_hash = EXCLUDED.password_hash,
            tier = EXCLUDED.tier,
            is_active = true`,
-        [email, username, passwordHash, tier, generateToken()]
+        [email, username, passwordHash, tier]
       );
       await pool2.end();
       const token = import_jsonwebtoken.default.sign({ email, username, tier }, JWT_SECRET, { expiresIn: "90d" });

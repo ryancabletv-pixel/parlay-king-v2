@@ -1130,14 +1130,14 @@ export async function registerRoutes(app: Express) {
       const tier = plan === 'lifetime' ? 'lifetime' : plan === 'vip-monthly' ? 'vip' : 'free';
       // Upsert member with username and password
       await pool.query(
-        `INSERT INTO members (email, username, password_hash, tier, token, is_active, created_at)
-         VALUES ($1, $2, $3, $4, $5, true, NOW())
+        `INSERT INTO members (email, username, password_hash, tier, is_active, created_at)
+         VALUES ($1, $2, $3, $4, true, NOW())
          ON CONFLICT (email) DO UPDATE SET
            username = EXCLUDED.username,
            password_hash = EXCLUDED.password_hash,
            tier = EXCLUDED.tier,
            is_active = true`,
-        [email, username, passwordHash, tier, generateToken()]
+        [email, username, passwordHash, tier]
       );
       await pool.end();
       // Issue JWT
