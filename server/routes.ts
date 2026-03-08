@@ -811,13 +811,107 @@ export async function registerRoutes(app: Express) {
       const publicActive = active.filter(p => (p.confidence ?? 0) >= 68 && p.tier !== 'free');
       // Exclude Power Pick rows from sport lists to avoid duplicates
       const sportOnly   = publicActive.filter(p => !p.isPowerPick);
-      const soccerPicks = sportOnly.filter(p => p.sport === 'soccer').slice(0, 3);
-      const mlsPicks    = sportOnly.filter(p => p.sport === 'mls').slice(0, 3);
-      const nbaPicks    = sportOnly.filter(p => p.sport === 'nba').slice(0, 3);
-      const powerPick   = publicActive.find(p => p.isPowerPick) ||
-                          [...publicActive].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
-      // Featured Mega-Pick: isFeatured=true takes priority over powerPick for hero section
-      const featuredMegaPick = publicActive.find(p => p.isFeatured) || powerPick;
+
+      // ── Load admin site-control overrides from engineConfig ──────────────────
+      const cfg = await storage.getEngineConfig();
+
+      // Helper: build a manual leg object from engineConfig prefix
+      function cfgLeg(prefix: string) {
+        return {
+          game:                `${cfg[`${prefix}_home`] || ''} vs ${cfg[`${prefix}_away`] || ''}`,
+          match:               `${cfg[`${prefix}_home`] || ''} vs ${cfg[`${prefix}_away`] || ''}`,
+          pick:                cfg[`${prefix}_pick`]   || '',
+          pick_type:           cfg[`${prefix}_pick`]   || '',
+          pick_label:          cfg[`${prefix}_pick`]   || '',
+          confidence:          parseFloat(cfg[`${prefix}_conf`] || '0'),
+          probability:         parseFloat(((parseFloat(cfg[`${prefix}_conf`] || '0')) / 100).toFixed(2)),
+          probability_display: `${cfg[`${prefix}_conf`] || '0'}%`,
+          confidence_pct:      `${cfg[`${prefix}_conf`] || '0'}%`,
+          league:              cfg[`${prefix}_league`] || '',
+          odds:                cfg[`${prefix}_odds`]   || '',
+          time:                `${date} — Today`,
+          time_display:        `${date} — Today`,
+          analysis:            `Gold Standard V3 Titan XII — ${cfg[`${prefix}_pick`] || ''} at ${cfg[`${prefix}_conf`] || '0'}%.`,
+          reasoning:           `Gold Standard V3 Titan XII — ${cfg[`${prefix}_pick`] || ''} at ${cfg[`${prefix}_conf`] || '0'}%.`,
+          home_team:           cfg[`${prefix}_home`]   || '',
+          away_team:           cfg[`${prefix}_away`]   || '',
+          tier:                'pro',
+          sport:               cfg[`${prefix}_sport`]  || 'soccer',
+          spread:              cfg[`${prefix}_spread`] || '',
+          total:               cfg[`${prefix}_total`]  || '',
+          isHighVolatility:    false,
+        };
+      }
+
+      // ── NBA parlay: use admin override if enabled, else DB picks ─────────────
+      const nbaAdminEnabled = cfg['nba_parlay_enabled'] !== 'false';
+      const nbaAdminLegs = nbaAdminEnabled && cfg['nba_leg1_home']
+        ? [1,2,3].map(i => cfgLeg(`nba_leg${i}`)).filter(l => l.home_team)
+        : null;
+      const nbaPicks = nbaAdminLegs || sportOnly.filter(p => p.sport === 'nba').slice(0, 3);
+
+      // ── Soccer parlay: use admin override if enabled, else DB picks ──────────
+      const socAdminEnabled = cfg['soc_parlay_enabled'] !== 'false';
+      const socAdminLegs = socAdminEnabled && cfg['soc_leg1_home']
+        ? [1,2,3].map(i => cfgLeg(`soc_leg${i}`)).filter(l => l.home_team)
+        : null;
+      const soccerPicks = socAdminLegs || sportOnly.filter(p => p.sport === 'soccer').slice(0, 3);
+
+      // ── MLS parlay: use admin override if enabled, else DB picks ─────────────
+      const mlsAdminEnabled = cfg['mls_parlay_enabled'] !== 'false';
+      const mlsAdminLegs = mlsAdminEnabled && cfg['mls_leg1_home']
+        ? [1,2,3].map(i => cfgLeg(`mls_leg${i}`)).filter(l => l.home_team)
+        : null;
+      const mlsPicks = mlsAdminLegs || sportOnly.filter(p => p.sport === 'mls').slice(0, 3);
+
+      // ── Power Pick: use admin override if enabled, else DB pick ──────────────
+      const ppAdminEnabled = cfg['pp_enabled'] !== 'false';
+      const ppAdminActive  = ppAdminEnabled && cfg['pp_home'];
+      const dbPowerPick    = publicActive.find(p => p.isPowerPick) ||
+                             [...publicActive].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
+      const powerPick: any = ppAdminActive ? {
+        homeTeam:   cfg['pp_home'],
+        awayTeam:   cfg['pp_away'],
+        league:     cfg['pp_league'],
+        sport:      cfg['pp_sport'],
+        prediction: cfg['pp_pick'],
+        confidence: parseFloat(cfg['pp_confidence'] || '0'),
+        odds:       cfg['pp_odds'],
+        analysis:   cfg['pp_analysis'],
+        isPowerPick: true,
+        isFeatured:  false,
+        tier:        'pro',
+        metadata:    { recommendation: cfg['pp_analysis'] },
+      } : dbPowerPick;
+
+      // ── Featured Game: use admin override if liveOnSite=true ─────────────────
+      const fgLive = cfg['fg_live'] === 'true' && cfg['fg_home'];
+      const adminFeaturedGame: any = fgLive ? {
+        homeTeam:   cfg['fg_home'],
+        awayTeam:   cfg['fg_away'],
+        league:     cfg['fg_league'],
+        sport:      cfg['fg_sport'],
+        prediction: cfg['fg_pick'],
+        confidence: parseFloat(cfg['fg_confidence'] || '0'),
+        odds:       cfg['fg_home_odds'],
+        isFeatured:  true,
+        isPowerPick: false,
+        tier:        'pro',
+        metadata:    {},
+      } : null;
+
+      // Featured Mega-Pick: admin featured game > isFeatured DB pick > powerPick
+      const dbFeaturedPick   = publicActive.find(p => p.isFeatured);
+      const featuredMegaPick = adminFeaturedGame || dbFeaturedPick || powerPick;
+
+      // ── Expert Analysis: use admin override if visible ───────────────────────
+      const eaVisible = cfg['ea_visible'] !== 'false';
+      const expertAnalysis = eaVisible && cfg['ea_body'] ? {
+        title:      cfg['ea_title'] || `Gold Standard V3 Titan XII — ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Moncton' })}`,
+        body:       cfg['ea_body'],
+        visible:    true,
+        updated_at: new Date().toISOString(),
+      } : null;
 
       const now = new Date().toISOString();
       const dateDisplay = new Date().toLocaleDateString('en-US', {
@@ -826,6 +920,8 @@ export async function registerRoutes(app: Express) {
       });
 
       function fmtLeg(p: any) {
+        // If p already has the cfgLeg shape (has .home_team), return as-is
+        if (p.home_team !== undefined) return p;
         return {
           game: `${p.homeTeam} vs ${p.awayTeam}`,
           match: `${p.homeTeam} vs ${p.awayTeam}`,
@@ -857,9 +953,10 @@ export async function registerRoutes(app: Express) {
         return `${(c * 100).toFixed(1)}%`;
       }
 
-      const parlayLegs = soccerPicks.map(fmtLeg);
-      const mlsLegs    = mlsPicks.map(fmtLeg);
-      const nbaLegs    = nbaPicks.map(fmtLeg);
+      // Build parlay leg arrays (already resolved above as admin or DB)
+      const parlayLegs = (soccerPicks as any[]).map(fmtLeg);
+      const mlsLegs    = (mlsPicks    as any[]).map(fmtLeg);
+      const nbaLegs    = (nbaPicks    as any[]).map(fmtLeg);
       const mlsNoSlate = mlsLegs.length === 0;
 
       const payload = {
@@ -882,9 +979,13 @@ export async function registerRoutes(app: Express) {
           league: powerPick.league || 'Unknown',
           probability: parseFloat(((powerPick.confidence ?? 0) / 100).toFixed(2)),
           probability_display: `${Math.round(powerPick.confidence ?? 0)}%`,
+          confidence: Math.round(powerPick.confidence ?? 0),
+          confidence_pct: `${Math.round(powerPick.confidence ?? 0)}%`,
           odds: powerPick.odds || '-110',
+          sport: powerPick.sport || 'nba',
           time: `${date} — Today`,
-          analysis: `Gold Standard V3 Titan XII — Top pick at ${Math.round(powerPick.confidence ?? 0)}%.`,
+          analysis: (powerPick as any).analysis || (powerPick.metadata as any)?.recommendation || `Gold Standard V3 Titan XII — Top pick at ${Math.round(powerPick.confidence ?? 0)}%.`,
+          enabled: ppAdminEnabled,
         } : null,
         featured_pick: featuredMegaPick ? {
           game: `${featuredMegaPick.homeTeam} vs ${featuredMegaPick.awayTeam}`,
@@ -906,41 +1007,44 @@ export async function registerRoutes(app: Express) {
           tag: featuredMegaPick.isFeatured ? 'MEGA-PICK' : 'POWER PICK',
           disclaimer: 'For entertainment purposes only.',
         } : null,
-        featured_soccer: soccerPicks[0] ? {
-          match: `${soccerPicks[0].homeTeam} vs ${soccerPicks[0].awayTeam}`,
-          league: soccerPicks[0].league || 'Soccer',
+        featured_soccer: parlayLegs[0] ? {
+          match: parlayLegs[0].match || parlayLegs[0].game || '',
+          league: parlayLegs[0].league || 'Soccer',
           sport: 'soccer',
-          pick: soccerPicks[0].prediction || soccerPicks[0].pick,
-          confidence: Math.round(soccerPicks[0].confidence ?? 0),
-          confidence_display: `${Math.round(soccerPicks[0].confidence ?? 0)}%`,
-          reasoning: `Gold Standard V3 Titan XII — ${soccerPicks[0].prediction} at ${Math.round(soccerPicks[0].confidence ?? 0)}%.`,
+          pick: parlayLegs[0].pick || '',
+          confidence: Math.round(parlayLegs[0].confidence ?? 0),
+          confidence_display: `${Math.round(parlayLegs[0].confidence ?? 0)}%`,
+          reasoning: parlayLegs[0].reasoning || `Gold Standard V3 Titan XII — ${parlayLegs[0].pick} at ${Math.round(parlayLegs[0].confidence ?? 0)}%.`,
           match_date: date,
-        } : { match: '', league: '', sport: 'soccer', pick: '', confidence: 0, confidence_display: '0%', reasoning: '', match_date: date },
-        featured_mls: mlsPicks[0] ? {
-          match: `${mlsPicks[0].homeTeam} vs ${mlsPicks[0].awayTeam}`,
-          league: mlsPicks[0].league || 'MLS',
+          enabled: socAdminEnabled,
+        } : { match: '', league: '', sport: 'soccer', pick: '', confidence: 0, confidence_display: '0%', reasoning: '', match_date: date, enabled: socAdminEnabled },
+        featured_mls: mlsLegs[0] ? {
+          match: mlsLegs[0].match || mlsLegs[0].game || '',
+          league: mlsLegs[0].league || 'MLS',
           sport: 'mls',
-          pick: mlsPicks[0].prediction || mlsPicks[0].pick,
-          confidence: Math.round(mlsPicks[0].confidence ?? 0),
-          confidence_display: `${Math.round(mlsPicks[0].confidence ?? 0)}%`,
-          reasoning: mlsNoSlate ? 'No MLS games today.' : `Gold Standard V3 Titan XII — ${mlsPicks[0].prediction} at ${Math.round(mlsPicks[0].confidence ?? 0)}%.`,
+          pick: mlsLegs[0].pick || '',
+          confidence: Math.round(mlsLegs[0].confidence ?? 0),
+          confidence_display: `${Math.round(mlsLegs[0].confidence ?? 0)}%`,
+          reasoning: mlsNoSlate ? 'No MLS games today.' : (mlsLegs[0].reasoning || `Gold Standard V3 Titan XII — ${mlsLegs[0].pick} at ${Math.round(mlsLegs[0].confidence ?? 0)}%.`),
           match_date: date,
-        } : { match: '', league: 'MLS', sport: 'mls', pick: '', confidence: 0, confidence_display: '0%', reasoning: 'No MLS games today.', match_date: date },
-        featured_nba: nbaPicks[0] ? {
-          match: `${nbaPicks[0].homeTeam} vs ${nbaPicks[0].awayTeam}`,
-          league: nbaPicks[0].league || 'NBA',
+          enabled: mlsAdminEnabled,
+        } : { match: '', league: 'MLS', sport: 'mls', pick: '', confidence: 0, confidence_display: '0%', reasoning: 'No MLS games today.', match_date: date, enabled: mlsAdminEnabled },
+        featured_nba: nbaLegs[0] ? {
+          match: nbaLegs[0].match || nbaLegs[0].game || '',
+          league: nbaLegs[0].league || 'NBA',
           sport: 'nba',
-          pick: nbaPicks[0].prediction || nbaPicks[0].pick,
-          confidence: Math.round(nbaPicks[0].confidence ?? 0),
-          confidence_display: `${Math.round(nbaPicks[0].confidence ?? 0)}%`,
-          reasoning: `Gold Standard V3 Titan XII — ${nbaPicks[0].prediction} at ${Math.round(nbaPicks[0].confidence ?? 0)}%.`,
+          pick: nbaLegs[0].pick || '',
+          confidence: Math.round(nbaLegs[0].confidence ?? 0),
+          confidence_display: `${Math.round(nbaLegs[0].confidence ?? 0)}%`,
+          reasoning: nbaLegs[0].reasoning || `Gold Standard V3 Titan XII — ${nbaLegs[0].pick} at ${Math.round(nbaLegs[0].confidence ?? 0)}%.`,
           match_date: date,
-        } : { match: '', league: 'NBA', sport: 'nba', pick: '', confidence: 0, confidence_display: '0%', reasoning: '', match_date: date },
+          enabled: nbaAdminEnabled,
+        } : { match: '', league: 'NBA', sport: 'nba', pick: '', confidence: 0, confidence_display: '0%', reasoning: '', match_date: date, enabled: nbaAdminEnabled },
         nba_picks: nbaLegs,
         player_prop_picks: [],
         free_tier_picks: active.filter(p => p.tier === 'free').slice(0, 3).map(fmtLeg),
         results: { date_display: dateDisplay, entries: [] },
-        expert_analysis: {
+        expert_analysis: expertAnalysis || {
           title: `Gold Standard V3 Titan XII — ${dateDisplay}`,
           body: `Today's picks were generated by the Gold Standard V3 Titan XII 12-factor AI engine. All picks passed the 68% confidence threshold.`,
           visible: true,
@@ -1717,6 +1821,289 @@ export async function registerRoutes(app: Express) {
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ── SITE CONTROL PANEL — 6 Admin Management Tabs ─────────────────────────────
+  // All state stored in engine_config table (key-value). No API calls made here.
+  // Cache is busted immediately on every save so the live site reflects in <3s.
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // ── In-memory picks.json cache buster ────────────────────────────────────────
+  // Any write to the 6 control tabs calls clearPicksCache() so /picks.json
+  // rebuilds on the very next request.
+  let _picksCache: { payload: any; ts: number } | null = null;
+  function clearPicksCache() { _picksCache = null; }
+  // Expose so picks.json can use it
+  (app as any)._clearPicksCache = clearPicksCache;
+  (app as any)._getPicksCache  = () => _picksCache;
+  (app as any)._setPicksCache  = (v: any) => { _picksCache = v; };
+
+  // ── TAB 1: FEATURED GAME ─────────────────────────────────────────────────────
+  // GET  /api/admin/featured-game  — load current featured game config
+  // POST /api/admin/featured-game  — save featured game + toggle Live on Site
+  app.get('/api/admin/featured-game', requireAuth, async (req, res) => {
+    try {
+      const cfg = await storage.getEngineConfig();
+      res.json({
+        homeTeam:   cfg['fg_home']    || '',
+        awayTeam:   cfg['fg_away']    || '',
+        league:     cfg['fg_league']  || '',
+        sport:      cfg['fg_sport']   || 'soccer',
+        homeOdds:   cfg['fg_home_odds'] || '',
+        awayOdds:   cfg['fg_away_odds'] || '',
+        drawOdds:   cfg['fg_draw_odds'] || '',
+        confidence: cfg['fg_confidence'] || '',
+        pick:       cfg['fg_pick']    || '',
+        liveOnSite: cfg['fg_live']    === 'true',
+      });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.post('/api/admin/featured-game', requireAuth, async (req, res) => {
+    try {
+      const { homeTeam, awayTeam, league, sport, homeOdds, awayOdds, drawOdds, confidence, pick, liveOnSite } = req.body;
+      await Promise.all([
+        storage.setEngineConfig('fg_home',       homeTeam   || ''),
+        storage.setEngineConfig('fg_away',       awayTeam   || ''),
+        storage.setEngineConfig('fg_league',     league     || ''),
+        storage.setEngineConfig('fg_sport',      sport      || 'soccer'),
+        storage.setEngineConfig('fg_home_odds',  String(homeOdds  || '')),
+        storage.setEngineConfig('fg_away_odds',  String(awayOdds  || '')),
+        storage.setEngineConfig('fg_draw_odds',  String(drawOdds  || '')),
+        storage.setEngineConfig('fg_confidence', String(confidence || '')),
+        storage.setEngineConfig('fg_pick',       pick       || ''),
+        storage.setEngineConfig('fg_live',       liveOnSite ? 'true' : 'false'),
+      ]);
+      clearPicksCache();
+      res.json({ success: true, message: liveOnSite ? 'Featured game is LIVE on site' : 'Featured game saved (not live)' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  // ── TAB 2: EXPERT ANALYSIS ───────────────────────────────────────────────────
+  // GET  /api/admin/expert-analysis  — load current analysis text + visibility
+  // POST /api/admin/expert-analysis  — save rich-text analysis + show/hide toggle
+  app.get('/api/admin/expert-analysis', requireAuth, async (req, res) => {
+    try {
+      const cfg = await storage.getEngineConfig();
+      res.json({
+        title:   cfg['ea_title']   || '',
+        body:    cfg['ea_body']    || '',
+        visible: cfg['ea_visible'] !== 'false',
+      });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.post('/api/admin/expert-analysis', requireAuth, async (req, res) => {
+    try {
+      const { title, body, visible } = req.body;
+      await Promise.all([
+        storage.setEngineConfig('ea_title',   title   || ''),
+        storage.setEngineConfig('ea_body',    body    || ''),
+        storage.setEngineConfig('ea_visible', visible !== false ? 'true' : 'false'),
+      ]);
+      clearPicksCache();
+      res.json({ success: true, message: visible !== false ? 'Expert analysis visible on site' : 'Expert analysis hidden' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  // ── TAB 3: 3-LEG NBA PARLAY ──────────────────────────────────────────────────
+  // GET  /api/admin/parlay-nba   — load 3 NBA slots
+  // POST /api/admin/parlay-nba   — save 3 NBA slots + enable/disable toggle
+  app.get('/api/admin/parlay-nba', requireAuth, async (req, res) => {
+    try {
+      const cfg = await storage.getEngineConfig();
+      const legs = [1,2,3].map(i => ({
+        homeTeam:   cfg[`nba_leg${i}_home`]   || '',
+        awayTeam:   cfg[`nba_leg${i}_away`]   || '',
+        pick:       cfg[`nba_leg${i}_pick`]   || '',
+        spread:     cfg[`nba_leg${i}_spread`] || '',
+        total:      cfg[`nba_leg${i}_total`]  || '',
+        odds:       cfg[`nba_leg${i}_odds`]   || '',
+        confidence: cfg[`nba_leg${i}_conf`]   || '',
+      }));
+      res.json({ legs, enabled: cfg['nba_parlay_enabled'] !== 'false' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.post('/api/admin/parlay-nba', requireAuth, async (req, res) => {
+    try {
+      const { legs, enabled } = req.body;
+      const saves: Promise<void>[] = [];
+      (legs || []).slice(0,3).forEach((leg: any, i: number) => {
+        const n = i + 1;
+        saves.push(storage.setEngineConfig(`nba_leg${n}_home`,   leg.homeTeam   || ''));
+        saves.push(storage.setEngineConfig(`nba_leg${n}_away`,   leg.awayTeam   || ''));
+        saves.push(storage.setEngineConfig(`nba_leg${n}_pick`,   leg.pick       || ''));
+        saves.push(storage.setEngineConfig(`nba_leg${n}_spread`, leg.spread     || ''));
+        saves.push(storage.setEngineConfig(`nba_leg${n}_total`,  leg.total      || ''));
+        saves.push(storage.setEngineConfig(`nba_leg${n}_odds`,   leg.odds       || ''));
+        saves.push(storage.setEngineConfig(`nba_leg${n}_conf`,   String(leg.confidence || '')));
+      });
+      saves.push(storage.setEngineConfig('nba_parlay_enabled', enabled !== false ? 'true' : 'false'));
+      await Promise.all(saves);
+      clearPicksCache();
+      res.json({ success: true, message: enabled !== false ? 'NBA parlay enabled on site' : 'NBA parlay disabled — placeholder shown' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  // ── TAB 4: 3-LEG SOCCER PARLAY ───────────────────────────────────────────────
+  app.get('/api/admin/parlay-soccer', requireAuth, async (req, res) => {
+    try {
+      const cfg = await storage.getEngineConfig();
+      const legs = [1,2,3].map(i => ({
+        homeTeam:   cfg[`soc_leg${i}_home`]   || '',
+        awayTeam:   cfg[`soc_leg${i}_away`]   || '',
+        pick:       cfg[`soc_leg${i}_pick`]   || '',
+        odds:       cfg[`soc_leg${i}_odds`]   || '',
+        confidence: cfg[`soc_leg${i}_conf`]   || '',
+        league:     cfg[`soc_leg${i}_league`] || '',
+      }));
+      res.json({ legs, enabled: cfg['soc_parlay_enabled'] !== 'false' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.post('/api/admin/parlay-soccer', requireAuth, async (req, res) => {
+    try {
+      const { legs, enabled } = req.body;
+      const saves: Promise<void>[] = [];
+      (legs || []).slice(0,3).forEach((leg: any, i: number) => {
+        const n = i + 1;
+        saves.push(storage.setEngineConfig(`soc_leg${n}_home`,   leg.homeTeam   || ''));
+        saves.push(storage.setEngineConfig(`soc_leg${n}_away`,   leg.awayTeam   || ''));
+        saves.push(storage.setEngineConfig(`soc_leg${n}_pick`,   leg.pick       || ''));
+        saves.push(storage.setEngineConfig(`soc_leg${n}_odds`,   leg.odds       || ''));
+        saves.push(storage.setEngineConfig(`soc_leg${n}_conf`,   String(leg.confidence || '')));
+        saves.push(storage.setEngineConfig(`soc_leg${n}_league`, leg.league     || ''));
+      });
+      saves.push(storage.setEngineConfig('soc_parlay_enabled', enabled !== false ? 'true' : 'false'));
+      await Promise.all(saves);
+      clearPicksCache();
+      res.json({ success: true, message: enabled !== false ? 'Soccer parlay enabled on site' : 'Soccer parlay disabled — placeholder shown' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  // ── TAB 5: 3-LEG MLS PARLAY ──────────────────────────────────────────────────
+  app.get('/api/admin/parlay-mls', requireAuth, async (req, res) => {
+    try {
+      const cfg = await storage.getEngineConfig();
+      const legs = [1,2,3].map(i => ({
+        homeTeam:   cfg[`mls_leg${i}_home`]   || '',
+        awayTeam:   cfg[`mls_leg${i}_away`]   || '',
+        pick:       cfg[`mls_leg${i}_pick`]   || '',
+        odds:       cfg[`mls_leg${i}_odds`]   || '',
+        confidence: cfg[`mls_leg${i}_conf`]   || '',
+      }));
+      res.json({ legs, enabled: cfg['mls_parlay_enabled'] !== 'false' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.post('/api/admin/parlay-mls', requireAuth, async (req, res) => {
+    try {
+      const { legs, enabled } = req.body;
+      const saves: Promise<void>[] = [];
+      (legs || []).slice(0,3).forEach((leg: any, i: number) => {
+        const n = i + 1;
+        saves.push(storage.setEngineConfig(`mls_leg${n}_home`,   leg.homeTeam   || ''));
+        saves.push(storage.setEngineConfig(`mls_leg${n}_away`,   leg.awayTeam   || ''));
+        saves.push(storage.setEngineConfig(`mls_leg${n}_pick`,   leg.pick       || ''));
+        saves.push(storage.setEngineConfig(`mls_leg${n}_odds`,   leg.odds       || ''));
+        saves.push(storage.setEngineConfig(`mls_leg${n}_conf`,   String(leg.confidence || '')));
+      });
+      saves.push(storage.setEngineConfig('mls_parlay_enabled', enabled !== false ? 'true' : 'false'));
+      await Promise.all(saves);
+      clearPicksCache();
+      res.json({ success: true, message: enabled !== false ? 'MLS parlay enabled on site' : 'MLS parlay disabled — placeholder shown' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  // ── TAB 6: POWER PICK ────────────────────────────────────────────────────────
+  app.get('/api/admin/power-pick-manual', requireAuth, async (req, res) => {
+    try {
+      const cfg = await storage.getEngineConfig();
+      res.json({
+        homeTeam:   cfg['pp_home']       || '',
+        awayTeam:   cfg['pp_away']       || '',
+        league:     cfg['pp_league']     || '',
+        sport:      cfg['pp_sport']      || 'nba',
+        pick:       cfg['pp_pick']       || '',
+        confidence: cfg['pp_confidence'] || '',
+        odds:       cfg['pp_odds']       || '',
+        analysis:   cfg['pp_analysis']   || '',
+        enabled:    cfg['pp_enabled']    !== 'false',
+      });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.post('/api/admin/power-pick-manual', requireAuth, async (req, res) => {
+    try {
+      const { homeTeam, awayTeam, league, sport, pick, confidence, odds, analysis, enabled } = req.body;
+      await Promise.all([
+        storage.setEngineConfig('pp_home',       homeTeam   || ''),
+        storage.setEngineConfig('pp_away',       awayTeam   || ''),
+        storage.setEngineConfig('pp_league',     league     || ''),
+        storage.setEngineConfig('pp_sport',      sport      || 'nba'),
+        storage.setEngineConfig('pp_pick',       pick       || ''),
+        storage.setEngineConfig('pp_confidence', String(confidence || '')),
+        storage.setEngineConfig('pp_odds',       odds       || ''),
+        storage.setEngineConfig('pp_analysis',   analysis   || ''),
+        storage.setEngineConfig('pp_enabled',    enabled !== false ? 'true' : 'false'),
+      ]);
+      clearPicksCache();
+      res.json({ success: true, message: enabled !== false ? 'Power Pick is LIVE on site' : 'Power Pick disabled — placeholder shown' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  // ── GET /api/admin/site-control — load all 6 tabs at once (dashboard init) ───
+  app.get('/api/admin/site-control', requireAuth, async (req, res) => {
+    try {
+      const cfg = await storage.getEngineConfig();
+      res.json({
+        featuredGame: {
+          homeTeam: cfg['fg_home'] || '', awayTeam: cfg['fg_away'] || '',
+          league: cfg['fg_league'] || '', sport: cfg['fg_sport'] || 'soccer',
+          homeOdds: cfg['fg_home_odds'] || '', awayOdds: cfg['fg_away_odds'] || '',
+          drawOdds: cfg['fg_draw_odds'] || '', confidence: cfg['fg_confidence'] || '',
+          pick: cfg['fg_pick'] || '', liveOnSite: cfg['fg_live'] === 'true',
+        },
+        expertAnalysis: {
+          title: cfg['ea_title'] || '', body: cfg['ea_body'] || '',
+          visible: cfg['ea_visible'] !== 'false',
+        },
+        parlayNba: {
+          legs: [1,2,3].map(i => ({
+            homeTeam: cfg[`nba_leg${i}_home`] || '', awayTeam: cfg[`nba_leg${i}_away`] || '',
+            pick: cfg[`nba_leg${i}_pick`] || '', spread: cfg[`nba_leg${i}_spread`] || '',
+            total: cfg[`nba_leg${i}_total`] || '', odds: cfg[`nba_leg${i}_odds`] || '',
+            confidence: cfg[`nba_leg${i}_conf`] || '',
+          })),
+          enabled: cfg['nba_parlay_enabled'] !== 'false',
+        },
+        parlaySoccer: {
+          legs: [1,2,3].map(i => ({
+            homeTeam: cfg[`soc_leg${i}_home`] || '', awayTeam: cfg[`soc_leg${i}_away`] || '',
+            pick: cfg[`soc_leg${i}_pick`] || '', odds: cfg[`soc_leg${i}_odds`] || '',
+            confidence: cfg[`soc_leg${i}_conf`] || '', league: cfg[`soc_leg${i}_league`] || '',
+          })),
+          enabled: cfg['soc_parlay_enabled'] !== 'false',
+        },
+        parlayMls: {
+          legs: [1,2,3].map(i => ({
+            homeTeam: cfg[`mls_leg${i}_home`] || '', awayTeam: cfg[`mls_leg${i}_away`] || '',
+            pick: cfg[`mls_leg${i}_pick`] || '', odds: cfg[`mls_leg${i}_odds`] || '',
+            confidence: cfg[`mls_leg${i}_conf`] || '',
+          })),
+          enabled: cfg['mls_parlay_enabled'] !== 'false',
+        },
+        powerPick: {
+          homeTeam: cfg['pp_home'] || '', awayTeam: cfg['pp_away'] || '',
+          league: cfg['pp_league'] || '', sport: cfg['pp_sport'] || 'nba',
+          pick: cfg['pp_pick'] || '', confidence: cfg['pp_confidence'] || '',
+          odds: cfg['pp_odds'] || '', analysis: cfg['pp_analysis'] || '',
+          enabled: cfg['pp_enabled'] !== 'false',
+        },
+      });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
 
   // GET /api/auth/me — verify JWT and return current user info

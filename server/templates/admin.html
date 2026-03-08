@@ -174,6 +174,23 @@
     .notif { padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
     .notif.success { background: rgba(0,230,118,0.9); color: #000; }
     .notif.error { background: rgba(255,68,68,0.9); color: #fff; }
+
+    /* Site Control Toggle Switch */
+    .sc-toggle { position: relative; display: inline-block; width: 52px; height: 28px; }
+    .sc-toggle input { opacity: 0; width: 0; height: 0; }
+    .sc-slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.1); border: 1px solid var(--gold-border);
+      border-radius: 28px; transition: .3s;
+    }
+    .sc-slider:before {
+      position: absolute; content: ''; height: 20px; width: 20px;
+      left: 3px; bottom: 3px; background: var(--text-dim);
+      border-radius: 50%; transition: .3s;
+    }
+    .sc-toggle input:checked + .sc-slider { background: rgba(0,230,118,0.3); border-color: var(--green); }
+    .sc-toggle input:checked + .sc-slider:before { transform: translateX(24px); background: var(--green); }
+    textarea.login-input { resize: vertical; font-family: inherit; }
   </style>
 </head>
 <body>
@@ -234,6 +251,15 @@
     <div class="nav-section">
       <div class="nav-label" style="color:var(--gold)">V3 Tools</div>
       <div class="nav-item" onclick="showPage('v3validator')" style="color:var(--gold)"><span class="nav-icon">🔬</span>V3 Validator</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label" style="color:#00e676">Site Control</div>
+      <div class="nav-item" onclick="showPage('featured-game')" style="color:#00e676"><span class="nav-icon">⭐</span>Featured Game</div>
+      <div class="nav-item" onclick="showPage('expert-analysis')"><span class="nav-icon">📝</span>Expert Analysis</div>
+      <div class="nav-item" onclick="showPage('parlay-nba')"><span class="nav-icon">🏀</span>3-Leg NBA</div>
+      <div class="nav-item" onclick="showPage('parlay-soccer')"><span class="nav-icon">⚽</span>3-Leg Soccer</div>
+      <div class="nav-item" onclick="showPage('parlay-mls')"><span class="nav-icon">🇺🇸</span>3-Leg MLS</div>
+      <div class="nav-item" onclick="showPage('power-pick')"><span class="nav-icon">⚡</span>Power Pick</div>
     </div>
   </div>
 
@@ -550,6 +576,270 @@
 
     </div><!-- /page-v3validator -->
 
+    <!-- ===== SITE CONTROL: FEATURED GAME ===== -->
+    <div class="page" id="page-featured-game">
+      <div class="page-header">
+        <div class="page-title">⭐ Featured Game</div>
+        <div class="page-sub">Override the Hero Section with a manually selected game</div>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div style="font-size:14px;font-weight:700;color:var(--gold)">Live on Site Toggle</div>
+          <label class="sc-toggle">
+            <input type="checkbox" id="fg-live-toggle" onchange="fgToggleLive(this.checked)">
+            <span class="sc-slider"></span>
+          </label>
+        </div>
+        <div id="fg-live-status" style="font-size:12px;color:var(--text-dim);margin-bottom:20px">OFF — Site shows default top-rated V3 game</div>
+        <div class="grid-2" style="gap:14px;margin-bottom:14px">
+          <div>
+            <label class="login-label">HOME TEAM</label>
+            <input class="login-input" id="fg-home" placeholder="e.g. Toronto Raptors">
+          </div>
+          <div>
+            <label class="login-label">AWAY TEAM</label>
+            <input class="login-input" id="fg-away" placeholder="e.g. Dallas Mavericks">
+          </div>
+        </div>
+        <div class="grid-2" style="gap:14px;margin-bottom:14px">
+          <div>
+            <label class="login-label">LEAGUE</label>
+            <input class="login-input" id="fg-league" placeholder="e.g. NBA">
+          </div>
+          <div>
+            <label class="login-label">SPORT</label>
+            <select class="login-input" id="fg-sport">
+              <option value="nba">NBA</option>
+              <option value="soccer">Soccer</option>
+              <option value="mls">MLS</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-3" style="gap:14px;margin-bottom:14px">
+          <div>
+            <label class="login-label">HOME ODDS</label>
+            <input class="login-input" id="fg-home-odds" placeholder="e.g. 1.85">
+          </div>
+          <div>
+            <label class="login-label">DRAW ODDS (soccer)</label>
+            <input class="login-input" id="fg-draw-odds" placeholder="e.g. 3.50">
+          </div>
+          <div>
+            <label class="login-label">AWAY ODDS</label>
+            <input class="login-input" id="fg-away-odds" placeholder="e.g. 4.20">
+          </div>
+        </div>
+        <div class="grid-2" style="gap:14px;margin-bottom:20px">
+          <div>
+            <label class="login-label">BEST PICK (e.g. Toronto Raptors Win)</label>
+            <input class="login-input" id="fg-pick" placeholder="e.g. Toronto Raptors Win">
+          </div>
+          <div>
+            <label class="login-label">V3 CONFIDENCE %</label>
+            <input class="login-input" id="fg-confidence" type="number" min="60" max="100" placeholder="e.g. 72.4">
+          </div>
+        </div>
+        <button class="btn btn-gold" onclick="saveFeaturedGame()">&#128190; Save Featured Game</button>
+        <div id="fg-msg" style="margin-top:12px;font-size:13px"></div>
+      </div>
+    </div><!-- /page-featured-game -->
+
+    <!-- ===== SITE CONTROL: EXPERT ANALYSIS ===== -->
+    <div class="page" id="page-expert-analysis">
+      <div class="page-header">
+        <div class="page-title">📝 Expert Analysis</div>
+        <div class="page-sub">Write the deep-dive analysis card shown on the live site</div>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div style="font-size:14px;font-weight:700;color:var(--gold)">Show Analysis on Site</div>
+          <label class="sc-toggle">
+            <input type="checkbox" id="ea-visible-toggle" checked onchange="eaToggleVisible(this.checked)">
+            <span class="sc-slider"></span>
+          </label>
+        </div>
+        <div id="ea-visible-status" style="font-size:12px;color:var(--text-dim);margin-bottom:20px">ON — Expert Analysis card is visible</div>
+        <div style="margin-bottom:14px">
+          <label class="login-label">ANALYSIS TITLE</label>
+          <input class="login-input" id="ea-title" placeholder="e.g. Sunday Mega-Pick Deep Dive: Knicks vs Lakers">
+        </div>
+        <div style="margin-bottom:14px">
+          <label class="login-label">ANALYSIS BODY (HTML allowed: &lt;b&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;br&gt;)</label>
+          <div style="border:1px solid var(--gold-border);border-radius:8px;overflow:hidden;margin-bottom:6px">
+            <div style="background:var(--bg3);padding:6px 10px;display:flex;gap:8px;border-bottom:1px solid var(--gold-border)">
+              <button onclick="eaFmt('bold')" style="background:none;border:1px solid var(--gold-border);color:var(--text);padding:3px 10px;border-radius:4px;cursor:pointer;font-weight:700">B</button>
+              <button onclick="eaFmt('insertUnorderedList')" style="background:none;border:1px solid var(--gold-border);color:var(--text);padding:3px 10px;border-radius:4px;cursor:pointer">• List</button>
+              <button onclick="eaFmt('insertOrderedList')" style="background:none;border:1px solid var(--gold-border);color:var(--text);padding:3px 10px;border-radius:4px;cursor:pointer">1. List</button>
+            </div>
+            <div id="ea-editor" contenteditable="true" style="min-height:180px;padding:14px;background:rgba(255,255,255,0.03);color:var(--text);font-size:14px;line-height:1.6;outline:none" placeholder="Write your expert analysis here..."></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-dim)">Use bold for key stats. Bullet points for factors. This appears on the live site under the picks.</div>
+        </div>
+        <button class="btn btn-gold" onclick="saveExpertAnalysis()">&#128190; Save Analysis</button>
+        <div id="ea-msg" style="margin-top:12px;font-size:13px"></div>
+      </div>
+    </div><!-- /page-expert-analysis -->
+
+    <!-- ===== SITE CONTROL: 3-LEG NBA ===== -->
+    <div class="page" id="page-parlay-nba">
+      <div class="page-header">
+        <div class="page-title">🏀 3-Leg NBA Parlay</div>
+        <div class="page-sub">Manually set 3 NBA game slots with spread/total inputs</div>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div style="font-size:14px;font-weight:700;color:var(--gold)">Enable NBA Parlay on Website</div>
+          <label class="sc-toggle">
+            <input type="checkbox" id="nba-enabled-toggle" checked onchange="nbaToggle(this.checked)">
+            <span class="sc-slider"></span>
+          </label>
+        </div>
+        <div id="nba-enabled-status" style="font-size:12px;color:var(--text-dim);margin-bottom:20px">ON — NBA parlay section visible</div>
+        <div id="nba-legs-container">
+          ${[1,2,3].map(i => `
+          <div style="background:var(--bg3);border:1px solid var(--gold-border);border-radius:10px;padding:16px;margin-bottom:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG ${i}</div>
+            <div class="grid-2" style="gap:10px;margin-bottom:10px">
+              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="nba-leg${i}-home" placeholder="e.g. Boston Celtics"></div>
+              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="nba-leg${i}-away" placeholder="e.g. Miami Heat"></div>
+            </div>
+            <div class="grid-3" style="gap:10px">
+              <div><label class="login-label">PICK</label><input class="login-input" id="nba-leg${i}-pick" placeholder="e.g. Boston Celtics Win"></div>
+              <div><label class="login-label">SPREAD</label><input class="login-input" id="nba-leg${i}-spread" placeholder="e.g. -5.5"></div>
+              <div><label class="login-label">TOTAL (O/U)</label><input class="login-input" id="nba-leg${i}-total" placeholder="e.g. O 218.5"></div>
+            </div>
+            <div class="grid-2" style="gap:10px;margin-top:10px">
+              <div><label class="login-label">ODDS</label><input class="login-input" id="nba-leg${i}-odds" placeholder="e.g. -110"></div>
+              <div><label class="login-label">V3 CONFIDENCE %</label><input class="login-input" id="nba-leg${i}-conf" type="number" min="60" max="100" placeholder="e.g. 71.2"></div>
+            </div>
+          </div>`).join('')}
+        </div>
+        <button class="btn btn-gold" onclick="saveNbaParlay()">&#128190; Save NBA Parlay</button>
+        <div id="nba-msg" style="margin-top:12px;font-size:13px"></div>
+      </div>
+    </div><!-- /page-parlay-nba -->
+
+    <!-- ===== SITE CONTROL: 3-LEG SOCCER ===== -->
+    <div class="page" id="page-parlay-soccer">
+      <div class="page-header">
+        <div class="page-title">⚽ 3-Leg Soccer Parlay</div>
+        <div class="page-sub">Manually set 3 global soccer game slots</div>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div style="font-size:14px;font-weight:700;color:var(--gold)">Enable Soccer Parlay on Website</div>
+          <label class="sc-toggle">
+            <input type="checkbox" id="soc-enabled-toggle" checked onchange="socToggle(this.checked)">
+            <span class="sc-slider"></span>
+          </label>
+        </div>
+        <div id="soc-enabled-status" style="font-size:12px;color:var(--text-dim);margin-bottom:20px">ON — Soccer parlay section visible</div>
+        <div id="soc-legs-container">
+          ${[1,2,3].map(i => `
+          <div style="background:var(--bg3);border:1px solid var(--gold-border);border-radius:10px;padding:16px;margin-bottom:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG ${i}</div>
+            <div class="grid-2" style="gap:10px;margin-bottom:10px">
+              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="soc-leg${i}-home" placeholder="e.g. Villarreal"></div>
+              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="soc-leg${i}-away" placeholder="e.g. Elche"></div>
+            </div>
+            <div class="grid-3" style="gap:10px">
+              <div><label class="login-label">PICK</label><input class="login-input" id="soc-leg${i}-pick" placeholder="e.g. Villarreal Win"></div>
+              <div><label class="login-label">LEAGUE</label><input class="login-input" id="soc-leg${i}-league" placeholder="e.g. La Liga"></div>
+              <div><label class="login-label">ODDS</label><input class="login-input" id="soc-leg${i}-odds" placeholder="e.g. 1.85"></div>
+            </div>
+            <div style="margin-top:10px">
+              <label class="login-label">V3 CONFIDENCE %</label>
+              <input class="login-input" id="soc-leg${i}-conf" type="number" min="60" max="100" placeholder="e.g. 71.4" style="max-width:200px">
+            </div>
+          </div>`).join('')}
+        </div>
+        <button class="btn btn-gold" onclick="saveSoccerParlay()">&#128190; Save Soccer Parlay</button>
+        <div id="soc-msg" style="margin-top:12px;font-size:13px"></div>
+      </div>
+    </div><!-- /page-parlay-soccer -->
+
+    <!-- ===== SITE CONTROL: 3-LEG MLS ===== -->
+    <div class="page" id="page-parlay-mls">
+      <div class="page-header">
+        <div class="page-title">🇺🇸 3-Leg MLS Parlay</div>
+        <div class="page-sub">Manually set 3 MLS soccer game slots</div>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div style="font-size:14px;font-weight:700;color:var(--gold)">Enable MLS Parlay on Website</div>
+          <label class="sc-toggle">
+            <input type="checkbox" id="mls-enabled-toggle" checked onchange="mlsToggle(this.checked)">
+            <span class="sc-slider"></span>
+          </label>
+        </div>
+        <div id="mls-enabled-status" style="font-size:12px;color:var(--text-dim);margin-bottom:20px">ON — MLS parlay section visible</div>
+        <div id="mls-legs-container">
+          ${[1,2,3].map(i => `
+          <div style="background:var(--bg3);border:1px solid var(--gold-border);border-radius:10px;padding:16px;margin-bottom:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG ${i}</div>
+            <div class="grid-2" style="gap:10px;margin-bottom:10px">
+              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="mls-leg${i}-home" placeholder="e.g. NY Red Bulls"></div>
+              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="mls-leg${i}-away" placeholder="e.g. CF Montreal"></div>
+            </div>
+            <div class="grid-2" style="gap:10px">
+              <div><label class="login-label">PICK</label><input class="login-input" id="mls-leg${i}-pick" placeholder="e.g. NY Red Bulls Win"></div>
+              <div><label class="login-label">ODDS</label><input class="login-input" id="mls-leg${i}-odds" placeholder="e.g. 1.75"></div>
+            </div>
+            <div style="margin-top:10px">
+              <label class="login-label">V3 CONFIDENCE %</label>
+              <input class="login-input" id="mls-leg${i}-conf" type="number" min="60" max="100" placeholder="e.g. 73.8" style="max-width:200px">
+            </div>
+          </div>`).join('')}
+        </div>
+        <button class="btn btn-gold" onclick="saveMlsParlay()">&#128190; Save MLS Parlay</button>
+        <div id="mls-msg" style="margin-top:12px;font-size:13px"></div>
+      </div>
+    </div><!-- /page-parlay-mls -->
+
+    <!-- ===== SITE CONTROL: POWER PICK ===== -->
+    <div class="page" id="page-power-pick">
+      <div class="page-header">
+        <div class="page-title">⚡ Power Pick</div>
+        <div class="page-sub">Titan XII highest-confidence pick of the day</div>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div style="font-size:14px;font-weight:700;color:var(--gold)">Enable Power Pick on Website</div>
+          <label class="sc-toggle">
+            <input type="checkbox" id="pp-enabled-toggle" checked onchange="ppToggle(this.checked)">
+            <span class="sc-slider"></span>
+          </label>
+        </div>
+        <div id="pp-enabled-status" style="font-size:12px;color:var(--text-dim);margin-bottom:20px">ON — Power Pick section visible</div>
+        <div class="grid-2" style="gap:14px;margin-bottom:14px">
+          <div><label class="login-label">HOME TEAM</label><input class="login-input" id="pp-home" placeholder="e.g. New York Knicks"></div>
+          <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="pp-away" placeholder="e.g. Los Angeles Lakers"></div>
+        </div>
+        <div class="grid-2" style="gap:14px;margin-bottom:14px">
+          <div><label class="login-label">LEAGUE</label><input class="login-input" id="pp-league" placeholder="e.g. NBA"></div>
+          <div>
+            <label class="login-label">SPORT</label>
+            <select class="login-input" id="pp-sport">
+              <option value="nba">NBA</option>
+              <option value="soccer">Soccer</option>
+              <option value="mls">MLS</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-3" style="gap:14px;margin-bottom:14px">
+          <div><label class="login-label">BEST PICK</label><input class="login-input" id="pp-pick" placeholder="e.g. Knicks Win"></div>
+          <div><label class="login-label">V3 CONFIDENCE %</label><input class="login-input" id="pp-confidence" type="number" min="60" max="100" placeholder="e.g. 74.3"></div>
+          <div><label class="login-label">ODDS</label><input class="login-input" id="pp-odds" placeholder="e.g. -115"></div>
+        </div>
+        <div style="margin-bottom:20px">
+          <label class="login-label">ANALYSIS / REASONING</label>
+          <textarea class="login-input" id="pp-analysis" rows="4" placeholder="Why is this the Power Pick today? Key factors, matchup edge, market signal..."></textarea>
+        </div>
+        <button class="btn btn-gold" onclick="savePowerPick()">&#128190; Save Power Pick</button>
+        <div id="pp-msg" style="margin-top:12px;font-size:13px"></div>
+      </div>
+    </div><!-- /page-power-pick -->
+
   </div><!-- /main -->
 </div><!-- /app -->
 
@@ -630,6 +920,12 @@ function showPage(name) {
     site: loadFTPFiles,
     control: loadControl,
     alerts: loadAlerts,
+    'featured-game':   loadFeaturedGame,
+    'expert-analysis': loadExpertAnalysis,
+    'parlay-nba':      loadParlayNba,
+    'parlay-soccer':   loadParlaySoccer,
+    'parlay-mls':      loadParlayMls,
+    'power-pick':      loadPowerPick,
   };
   loaders[name]?.();
 }
@@ -1267,6 +1563,338 @@ async function initV3Validator() {
     }
   } catch(e) {
     document.getElementById('v3-budget-text').textContent = 'API Budget: Unable to load';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SITE CONTROL PANEL — 6 Tab JS Functions
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── TAB 1: FEATURED GAME ─────────────────────────────────────────────────────
+async function loadFeaturedGame() {
+  try {
+    const d = await api('/api/admin/featured-game');
+    document.getElementById('fg-home').value       = d.homeTeam   || '';
+    document.getElementById('fg-away').value       = d.awayTeam   || '';
+    document.getElementById('fg-league').value     = d.league     || '';
+    document.getElementById('fg-sport').value      = d.sport      || 'soccer';
+    document.getElementById('fg-home-odds').value  = d.homeOdds   || '';
+    document.getElementById('fg-draw-odds').value  = d.drawOdds   || '';
+    document.getElementById('fg-away-odds').value  = d.awayOdds   || '';
+    document.getElementById('fg-pick').value       = d.pick       || '';
+    document.getElementById('fg-confidence').value = d.confidence || '';
+    const tog = document.getElementById('fg-live-toggle');
+    tog.checked = !!d.liveOnSite;
+    document.getElementById('fg-live-status').textContent = d.liveOnSite
+      ? '🟢 ON — Featured game is LIVE in the Hero Section'
+      : '⚫ OFF — Site shows default top-rated V3 game';
+    document.getElementById('fg-live-status').style.color = d.liveOnSite ? 'var(--green)' : 'var(--text-dim)';
+  } catch(e) { notify('Error loading featured game: ' + e.message, 'error'); }
+}
+
+function fgToggleLive(checked) {
+  document.getElementById('fg-live-status').textContent = checked
+    ? '🟢 ON — Featured game is LIVE in the Hero Section'
+    : '⚫ OFF — Site shows default top-rated V3 game';
+  document.getElementById('fg-live-status').style.color = checked ? 'var(--green)' : 'var(--text-dim)';
+}
+
+async function saveFeaturedGame() {
+  const msg = document.getElementById('fg-msg');
+  msg.textContent = 'Saving...';
+  try {
+    const d = await api('/api/admin/featured-game', {
+      method: 'POST',
+      body: JSON.stringify({
+        homeTeam:   document.getElementById('fg-home').value,
+        awayTeam:   document.getElementById('fg-away').value,
+        league:     document.getElementById('fg-league').value,
+        sport:      document.getElementById('fg-sport').value,
+        homeOdds:   document.getElementById('fg-home-odds').value,
+        drawOdds:   document.getElementById('fg-draw-odds').value,
+        awayOdds:   document.getElementById('fg-away-odds').value,
+        pick:       document.getElementById('fg-pick').value,
+        confidence: document.getElementById('fg-confidence').value,
+        liveOnSite: document.getElementById('fg-live-toggle').checked,
+      })
+    });
+    msg.textContent = '✅ ' + d.message;
+    msg.style.color = 'var(--green)';
+    notify(d.message);
+  } catch(e) {
+    msg.textContent = '❌ ' + e.message;
+    msg.style.color = 'var(--red)';
+    notify(e.message, 'error');
+  }
+}
+
+// ── TAB 2: EXPERT ANALYSIS ───────────────────────────────────────────────────
+async function loadExpertAnalysis() {
+  try {
+    const d = await api('/api/admin/expert-analysis');
+    document.getElementById('ea-title').value = d.title || '';
+    document.getElementById('ea-editor').innerHTML = d.body || '';
+    const tog = document.getElementById('ea-visible-toggle');
+    tog.checked = d.visible !== false;
+    document.getElementById('ea-visible-status').textContent = tog.checked
+      ? '🟢 ON — Expert Analysis card is visible'
+      : '⚫ OFF — Expert Analysis card is hidden';
+    document.getElementById('ea-visible-status').style.color = tog.checked ? 'var(--green)' : 'var(--text-dim)';
+  } catch(e) { notify('Error loading expert analysis: ' + e.message, 'error'); }
+}
+
+function eaToggleVisible(checked) {
+  document.getElementById('ea-visible-status').textContent = checked
+    ? '🟢 ON — Expert Analysis card is visible'
+    : '⚫ OFF — Expert Analysis card is hidden';
+  document.getElementById('ea-visible-status').style.color = checked ? 'var(--green)' : 'var(--text-dim)';
+}
+
+function eaFmt(cmd) {
+  document.getElementById('ea-editor').focus();
+  document.execCommand(cmd, false, null);
+}
+
+async function saveExpertAnalysis() {
+  const msg = document.getElementById('ea-msg');
+  msg.textContent = 'Saving...';
+  try {
+    const d = await api('/api/admin/expert-analysis', {
+      method: 'POST',
+      body: JSON.stringify({
+        title:   document.getElementById('ea-title').value,
+        body:    document.getElementById('ea-editor').innerHTML,
+        visible: document.getElementById('ea-visible-toggle').checked,
+      })
+    });
+    msg.textContent = '✅ ' + d.message;
+    msg.style.color = 'var(--green)';
+    notify(d.message);
+  } catch(e) {
+    msg.textContent = '❌ ' + e.message;
+    msg.style.color = 'var(--red)';
+    notify(e.message, 'error');
+  }
+}
+
+// ── TAB 3: 3-LEG NBA PARLAY ──────────────────────────────────────────────────
+async function loadParlayNba() {
+  try {
+    const d = await api('/api/admin/parlay-nba');
+    (d.legs || []).forEach((leg, i) => {
+      const n = i + 1;
+      document.getElementById(`nba-leg${n}-home`).value   = leg.homeTeam   || '';
+      document.getElementById(`nba-leg${n}-away`).value   = leg.awayTeam   || '';
+      document.getElementById(`nba-leg${n}-pick`).value   = leg.pick       || '';
+      document.getElementById(`nba-leg${n}-spread`).value = leg.spread     || '';
+      document.getElementById(`nba-leg${n}-total`).value  = leg.total      || '';
+      document.getElementById(`nba-leg${n}-odds`).value   = leg.odds       || '';
+      document.getElementById(`nba-leg${n}-conf`).value   = leg.confidence || '';
+    });
+    const tog = document.getElementById('nba-enabled-toggle');
+    tog.checked = d.enabled !== false;
+    document.getElementById('nba-enabled-status').textContent = tog.checked
+      ? '🟢 ON — NBA parlay section visible'
+      : '⚫ OFF — Shows "Stay Tuned" placeholder';
+    document.getElementById('nba-enabled-status').style.color = tog.checked ? 'var(--green)' : 'var(--text-dim)';
+  } catch(e) { notify('Error loading NBA parlay: ' + e.message, 'error'); }
+}
+
+function nbaToggle(checked) {
+  document.getElementById('nba-enabled-status').textContent = checked
+    ? '🟢 ON — NBA parlay section visible'
+    : '⚫ OFF — Shows "Stay Tuned" placeholder';
+  document.getElementById('nba-enabled-status').style.color = checked ? 'var(--green)' : 'var(--text-dim)';
+}
+
+async function saveNbaParlay() {
+  const msg = document.getElementById('nba-msg');
+  msg.textContent = 'Saving...';
+  try {
+    const legs = [1,2,3].map(n => ({
+      homeTeam:   document.getElementById(`nba-leg${n}-home`).value,
+      awayTeam:   document.getElementById(`nba-leg${n}-away`).value,
+      pick:       document.getElementById(`nba-leg${n}-pick`).value,
+      spread:     document.getElementById(`nba-leg${n}-spread`).value,
+      total:      document.getElementById(`nba-leg${n}-total`).value,
+      odds:       document.getElementById(`nba-leg${n}-odds`).value,
+      confidence: document.getElementById(`nba-leg${n}-conf`).value,
+    }));
+    const d = await api('/api/admin/parlay-nba', {
+      method: 'POST',
+      body: JSON.stringify({ legs, enabled: document.getElementById('nba-enabled-toggle').checked })
+    });
+    msg.textContent = '✅ ' + d.message;
+    msg.style.color = 'var(--green)';
+    notify(d.message);
+  } catch(e) {
+    msg.textContent = '❌ ' + e.message;
+    msg.style.color = 'var(--red)';
+    notify(e.message, 'error');
+  }
+}
+
+// ── TAB 4: 3-LEG SOCCER PARLAY ───────────────────────────────────────────────
+async function loadParlaySoccer() {
+  try {
+    const d = await api('/api/admin/parlay-soccer');
+    (d.legs || []).forEach((leg, i) => {
+      const n = i + 1;
+      document.getElementById(`soc-leg${n}-home`).value   = leg.homeTeam   || '';
+      document.getElementById(`soc-leg${n}-away`).value   = leg.awayTeam   || '';
+      document.getElementById(`soc-leg${n}-pick`).value   = leg.pick       || '';
+      document.getElementById(`soc-leg${n}-odds`).value   = leg.odds       || '';
+      document.getElementById(`soc-leg${n}-conf`).value   = leg.confidence || '';
+      document.getElementById(`soc-leg${n}-league`).value = leg.league     || '';
+    });
+    const tog = document.getElementById('soc-enabled-toggle');
+    tog.checked = d.enabled !== false;
+    document.getElementById('soc-enabled-status').textContent = tog.checked
+      ? '🟢 ON — Soccer parlay section visible'
+      : '⚫ OFF — Shows "Stay Tuned" placeholder';
+    document.getElementById('soc-enabled-status').style.color = tog.checked ? 'var(--green)' : 'var(--text-dim)';
+  } catch(e) { notify('Error loading soccer parlay: ' + e.message, 'error'); }
+}
+
+function socToggle(checked) {
+  document.getElementById('soc-enabled-status').textContent = checked
+    ? '🟢 ON — Soccer parlay section visible'
+    : '⚫ OFF — Shows "Stay Tuned" placeholder';
+  document.getElementById('soc-enabled-status').style.color = checked ? 'var(--green)' : 'var(--text-dim)';
+}
+
+async function saveSoccerParlay() {
+  const msg = document.getElementById('soc-msg');
+  msg.textContent = 'Saving...';
+  try {
+    const legs = [1,2,3].map(n => ({
+      homeTeam:   document.getElementById(`soc-leg${n}-home`).value,
+      awayTeam:   document.getElementById(`soc-leg${n}-away`).value,
+      pick:       document.getElementById(`soc-leg${n}-pick`).value,
+      odds:       document.getElementById(`soc-leg${n}-odds`).value,
+      confidence: document.getElementById(`soc-leg${n}-conf`).value,
+      league:     document.getElementById(`soc-leg${n}-league`).value,
+    }));
+    const d = await api('/api/admin/parlay-soccer', {
+      method: 'POST',
+      body: JSON.stringify({ legs, enabled: document.getElementById('soc-enabled-toggle').checked })
+    });
+    msg.textContent = '✅ ' + d.message;
+    msg.style.color = 'var(--green)';
+    notify(d.message);
+  } catch(e) {
+    msg.textContent = '❌ ' + e.message;
+    msg.style.color = 'var(--red)';
+    notify(e.message, 'error');
+  }
+}
+
+// ── TAB 5: 3-LEG MLS PARLAY ──────────────────────────────────────────────────
+async function loadParlayMls() {
+  try {
+    const d = await api('/api/admin/parlay-mls');
+    (d.legs || []).forEach((leg, i) => {
+      const n = i + 1;
+      document.getElementById(`mls-leg${n}-home`).value = leg.homeTeam   || '';
+      document.getElementById(`mls-leg${n}-away`).value = leg.awayTeam   || '';
+      document.getElementById(`mls-leg${n}-pick`).value = leg.pick       || '';
+      document.getElementById(`mls-leg${n}-odds`).value = leg.odds       || '';
+      document.getElementById(`mls-leg${n}-conf`).value = leg.confidence || '';
+    });
+    const tog = document.getElementById('mls-enabled-toggle');
+    tog.checked = d.enabled !== false;
+    document.getElementById('mls-enabled-status').textContent = tog.checked
+      ? '🟢 ON — MLS parlay section visible'
+      : '⚫ OFF — Shows "Stay Tuned" placeholder';
+    document.getElementById('mls-enabled-status').style.color = tog.checked ? 'var(--green)' : 'var(--text-dim)';
+  } catch(e) { notify('Error loading MLS parlay: ' + e.message, 'error'); }
+}
+
+function mlsToggle(checked) {
+  document.getElementById('mls-enabled-status').textContent = checked
+    ? '🟢 ON — MLS parlay section visible'
+    : '⚫ OFF — Shows "Stay Tuned" placeholder';
+  document.getElementById('mls-enabled-status').style.color = checked ? 'var(--green)' : 'var(--text-dim)';
+}
+
+async function saveMlsParlay() {
+  const msg = document.getElementById('mls-msg');
+  msg.textContent = 'Saving...';
+  try {
+    const legs = [1,2,3].map(n => ({
+      homeTeam:   document.getElementById(`mls-leg${n}-home`).value,
+      awayTeam:   document.getElementById(`mls-leg${n}-away`).value,
+      pick:       document.getElementById(`mls-leg${n}-pick`).value,
+      odds:       document.getElementById(`mls-leg${n}-odds`).value,
+      confidence: document.getElementById(`mls-leg${n}-conf`).value,
+    }));
+    const d = await api('/api/admin/parlay-mls', {
+      method: 'POST',
+      body: JSON.stringify({ legs, enabled: document.getElementById('mls-enabled-toggle').checked })
+    });
+    msg.textContent = '✅ ' + d.message;
+    msg.style.color = 'var(--green)';
+    notify(d.message);
+  } catch(e) {
+    msg.textContent = '❌ ' + e.message;
+    msg.style.color = 'var(--red)';
+    notify(e.message, 'error');
+  }
+}
+
+// ── TAB 6: POWER PICK ────────────────────────────────────────────────────────
+async function loadPowerPick() {
+  try {
+    const d = await api('/api/admin/power-pick-manual');
+    document.getElementById('pp-home').value       = d.homeTeam   || '';
+    document.getElementById('pp-away').value       = d.awayTeam   || '';
+    document.getElementById('pp-league').value     = d.league     || '';
+    document.getElementById('pp-sport').value      = d.sport      || 'nba';
+    document.getElementById('pp-pick').value       = d.pick       || '';
+    document.getElementById('pp-confidence').value = d.confidence || '';
+    document.getElementById('pp-odds').value       = d.odds       || '';
+    document.getElementById('pp-analysis').value   = d.analysis   || '';
+    const tog = document.getElementById('pp-enabled-toggle');
+    tog.checked = d.enabled !== false;
+    document.getElementById('pp-enabled-status').textContent = tog.checked
+      ? '🟢 ON — Power Pick section visible'
+      : '⚫ OFF — Shows "Stay Tuned" placeholder';
+    document.getElementById('pp-enabled-status').style.color = tog.checked ? 'var(--green)' : 'var(--text-dim)';
+  } catch(e) { notify('Error loading Power Pick: ' + e.message, 'error'); }
+}
+
+function ppToggle(checked) {
+  document.getElementById('pp-enabled-status').textContent = checked
+    ? '🟢 ON — Power Pick section visible'
+    : '⚫ OFF — Shows "Stay Tuned" placeholder';
+  document.getElementById('pp-enabled-status').style.color = checked ? 'var(--green)' : 'var(--text-dim)';
+}
+
+async function savePowerPick() {
+  const msg = document.getElementById('pp-msg');
+  msg.textContent = 'Saving...';
+  try {
+    const d = await api('/api/admin/power-pick-manual', {
+      method: 'POST',
+      body: JSON.stringify({
+        homeTeam:   document.getElementById('pp-home').value,
+        awayTeam:   document.getElementById('pp-away').value,
+        league:     document.getElementById('pp-league').value,
+        sport:      document.getElementById('pp-sport').value,
+        pick:       document.getElementById('pp-pick').value,
+        confidence: document.getElementById('pp-confidence').value,
+        odds:       document.getElementById('pp-odds').value,
+        analysis:   document.getElementById('pp-analysis').value,
+        enabled:    document.getElementById('pp-enabled-toggle').checked,
+      })
+    });
+    msg.textContent = '✅ ' + d.message;
+    msg.style.color = 'var(--green)';
+    notify(d.message);
+  } catch(e) {
+    msg.textContent = '❌ ' + e.message;
+    msg.style.color = 'var(--red)';
+    notify(e.message, 'error');
   }
 }
 
