@@ -1396,6 +1396,25 @@ export async function registerRoutes(app: Express) {
   });
 
   // ── Tier Pricing ────────────────────────────────────────────────────────────
+  // Alias: admin.html calls /tiers-pricing (with s)
+  app.get('/api/admin/tiers-pricing', requireAuth, async (req, res) => {
+    try {
+      const pricing = await storage.getTierPricing();
+      res.json(pricing);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post('/api/admin/tiers-pricing', requireAuth, async (req, res) => {
+    try {
+      const { tier, price, label } = req.body;
+      await storage.setTierPricing(tier, price, label);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get('/api/admin/tier-pricing', requireAuth, async (req, res) => {
     try {
       const pricing = await storage.getTierPricing();

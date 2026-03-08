@@ -579,15 +579,55 @@
     <!-- Site & FTP -->
     <div class="page" id="page-site">
       <div class="page-header">
-        <div class="page-title">Site & FTP Manager</div>
-        <div class="page-sub">soccernbaparlayking.vip file management</div>
+        <div class="page-title">🌐 Site Manager</div>
+        <div class="page-sub">soccernbaparlayking.vip — live site controls and cache management</div>
       </div>
-      <div class="section-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <div class="section-title" style="margin:0">📁 FTP Files</div>
-          <button class="btn btn-outline btn-sm" onclick="loadFTPFiles()">↻ Refresh</button>
+
+      <!-- Quick Stats Row -->
+      <div class="grid-3" style="margin-bottom:16px">
+        <div class="stat-card">
+          <div class="stat-label">SITE STATUS</div>
+          <div class="stat-value green" style="font-size:18px">🟢 LIVE</div>
+          <div class="card-sub">soccernbaparlayking.vip</div>
         </div>
-        <div id="ftp-files" class="table-scroll">Loading...</div>
+        <div class="stat-card">
+          <div class="stat-label">HOSTING</div>
+          <div class="stat-value gold" style="font-size:18px">Railway</div>
+          <div class="card-sub">Auto-deploy on push</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">ENGINE</div>
+          <div class="stat-value blue" style="font-size:18px">Titan XII</div>
+          <div class="card-sub">V3 Gold Standard</div>
+        </div>
+      </div>
+
+      <!-- Cache Control -->
+      <div class="section-card" style="margin-bottom:16px">
+        <div class="section-title">⚡ Cache Control</div>
+        <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px">Force-clear the picks cache so the live site reflects your latest admin changes immediately (under 3 seconds).</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn btn-gold" onclick="siteClearCache()">🗑️ Clear Picks Cache Now</button>
+          <button class="btn btn-outline" onclick="loadSiteManager()">↻ Refresh Status</button>
+        </div>
+        <div id="site-cache-result" style="margin-top:12px"></div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="section-card" style="margin-bottom:16px">
+        <div class="section-title">🔗 Quick Links</div>
+        <div class="grid-2">
+          <a href="https://soccernbaparlayking.vip" target="_blank" class="btn btn-outline" style="text-decoration:none;text-align:center">🌐 View Live Site</a>
+          <a href="https://soccernbaparlayking.vip/picks.json" target="_blank" class="btn btn-outline" style="text-decoration:none;text-align:center">📄 View picks.json</a>
+          <a href="https://railway.com/project/93d94cf4-684d-4c70-9e82-8206777680a7" target="_blank" class="btn btn-outline" style="text-decoration:none;text-align:center">🚂 Railway Dashboard</a>
+          <a href="https://soccernbaparlayking.vip/api/health" target="_blank" class="btn btn-outline" style="text-decoration:none;text-align:center">💓 Health Check</a>
+        </div>
+      </div>
+
+      <!-- Site Health -->
+      <div class="section-card">
+        <div class="section-title">📊 Live Site Health</div>
+        <div id="site-health-display">Loading...</div>
       </div>
     </div>
 
@@ -1598,34 +1638,49 @@ async function updateTierPrice(tier) {
 }
 
 // ── FTP ───────────────────────────────────────────────────────────────────────
-async function loadFTPFiles() {
+// loadFTPFiles is now aliased to loadSiteManager for backward compat
+async function loadFTPFiles() { loadSiteManager(); }
+
+async function loadSiteManager() {
   try {
-    const files = await api('/api/admin/ftp-files');
-    document.getElementById('ftp-files').innerHTML = `
-      <table>
-        <thead><tr><th>Filename</th><th>Size</th><th>Protected</th><th>Action</th></tr></thead>
-        <tbody>${files.map(f => `
-          <tr>
-            <td>${f.name}</td>
-            <td style="color:var(--text-dim)">${f.size ? (f.size/1024).toFixed(1) + ' KB' : '—'}</td>
-            <td>${f.isProtected ? '<span style="color:var(--orange)">🔒 Protected</span>' : '<span style="color:var(--text-dim)">—</span>'}</td>
-            <td>${!f.isProtected ? `<button class="btn btn-red btn-sm" onclick="deleteFTPFile('${f.name}')">Delete</button>` : ''}</td>
-          </tr>`).join('')}
-        </tbody>
-      </table>`;
+    const health = await api('/api/health');
+    const el = document.getElementById('site-health-display');
+    if (!el) return;
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="padding:12px;background:var(--bg3);border-radius:8px">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">UPTIME</div>
+          <div style="font-size:20px;font-weight:800;color:var(--green)">${Math.floor((health.uptime||0)/60)}m ${Math.floor((health.uptime||0)%60)}s</div>
+        </div>
+        <div style="padding:12px;background:var(--bg3);border-radius:8px">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">STATUS</div>
+          <div style="font-size:20px;font-weight:800;color:var(--green)">${health.status||'OK'}</div>
+        </div>
+        <div style="padding:12px;background:var(--bg3);border-radius:8px">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">ACTIVE PICKS</div>
+          <div style="font-size:20px;font-weight:800;color:var(--gold)">${health.activePicks??'—'}</div>
+        </div>
+        <div style="padding:12px;background:var(--bg3);border-radius:8px">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">API CALLS TODAY</div>
+          <div style="font-size:20px;font-weight:800;color:var(--blue)">${health.apiCallsToday??'—'} / 100</div>
+        </div>
+      </div>`;
   } catch(e) {
-    document.getElementById('ftp-files').innerHTML = `<div class="alert alert-warning">FTP connection unavailable. Configure SFTP_PASSWORD in environment variables.</div>`;
+    const el = document.getElementById('site-health-display');
+    if (el) el.innerHTML = `<div class="alert alert-error">Could not load health data: ${e.message}</div>`;
   }
 }
 
-async function deleteFTPFile(name) {
-  if (!confirm(`Delete ${name}?`)) return;
+async function siteClearCache() {
+  const el = document.getElementById('site-cache-result');
+  if (el) el.innerHTML = '<div class="alert alert-info">Clearing cache...</div>';
   try {
-    await api('/api/admin/ftp-files', { method: 'DELETE', body: JSON.stringify({ filename: name }) });
-    notify('File deleted');
-    loadFTPFiles();
+    await api('/api/admin/clear-cache', { method: 'POST' });
+    if (el) el.innerHTML = '<div class="alert alert-success">✅ Cache cleared — live site will reflect changes within 3 seconds.</div>';
+    notify('Cache cleared successfully');
   } catch(e) {
-    notify('Error: ' + e.message, 'error');
+    if (el) el.innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+    notify('Cache clear failed: ' + e.message, 'error');
   }
 }
 
