@@ -159,9 +159,9 @@ export async function generateDailyPicks(date: string): Promise<{
   const lifetimePicks = selectBestLegs(allPreds, TIER_PICK_COUNTS.lifetime,
     CONFIDENCE_THRESHOLDS.LIFETIME_MIN, 100);
 
-  // For display compatibility: soccer/mls/nba legs for the parlay builder
-  // Use Pro-tier picks (68%+) for the sport-specific parlays
-  // If real API data doesn't produce enough legs, blend in mock data to guarantee picks
+  // GUARDRAIL 1 — NO MOCK DATA: Sport-specific parlays use LIVE API data only.
+  // If real API returns insufficient legs, the engine logs NULL and saves 0 picks.
+  // No placeholder or mock fixtures are ever used.
   let soccerLegs = selectBestLegs(soccerPreds, 3, CONFIDENCE_THRESHOLDS.PRO_MIN);
   let mlsLegs    = selectBestLegs(mlsPreds,    3, CONFIDENCE_THRESHOLDS.PRO_MIN);
   let nbaLegs    = selectBestLegs(nbaPreds,    3, CONFIDENCE_THRESHOLDS.PRO_MIN);
@@ -181,19 +181,13 @@ export async function generateDailyPicks(date: string): Promise<{
     console.error(`[Engine] MLS fixtures scored: ${mlsPreds.map(p => p.homeTeam + ' vs ' + p.awayTeam + ' @ ' + p.topConfidence + '%').join(', ')}`);
   }
 
-   // ── Select 1 Power Pick (highest confidence across ALL sports ≥70%) ─────
-  // First try real API data, then fall back to best leg from mock-blended legs
-  const allLegsForPower = [...soccerLegs, ...nbaLegs, ...mlsLegs];
+  // ── Select 1 Power Pick (highest confidence across ALL sports ≥70%) ─────
+  // GUARDRAIL 1: Power Pick uses LIVE API data only. No mock fallback.
   const powerCandidates = allPreds
     .filter(p => p.topConfidence >= CONFIDENCE_THRESHOLDS.LIFETIME_MIN)
     .filter(p => !p.topPick.toLowerCase().includes('draw'))
     .sort((a, b) => b.topConfidence - a.topConfidence);
-  // If no real 70%+ picks, use the highest confidence leg from mock-blended legs
-  const powerPick = powerCandidates[0] ||
-    allLegsForPower
-      .filter(p => !p.topPick.toLowerCase().includes('draw'))
-      .sort((a, b) => b.topConfidence - a.topConfidence)[0] ||
-    null;
+  const powerPick = powerCandidates[0] || null;  // NULL if no real 70%+ picks
 
   console.log(`[Engine] Tiered picks: ${freePicks.length} Free (64-67%), ${proPicks.length} Pro (68%+), ${lifetimePicks.length} Lifetime (70%+)`);
   console.log(`[Engine] Sport parlays: ${soccerLegs.length} soccer, ${mlsLegs.length} MLS, ${nbaLegs.length} NBA`);
@@ -956,7 +950,25 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.post('/api/admin/results', requireAuth, async (req, res) => {
+  // GUARDRAIL 3 — READ-ONLY PROTECTION: Historical Records and Win/Loss pages
+  // are read-only. Modifications require a Manager Override code in the request header.
+  // Only the 'Live Picks' section is authorized for automated updates.
+  const MANAGER_OVERRIDE_CODE = process.env.MANAGER_OVERRIDE_CODE || 'PK-MANAGER-2026';
+  function requireManagerOverride(req: Request, res: Response, next: NextFunction) {
+    const override = req.headers['x-manager-override'] as string || req.body?.managerOverride;
+    if (!override || override !== MANAGER_OVERRIDE_CODE) {
+      console.warn(`[GUARDRAIL-3] READ-ONLY PROTECTION: Blocked write to Historical Records without Manager Override. IP: ${req.ip}`);
+      return res.status(403).json({
+        error: 'READ-ONLY PROTECTION ACTIVE',
+        message: 'Historical Records and Win/Loss pages are read-only. A Manager Override code is required to modify these records.',
+        guardrail: 3,
+        hint: 'Include X-Manager-Override header with the override code to proceed.',
+      });
+    }
+    console.log(`[GUARDRAIL-3] Manager Override accepted — write to Historical Records authorized`);
+    next();
+  }
+  app.post('/api/admin/results', requireAuth, requireManagerOverride, async (req, res) => {
     try {
       const result = await storage.createResult(req.body);
       res.json(result);
@@ -964,8 +976,7 @@ export async function registerRoutes(app: Express) {
       res.status(500).json({ error: err.message });
     }
   });
-
-  app.put('/api/admin/results/:id', requireAuth, async (req, res) => {
+  app.put('/api/admin/results/:id', requireAuth, requireManagerOverride, async (req, res) => {
     try {
       const result = await storage.updateResult(parseInt(req.params.id), req.body);
       res.json(result);
@@ -1320,6 +1331,45 @@ export async function registerRoutes(app: Express) {
     } catch (err: any) {
       console.error('[Auth Login]', err.message);
       return res.status(500).json({ error: 'Login failed. Please try again.' });
+    }
+  });
+
+  // ─── GUARDRAIL 4: The Odds API connection verification ─────────────────────
+  // Returns lastUpdatedAt timestamps for the first 3 games to confirm live data.
+  app.get('/api/admin/verify-connection', requireAuth, async (req, res) => {
+    try {
+      const { getOddsApiStatus } = await import('./apis/oddsApi.js');
+      const status = await getOddsApiStatus();
+      res.json({
+        guardrail: 4,
+        status: 'LIVE',
+        source: 'the-odds-api.com',
+        budgetLedger: status.budgetLedger,
+        sampleGames: status.sampleGames,
+        cacheStatus: status.cacheStatus,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message, status: 'DISCONNECTED' });
+    }
+  });
+
+  // GET /api/admin/budget-status — check API quota remaining
+  app.get('/api/admin/budget-status', requireAuth, async (req, res) => {
+    try {
+      const { getBudgetLedger } = await import('./apis/oddsApi.js');
+      const ledger = getBudgetLedger();
+      res.json({
+        guardrail: 2,
+        hardCeiling: 100,
+        used: ledger.used,
+        remaining: ledger.remaining,
+        cacheHits: ledger.cacheHits,
+        lastReset: ledger.lastReset,
+        status: ledger.remaining > 10 ? 'OK' : ledger.remaining > 0 ? 'WARNING' : 'EXHAUSTED',
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
     }
   });
 
