@@ -1535,6 +1535,190 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // ── V3 VALIDATOR ENDPOINTS ──────────────────────────────────────────────────
+
+  // GET /api/admin/v3-games — fetch all games from The Odds API (cached 4h, 1 call per sport)
+  app.get('/api/admin/v3-games', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { getGlobalSoccerOdds, getNBAOdds, getMLSOdds, getBudgetLedger } = await import('./apis/oddsApi.js');
+      const [soccerGames, nbaGames, mlsGames] = await Promise.all([
+        getGlobalSoccerOdds().catch(() => []),
+        getNBAOdds().catch(() => []),
+        getMLSOdds().catch(() => []),
+      ]);
+      const allGames = [...soccerGames, ...nbaGames, ...mlsGames];
+      const today = new Date().toLocaleDateString('en-CA');
+      const in7Days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-CA');
+
+      const games = allGames
+        .filter(g => {
+          const d = new Date(g.commence_time).toLocaleDateString('en-CA');
+          return d >= today && d <= in7Days;
+        })
+        .map(g => {
+          const sport: 'nba' | 'mls' | 'soccer' = g.sport_key.startsWith('basketball') ? 'nba' :
+            g.sport_key === 'soccer_usa_mls' ? 'mls' : 'soccer';
+          const fixture: FixtureData = {
+            fixtureId: parseInt(g.id.replace(/\D/g, '').slice(0, 8) || '0', 10),
+            homeTeam: g.home_team,
+            awayTeam: g.away_team,
+            league: g.sport_title,
+            sport,
+            homeOdds: g.home_odds ?? undefined,
+            drawOdds: g.draw_odds ?? undefined,
+            awayOdds: g.away_odds ?? undefined,
+            homeInjuries: 0,
+            awayInjuries: 0,
+            isNeutralVenue: false,
+          } as FixtureData;
+          const preds = runBatchPredictions([fixture]);
+          const pred = preds[0];
+          const conf = pred ? pred.topConfidence : 0;
+          const outcomes: { label: string; conf: number }[] = [];
+          if (pred) {
+            const p = pred.predictions;
+            if (p.homeWin)    outcomes.push({ label: `${g.home_team} Win`, conf: p.homeWin * 100 });
+            if (p.awayWin)    outcomes.push({ label: `${g.away_team} Win`, conf: p.awayWin * 100 });
+            if (p.draw)       outcomes.push({ label: 'Draw', conf: p.draw * 100 });
+            if (p.homeOrDraw) outcomes.push({ label: `${g.home_team} Win or Draw`, conf: p.homeOrDraw * 100 });
+            if (p.awayOrDraw) outcomes.push({ label: `${g.away_team} Win or Draw`, conf: p.awayOrDraw * 100 });
+            if (p.over25)     outcomes.push({ label: 'Over 2.5 Goals', conf: p.over25 * 100 });
+            if (p.under25)    outcomes.push({ label: 'Under 2.5 Goals', conf: p.under25 * 100 });
+            if (p.btts)       outcomes.push({ label: 'Both Teams to Score', conf: p.btts * 100 });
+          }
+          return {
+            id: g.id,
+            sportKey: g.sport_key,
+            sport,
+            league: g.sport_title,
+            homeTeam: g.home_team,
+            awayTeam: g.away_team,
+            commenceTime: g.commence_time,
+            lastUpdated: g.last_update,
+            date: new Date(g.commence_time).toLocaleDateString('en-CA'),
+            homeOdds: g.home_odds,
+            awayOdds: g.away_odds,
+            drawOdds: g.draw_odds,
+            bookmaker: g.bookmaker,
+            confidence: Math.round(conf * 10) / 10,
+            bestPick: pred ? pred.topPick : 'N/A',
+            outcomes: outcomes.sort((a, b) => b.conf - a.conf),
+            validated: false,
+          };
+        });
+
+      const ledger = getBudgetLedger();
+      res.json({
+        success: true,
+        games,
+        total: games.length,
+        budget: { used: ledger.used, remaining: ledger.remaining, resetTime: ledger.lastReset },
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/admin/v3-validate — run full Titan XII on a specific game by ID
+  app.post('/api/admin/v3-validate', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { gameId } = req.body;
+      if (!gameId) return res.status(400).json({ error: 'gameId required' });
+      const { getGlobalSoccerOdds, getNBAOdds, getMLSOdds } = await import('./apis/oddsApi.js');
+      const [soccerGames, nbaGames, mlsGames] = await Promise.all([
+        getGlobalSoccerOdds().catch(() => []),
+        getNBAOdds().catch(() => []),
+        getMLSOdds().catch(() => []),
+      ]);
+      const g = [...soccerGames, ...nbaGames, ...mlsGames].find(x => x.id === gameId);
+      if (!g) return res.status(404).json({ error: 'Game not found in current API data' });
+      const sport: 'nba' | 'mls' | 'soccer' = g.sport_key.startsWith('basketball') ? 'nba' :
+        g.sport_key === 'soccer_usa_mls' ? 'mls' : 'soccer';
+      const fixture: FixtureData = {
+        fixtureId: parseInt(g.id.replace(/\D/g, '').slice(0, 8) || '0', 10),
+        homeTeam: g.home_team, awayTeam: g.away_team, league: g.sport_title, sport,
+        homeOdds: g.home_odds ?? undefined, drawOdds: g.draw_odds ?? undefined, awayOdds: g.away_odds ?? undefined,
+        homeInjuries: 0, awayInjuries: 0, isNeutralVenue: false,
+      } as FixtureData;
+      const preds = runBatchPredictions([fixture]);
+      const pred = preds[0];
+      if (!pred) return res.status(422).json({ error: 'Engine returned no prediction for this fixture' });
+      const conf = pred.topConfidence;
+      const outcomes: { label: string; conf: number }[] = [];
+      const p = pred.predictions;
+      if (p.homeWin)    outcomes.push({ label: `${g.home_team} Win`, conf: p.homeWin * 100 });
+      if (p.awayWin)    outcomes.push({ label: `${g.away_team} Win`, conf: p.awayWin * 100 });
+      if (p.draw)       outcomes.push({ label: 'Draw', conf: p.draw * 100 });
+      if (p.homeOrDraw) outcomes.push({ label: `${g.home_team} Win or Draw`, conf: p.homeOrDraw * 100 });
+      if (p.awayOrDraw) outcomes.push({ label: `${g.away_team} Win or Draw`, conf: p.awayOrDraw * 100 });
+      if (p.over25)     outcomes.push({ label: 'Over 2.5 Goals', conf: p.over25 * 100 });
+      if (p.under25)    outcomes.push({ label: 'Under 2.5 Goals', conf: p.under25 * 100 });
+      if (p.btts)       outcomes.push({ label: 'Both Teams to Score', conf: p.btts * 100 });
+      res.json({
+        success: true,
+        game: {
+          id: g.id, homeTeam: g.home_team, awayTeam: g.away_team, league: g.sport_title, sport,
+          confidence: Math.round(conf * 10) / 10, bestPick: pred.topPick,
+          outcomes: outcomes.sort((a, b) => b.conf - a.conf),
+          factors: pred.factors, recommendation: pred.recommendation, validated: true,
+        },
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/admin/feature-pick — mark a game as the hero featured pick
+  app.post('/api/admin/feature-pick', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { matchup, pick, confidence } = req.body;
+      if (!matchup || !pick) return res.status(400).json({ error: 'matchup and pick required' });
+      const today = new Date().toLocaleDateString('en-CA');
+      // Clear existing featured picks for today then mark the target pick as featured
+      const { Pool: FeaturePool } = await import('pg');
+      const fPool = new FeaturePool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      await fPool.query('UPDATE picks SET is_featured = false WHERE date = $1', [today]);
+      await fPool.query(
+        'UPDATE picks SET is_featured = true WHERE date = $1 AND (home_team || \' vs \' || away_team = $2 OR prediction = $3) LIMIT 1',
+        [today, matchup, pick]
+      );
+      await fPool.end();
+      res.json({ success: true, message: `Featured: ${matchup} — ${pick} @ ${confidence}%` });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/admin/push-pick — push a validated game directly to live picks
+  app.post('/api/admin/push-pick', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { matchup, pick, confidence, sport, league } = req.body;
+      if (!matchup || !pick || !sport) return res.status(400).json({ error: 'matchup, pick, sport required' });
+      const parts = matchup.split(' vs ');
+      const homeTeam = parts[0]?.trim() || matchup;
+      const awayTeam = parts[1]?.trim() || '';
+      const today = new Date().toLocaleDateString('en-CA');
+      const tier = confidence >= 68 ? 'pro' : 'free';
+      const isHighVolatility = confidence < 68;
+      await storage.createPick({
+        homeTeam, awayTeam,
+        league: league || sport.toUpperCase(),
+        sport,
+        prediction: pick,
+        confidence: Math.round(confidence * 10) / 10,
+        status: 'pending',
+        date: today,
+        tier,
+        isPowerPick: false,
+        isFeatured: false,
+        metadata: { isHighVolatility, source: 'v3-validator', pushedAt: new Date().toISOString() },
+      });
+      res.json({ success: true, message: `Pushed to live: ${matchup} — ${pick} @ ${confidence}%` });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // GET /api/auth/me — verify JWT and return current user info
   app.get('/api/auth/me', async (req: Request, res: Response) => {
     try {
