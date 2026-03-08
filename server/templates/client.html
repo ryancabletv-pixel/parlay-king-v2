@@ -1296,8 +1296,9 @@
           '<div class="leg-info"><span class="leg-label">Pick<\/span><span class="leg-value">' + (pick.pick||'TBD') + '<\/span><\/div>' +
           '<div class="leg-info"><span class="leg-label">Odds<\/span><span class="leg-odds">' + (pick.odds ? pick.odds : toAmericanOdds(realOdds)) + '<\/span><\/div>' +
           '<div class="leg-info"><span class="leg-label">Probability<\/span><span class="leg-probability">' + prob + '%<\/span><\/div>' +
+          (pick.isHighVolatility ? '<div class="leg-info" style="margin-top:6px;"><span style="background:#ff6b00;color:#fff;padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;">⚠ HIGH VOLATILITY<\/span>&nbsp;<span style="color:#ff9944;font-size:0.72rem;">Below 68% threshold — bet with caution<\/span><\/div>' : '') +
           '<\/div><\/div>' +
-          '<div class="leg-reasoning"><strong>Analysis:</strong> ' + (pick.analysis || pick.confidence + ' confidence pick based on 9-Factor Composite model.') + '<\/div>' +
+          '<div class="leg-reasoning"><strong>Analysis:<\/strong> ' + (pick.analysis || pick.confidence + ' confidence pick based on 9-Factor Composite model.') + '<\/div>' +
           '<\/div>';
       });
       legsEl.innerHTML = '<div class="legs">' + html + '<\/div>';
@@ -1437,8 +1438,9 @@
         h += '<div class="leg-info"><span class="leg-label">Match<\/span><span class="leg-value" style="color:#fff; font-weight:700;">' + (leg.game || leg.match || '') + '<\/span><\/div>';
         h += '<div class="leg-info"><span class="leg-label">Pick<\/span><span class="leg-value" style="color:#00cc66; font-weight:700;">' + (leg.pick || '') + '<\/span><\/div>';
         h += '<div class="leg-info"><span class="leg-label">Confidence<\/span><span class="leg-value" style="color:#d4af37; font-weight:700;">' + conf + '%<\/span><\/div>';
+        if (leg.isHighVolatility) h += '<div class="leg-info" style="margin-top:6px;"><span style="background:#ff6b00;color:#fff;padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;">⚠ HIGH VOLATILITY<\/span>&nbsp;<span style="color:#ff9944;font-size:0.72rem;">Below 68% threshold — bet with caution<\/span><\/div>';
         if (leg.time_display) h += '<div class="leg-info"><span class="leg-label">Time<\/span><span class="leg-value">' + leg.time_display + '<\/span><\/div>';
-        if (leg.analysis) h += '<div class="leg-reasoning"><strong>Analysis:</strong> ' + leg.analysis + '<\/div>';
+        if (leg.analysis) h += '<div class="leg-reasoning"><strong>Analysis:<\/strong> ' + leg.analysis + '<\/div>';
         h += '<\/div><\/div><\/div>';
       });
       if (legsEl) legsEl.innerHTML = h;
@@ -1655,7 +1657,8 @@
         h += '<div class="leg-info"><span class="leg-label">Pick<\/span><span class="leg-value" style="color:#00cc66; font-weight:700;">' + (np.pick || '') + '<\/span><\/div>';
         h += '<div class="leg-info"><span class="leg-label">Confidence<\/span><span class="leg-value" style="color:#d4af37; font-weight:700;">' + conf + '%<\/span><\/div>';
         h += '<div class="leg-info"><span class="leg-label">Odds<\/span><span class="leg-value">' + (np.odds || '—') + '<\/span><\/div>';
-        var nbaAnalysis = np.reasoning || np.analysis || ''; if (nbaAnalysis) h += '<div class="leg-reasoning"><strong>Analysis:</strong> ' + nbaAnalysis + '<\/div>';
+        if (np.isHighVolatility) h += '<div class="leg-info" style="margin-top:6px;"><span style="background:#ff6b00;color:#fff;padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;">⚠ HIGH VOLATILITY<\/span>&nbsp;<span style="color:#ff9944;font-size:0.72rem;">Below 68% threshold — bet with caution<\/span><\/div>';
+        var nbaAnalysis = np.reasoning || np.analysis || ''; if (nbaAnalysis) h += '<div class="leg-reasoning"><strong>Analysis:<\/strong> ' + nbaAnalysis + '<\/div>';
         h += '<\/div><\/div><\/div>';
       });
       if (avgEl) avgEl.textContent = Math.round(totalConf / picks.length) + '%';

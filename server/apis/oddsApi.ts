@@ -30,14 +30,54 @@ const ODDS_API_BASE = 'https://api.the-odds-api.com/v4';
 
 // ── Sport keys for each category ────────────────────────────
 export const SPORT_KEYS = {
-  soccer_laliga:   'soccer_spain_la_liga',
-  soccer_seriea:   'soccer_italy_serie_a',
-  soccer_ligue1:   'soccer_france_ligue_one',
-  soccer_epl:      'soccer_epl',
-  soccer_bundesliga: 'soccer_germany_bundesliga',
-  soccer_mls:      'soccer_usa_mls',
-  nba:             'basketball_nba',
+  // Europe — Tier 1
+  soccer_epl:          'soccer_epl',
+  soccer_laliga:       'soccer_spain_la_liga',
+  soccer_seriea:       'soccer_italy_serie_a',
+  soccer_bundesliga:   'soccer_germany_bundesliga',
+  soccer_ligue1:       'soccer_france_ligue_one',
+  soccer_eredivisie:   'soccer_netherlands_eredivisie',
+  soccer_portugal:     'soccer_portugal_primeira_liga',
+  soccer_turkey:       'soccer_turkey_super_league',
+  soccer_scotland:     'soccer_scotland_premiership',
+  soccer_belgium:      'soccer_belgium_first_div',
+  // Europe — Tier 2 / Cups
+  soccer_champions:    'soccer_uefa_champs_league',
+  soccer_europa:       'soccer_uefa_europa_league',
+  soccer_conference:   'soccer_uefa_europa_conference_league',
+  // Americas
+  soccer_mls:          'soccer_usa_mls',
+  soccer_brazil:       'soccer_brazil_campeonato',
+  soccer_argentina:    'soccer_argentina_primera_division',
+  soccer_mexico:       'soccer_mexico_ligamx',
+  soccer_colombia:     'soccer_colombia_primera_a',
+  // Asia / Oceania
+  soccer_japan:        'soccer_japan_j_league',
+  soccer_australia:    'soccer_australia_aleague',
+  soccer_china:        'soccer_china_superleague',
+  soccer_south_korea:  'soccer_south_korea_kleague1',
+  // Africa / Middle East
+  soccer_saudi:        'soccer_saudi_professional_league',
+  soccer_egypt:        'soccer_egypt_premier_league',
+  // Basketball
+  nba:                 'basketball_nba',
+  ncaab:               'basketball_ncaab',
+  euroleague:          'basketball_euroleague',
 } as const;
+
+// Leagues grouped for the Diversity Check waterfall
+export const GLOBAL_SOCCER_KEYS = [
+  'soccer_epl', 'soccer_spain_la_liga', 'soccer_italy_serie_a',
+  'soccer_germany_bundesliga', 'soccer_france_ligue_one',
+  'soccer_netherlands_eredivisie', 'soccer_portugal_primeira_liga',
+  'soccer_turkey_super_league', 'soccer_scotland_premiership',
+  'soccer_belgium_first_div', 'soccer_uefa_champs_league',
+  'soccer_uefa_europa_league', 'soccer_brazil_campeonato',
+  'soccer_argentina_primera_division', 'soccer_mexico_ligamx',
+  'soccer_colombia_primera_a', 'soccer_japan_j_league',
+  'soccer_australia_aleague', 'soccer_south_korea_kleague1',
+  'soccer_saudi_professional_league',
+];
 
 // ── Budget Ledger ────────────────────────────────────────────
 interface BudgetEntry {
@@ -215,27 +255,78 @@ async function fetchOdds(sportKey: string): Promise<OddsGame[]> {
 
 // ── Public API ───────────────────────────────────────────────
 
-/** Fetch today's soccer games across all configured leagues */
+/** Fetch today's soccer games across Tier 1 European leagues */
 export async function getSoccerOdds(): Promise<OddsGame[]> {
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
-  const leagues = [
+  const tier1Leagues = [
+    SPORT_KEYS.soccer_epl,
     SPORT_KEYS.soccer_laliga,
     SPORT_KEYS.soccer_seriea,
-    SPORT_KEYS.soccer_ligue1,
-    SPORT_KEYS.soccer_epl,
     SPORT_KEYS.soccer_bundesliga,
+    SPORT_KEYS.soccer_ligue1,
+    SPORT_KEYS.soccer_portugal,
+    SPORT_KEYS.soccer_eredivisie,
+    SPORT_KEYS.soccer_turkey,
+    SPORT_KEYS.soccer_champions,
+    SPORT_KEYS.soccer_europa,
   ];
 
   const results: OddsGame[] = [];
-  for (const key of leagues) {
+  for (const key of tier1Leagues) {
     const games = await fetchOdds(key);
-    // Filter to today's games only
     const todayGames = games.filter(g => g.commence_time.startsWith(today));
     results.push(...todayGames);
+    // Budget guard: stop if we've used too many calls
+    if (!checkBudget(key, 'diversity-check')) break;
   }
 
   if (results.length === 0) {
     console.warn(`[OddsAPI] NO SOCCER GAMES found for ${today} — returning NULL (no mock)`);
+  }
+  return results;
+}
+
+/**
+ * DIVERSITY CHECK: Fetch today's soccer games from ALL global leagues.
+ * Used when Tier 1 leagues don't produce enough 68%+ picks.
+ * Budget-aware: stops fetching once 15 calls have been used for this sweep.
+ */
+export async function getGlobalSoccerOdds(): Promise<OddsGame[]> {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+  const results: OddsGame[] = [];
+  let callsUsed = 0;
+  const MAX_DIVERSITY_CALLS = 15;
+
+  console.log(`[OddsAPI] DIVERSITY CHECK: Scanning ${GLOBAL_SOCCER_KEYS.length} global leagues for ${today}`);
+
+  for (const key of GLOBAL_SOCCER_KEYS) {
+    if (callsUsed >= MAX_DIVERSITY_CALLS) {
+      console.warn(`[OddsAPI] Diversity check budget cap (${MAX_DIVERSITY_CALLS}) reached`);
+      break;
+    }
+    if (!checkBudget(key, 'global-diversity')) break;
+    const games = await fetchOdds(key);
+    const todayGames = games.filter(g => g.commence_time.startsWith(today));
+    if (todayGames.length > 0) {
+      results.push(...todayGames);
+      callsUsed++;
+      console.log(`[OddsAPI] Diversity: ${key} → ${todayGames.length} games today`);
+    }
+  }
+
+  console.log(`[OddsAPI] Diversity check complete: ${results.length} total global soccer games found`);
+  return results;
+}
+
+/** Fetch today's global basketball (NBA + EuroLeague) for diversity check */
+export async function getGlobalBasketballOdds(): Promise<OddsGame[]> {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+  const results: OddsGame[] = [];
+  for (const key of [SPORT_KEYS.nba, SPORT_KEYS.euroleague]) {
+    if (!checkBudget(key, 'basketball-diversity')) break;
+    const games = await fetchOdds(key);
+    const todayGames = games.filter(g => g.commence_time.startsWith(today));
+    results.push(...todayGames);
   }
   return results;
 }

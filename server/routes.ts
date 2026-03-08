@@ -159,27 +159,143 @@ export async function generateDailyPicks(date: string): Promise<{
   const lifetimePicks = selectBestLegs(allPreds, TIER_PICK_COUNTS.lifetime,
     CONFIDENCE_THRESHOLDS.LIFETIME_MIN, 100);
 
-  // GUARDRAIL 1 — NO MOCK DATA: Sport-specific parlays use LIVE API data only.
-  // If real API returns insufficient legs, the engine logs NULL and saves 0 picks.
-  // No placeholder or mock fixtures are ever used.
+  // ───────────────────────────────────────────────────────────────────────
+  // DYNAMIC SELECTION WATERFALL
+  // Step 1 — PRIMARY: Select legs at 68%+ threshold
+  // Step 2 — DIVERSITY CHECK: If short, query global leagues for more 68%+ picks
+  // Step 3 — FALLBACK (No-Dark Policy): Lower to 65% hard floor + High Volatility label
+  // ───────────────────────────────────────────────────────────────────────
+  const HARD_FLOOR = 65;
+  const HARD_FLOOR_LABEL = 'High Volatility';
+
+  // Track which legs are high-volatility (below 68%)
+  const highVolatilityLegs = new Set<string>(); // key: homeTeam+awayTeam
+
+  // Helper: mark a leg as high-volatility
+  function markHighVolatility(pred: PredictionResult) {
+    highVolatilityLegs.add(`${pred.homeTeam}|${pred.awayTeam}`);
+  }
+  function isHighVol(pred: PredictionResult) {
+    return highVolatilityLegs.has(`${pred.homeTeam}|${pred.awayTeam}`);
+  }
+
+  // STEP 1: Try 68%+ from existing predictions
   let soccerLegs = selectBestLegs(soccerPreds, 3, CONFIDENCE_THRESHOLDS.PRO_MIN);
   let mlsLegs    = selectBestLegs(mlsPreds,    3, CONFIDENCE_THRESHOLDS.PRO_MIN);
   let nbaLegs    = selectBestLegs(nbaPreds,    3, CONFIDENCE_THRESHOLDS.PRO_MIN);
 
-  // ── Log real API leg counts ──────────────────────────────────────────────
-  console.log(`[Engine] LIVE legs at 68%+: Soccer=${soccerLegs.length}/3, NBA=${nbaLegs.length}/3, MLS=${mlsLegs.length}/3`);
+  console.log(`[Waterfall] Step 1 — 68%+ legs: Soccer=${soccerLegs.length}/3, NBA=${nbaLegs.length}/3, MLS=${mlsLegs.length}/3`);
+
+  // STEP 2: DIVERSITY CHECK — if any sport is short, scan global leagues for 68%+ picks
+  if (soccerLegs.length < 3 || nbaLegs.length < 3) {
+    console.log(`[Waterfall] Step 2 — DIVERSITY CHECK: Scanning global leagues...`);
+    try {
+      const { getGlobalSoccerOdds, getGlobalBasketballOdds } = await import('./apis/oddsApi.js');
+      const { convertOddsGameToFixture } = await import('./apis/oddsApi.js').then(m => m).catch(() => ({ convertOddsGameToFixture: null }));
+
+      if (soccerLegs.length < 3) {
+        const globalSoccerGames = await getGlobalSoccerOdds();
+        if (globalSoccerGames.length > 0) {
+          // Convert OddsGame to FixtureData format for the engine
+          const globalFixtures: FixtureData[] = globalSoccerGames.map(g => ({
+            fixtureId: parseInt(g.id.replace(/\D/g,'').slice(0,8) || '0', 10),
+            homeTeam: g.home_team, awayTeam: g.away_team,
+            league: g.sport_title, sport: 'soccer',
+            homeOdds: g.home_odds ?? undefined, awayOdds: g.away_odds ?? undefined, drawOdds: g.draw_odds ?? undefined,
+            homeWinRate: undefined, awayWinRate: undefined,
+            homeForm: undefined, awayForm: undefined,
+            homeRank: undefined, awayRank: undefined,
+            homeGoalsFor: undefined, awayGoalsFor: undefined,
+            homeGoalsAgainst: undefined, awayGoalsAgainst: undefined,
+            homeInjuries: 0, awayInjuries: 0,
+            isNeutralVenue: false, venueName: undefined,
+            headToHead: undefined,
+          } as FixtureData));
+          const globalPreds = runBatchPredictions(globalFixtures);
+          const globalLegs = selectBestLegs(globalPreds, 3 - soccerLegs.length, CONFIDENCE_THRESHOLDS.PRO_MIN);
+          if (globalLegs.length > 0) {
+            soccerLegs = [...soccerLegs, ...globalLegs];
+            console.log(`[Waterfall] Diversity: Found ${globalLegs.length} additional soccer legs from global leagues`);
+          }
+        }
+      }
+
+      if (nbaLegs.length < 3) {
+        const globalBball = await getGlobalBasketballOdds();
+        if (globalBball.length > 0) {
+          const bballFixtures: FixtureData[] = globalBball.map(g => ({
+            fixtureId: parseInt(g.id.replace(/\D/g,'').slice(0,8) || '0', 10),
+            homeTeam: g.home_team, awayTeam: g.away_team,
+            league: g.sport_title, sport: 'nba',
+            homeOdds: g.home_odds ?? undefined, awayOdds: g.away_odds ?? undefined,
+            homeWinRate: undefined, awayWinRate: undefined,
+            homeForm: undefined, awayForm: undefined,
+            homeRank: undefined, awayRank: undefined,
+            homeGoalsFor: undefined, awayGoalsFor: undefined,
+            homeGoalsAgainst: undefined, awayGoalsAgainst: undefined,
+            homeInjuries: 0, awayInjuries: 0,
+            isNeutralVenue: false, venueName: undefined,
+            headToHead: undefined,
+          } as FixtureData));
+          const bballPreds = runBatchPredictions(bballFixtures);
+          const bballLegs = selectBestLegs(bballPreds, 3 - nbaLegs.length, CONFIDENCE_THRESHOLDS.PRO_MIN);
+          if (bballLegs.length > 0) {
+            nbaLegs = [...nbaLegs, ...bballLegs];
+            console.log(`[Waterfall] Diversity: Found ${bballLegs.length} additional NBA/basketball legs`);
+          }
+        }
+      }
+    } catch (divErr: any) {
+      console.error(`[Waterfall] Diversity check error:`, divErr.message);
+    }
+  }
+
+  console.log(`[Waterfall] After Step 2: Soccer=${soccerLegs.length}/3, NBA=${nbaLegs.length}/3, MLS=${mlsLegs.length}/3`);
+
+  // STEP 3: FALLBACK (No-Dark Policy) — lower to 65% hard floor + High Volatility label
   if (soccerLegs.length < 3) {
-    console.error(`[Engine] CRITICAL: Only ${soccerLegs.length}/3 soccer legs passed 68% threshold from LIVE API data`);
-    console.error(`[Engine] Soccer fixtures scored: ${soccerPreds.map(p => p.homeTeam + ' vs ' + p.awayTeam + ' @ ' + p.topConfidence + '%').join(', ')}`);
+    const needed = 3 - soccerLegs.length;
+    const alreadySelected = new Set(soccerLegs.map(p => `${p.homeTeam}|${p.awayTeam}`));
+    const fallbackLegs = selectBestLegs(
+      soccerPreds.filter(p => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`)),
+      needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS.PRO_MIN - 0.01
+    );
+    for (const leg of fallbackLegs) {
+      markHighVolatility(leg);
+      soccerLegs.push(leg);
+      console.log(`[Waterfall] ⚠️  Soccer FALLBACK (High Volatility): ${leg.homeTeam} vs ${leg.awayTeam} @ ${leg.topConfidence.toFixed(1)}%`);
+    }
   }
+
   if (nbaLegs.length < 3) {
-    console.error(`[Engine] CRITICAL: Only ${nbaLegs.length}/3 NBA legs passed 68% threshold from LIVE API data`);
-    console.error(`[Engine] NBA fixtures scored: ${nbaPreds.map(p => p.homeTeam + ' vs ' + p.awayTeam + ' @ ' + p.topConfidence + '%').join(', ')}`);
+    const needed = 3 - nbaLegs.length;
+    const alreadySelected = new Set(nbaLegs.map(p => `${p.homeTeam}|${p.awayTeam}`));
+    const fallbackLegs = selectBestLegs(
+      nbaPreds.filter(p => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`)),
+      needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS.PRO_MIN - 0.01
+    );
+    for (const leg of fallbackLegs) {
+      markHighVolatility(leg);
+      nbaLegs.push(leg);
+      console.log(`[Waterfall] ⚠️  NBA FALLBACK (High Volatility): ${leg.homeTeam} vs ${leg.awayTeam} @ ${leg.topConfidence.toFixed(1)}%`);
+    }
   }
-  if (mlsLegs.length < 3) {
-    console.error(`[Engine] CRITICAL: Only ${mlsLegs.length}/3 MLS legs passed 68% threshold from LIVE API data`);
-    console.error(`[Engine] MLS fixtures scored: ${mlsPreds.map(p => p.homeTeam + ' vs ' + p.awayTeam + ' @ ' + p.topConfidence + '%').join(', ')}`);
+
+  if (mlsLegs.length < 2) {
+    const needed = 2 - mlsLegs.length;
+    const alreadySelected = new Set(mlsLegs.map(p => `${p.homeTeam}|${p.awayTeam}`));
+    const fallbackLegs = selectBestLegs(
+      mlsPreds.filter(p => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`)),
+      needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS.PRO_MIN - 0.01
+    );
+    for (const leg of fallbackLegs) {
+      markHighVolatility(leg);
+      mlsLegs.push(leg);
+      console.log(`[Waterfall] ⚠️  MLS FALLBACK (High Volatility): ${leg.homeTeam} vs ${leg.awayTeam} @ ${leg.topConfidence.toFixed(1)}%`);
+    }
   }
+
+  console.log(`[Waterfall] Final: Soccer=${soccerLegs.length}/3, NBA=${nbaLegs.length}/3, MLS=${mlsLegs.length}/2, HighVol=${highVolatilityLegs.size}`);
 
   // ── Select 1 Power Pick (highest confidence across ALL sports ≥70%) ─────
   // GUARDRAIL 1: Power Pick uses LIVE API data only. No mock fallback.
@@ -215,7 +331,7 @@ export async function generateDailyPicks(date: string): Promise<{
   let soccerCount = 0, nbaCount = 0, mlsCount = 0, powerCount = 0;
 
   // Helper to save a pick
-  async function savePick(pred: PredictionResult, overrideSport?: string, overrideTier?: string, isPower = false) {
+  async function savePick(pred: PredictionResult, overrideSport?: string, overrideTier?: string, isPower = false, highVolatility = false) {
     try {
       await storage.createPick({
         date,
@@ -228,7 +344,7 @@ export async function generateDailyPicks(date: string): Promise<{
         confidence: pred.topConfidence,
         fixtureId:  String(pred.fixtureId),
         isPowerPick: isPower,
-        metadata:   pred as any,
+        metadata:   { ...pred as any, isHighVolatility: highVolatility, volatilityLabel: highVolatility ? 'High Volatility' : null } as any,
       });
     } catch (err) {
       console.error('[Engine] Failed to save pick:', err);
@@ -237,24 +353,27 @@ export async function generateDailyPicks(date: string): Promise<{
 
   // Save soccer legs (type = 'soccer')
   for (const pred of soccerLegs) {
-    await savePick(pred, 'soccer');
+    const hv = isHighVol(pred);
+    await savePick(pred, 'soccer', undefined, false, hv);
     soccerCount++;
-    console.log(`[Engine] ✅ Soccer leg: ${pred.homeTeam} vs ${pred.awayTeam} — ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)`);
+    console.log(`[Engine] ${hv ? '⚠️ ' : '✅'} Soccer leg: ${pred.homeTeam} vs ${pred.awayTeam} — ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)${hv ? ' [HIGH VOLATILITY]' : ''}`);
   }
 
   // Save NBA legs (type = 'nba')
   for (const pred of nbaLegs) {
-    await savePick(pred, 'nba');
+    const hv = isHighVol(pred);
+    await savePick(pred, 'nba', undefined, false, hv);
     nbaCount++;
-    console.log(`[Engine] ✅ NBA leg:    ${pred.homeTeam} vs ${pred.awayTeam} — ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)`);
+    console.log(`[Engine] ${hv ? '⚠️ ' : '✅'} NBA leg:    ${pred.homeTeam} vs ${pred.awayTeam} — ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)${hv ? ' [HIGH VOLATILITY]' : ''}`);
   }
 
   // Save MLS legs (type = 'mls') — only if games exist
   if (mlsLegs.length > 0) {
     for (const pred of mlsLegs) {
-      await savePick(pred, 'mls');
+      const hv = isHighVol(pred);
+      await savePick(pred, 'mls', undefined, false, hv);
       mlsCount++;
-      console.log(`[Engine] ✅ MLS leg:    ${pred.homeTeam} vs ${pred.awayTeam} — ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)`);
+      console.log(`[Engine] ${hv ? '⚠️ ' : '✅'} MLS leg:    ${pred.homeTeam} vs ${pred.awayTeam} — ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)${hv ? ' [HIGH VOLATILITY]' : ''}`);
     }
   } else {
     console.log(`[Engine] ℹ️  MLS tab: No MLS games on ${date} — tab will show blank`);
@@ -686,6 +805,8 @@ export async function registerRoutes(app: Express) {
           away_team: p.awayTeam,
           tier: p.tier || 'free',
           sport: p.sport || 'soccer',
+          isHighVolatility: (p.metadata as any)?.isHighVolatility ?? false,
+          volatilityLabel: (p.metadata as any)?.volatilityLabel ?? null,
         };
       }
 
