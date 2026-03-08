@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { createRunLog, updateRunLog, createAlert, getRunLogs } from './storage.js';
 import { generateDailyPicks } from './routes.js';
 import { pingGoogleAfterUpdate } from './seo.js';
+import { autoSettleResults } from './resultsSettler.js';
 
 // ─── Timezone ─────────────────────────────────────────────────────────────────
 // America/Moncton = AST (UTC-4) / ADT (UTC-3 during DST) — New Brunswick, Canada
@@ -235,10 +236,25 @@ export function startScheduler() {
 
   // ── Every 2 hours — Auto-Settle Results ───────────────────────────────────
   cron.schedule('0 0 */2 * * *', async () => {
-    console.log('[Scheduler] Auto-settle results check');
-    // Check finished games and update Won/Lost statuses
-    // Ping Google after results are settled so results pages are re-indexed
-    pingGoogleAfterUpdate('results-settled').catch(() => {});
+    console.log('[Scheduler] Auto-settle results check — fetching final scores from API');
+    try {
+      const stats = await autoSettleResults();
+      console.log(`[Scheduler] Settlement run: checked=${stats.checked} settled=${stats.settled} wins=${stats.wins} losses=${stats.losses} voids=${stats.voids} errors=${stats.errors}`);
+    } catch (err) {
+      console.error('[Scheduler] Settlement error:', err);
+    }
+  }, { timezone: TZ });
+
+  // ── Every day at 6 AM — Morning Settlement Pass ────────────────────────────
+  // Catches any overnight games that finished after the last 2-hour check
+  cron.schedule('0 0 6 * * *', async () => {
+    console.log('[Scheduler] 6:00 AM AST — Morning settlement pass');
+    try {
+      const stats = await autoSettleResults();
+      console.log(`[Scheduler] Morning settlement: ${stats.settled} settled (${stats.wins}W/${stats.losses}L/${stats.voids}V)`);
+    } catch (err) {
+      console.error('[Scheduler] Morning settlement error:', err);
+    }
   }, { timezone: TZ });
 
   // ── Every 15 minutes — Grace Period Enforcement ────────────────────────────

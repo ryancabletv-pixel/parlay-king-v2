@@ -418,13 +418,13 @@ export async function registerRoutes(app: Express) {
   // These feed the 4 tabs on the client-facing site.
   // No auth required — public data.
 
-  // NBA Tab — 3 NBA legs
+  // NBA Tab — 3 NBA legs (only pending picks shown on main page)
   app.get('/api/picks/nba', async (req, res) => {
     try {
       const date = (req.query.date as string) || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
       const picks = await storage.getPicksByDate(date);
       const nbaLegs = picks
-        .filter(p => p.sport === 'nba' && !p.isDisabled)
+        .filter(p => p.sport === 'nba' && !p.isDisabled && p.status === 'pending')
         .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))
         .slice(0, 3);
       res.json({
@@ -446,7 +446,7 @@ export async function registerRoutes(app: Express) {
       const date = (req.query.date as string) || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
       const picks = await storage.getPicksByDate(date);
       const mlsLegs = picks
-        .filter(p => p.sport === 'mls' && !p.isDisabled)
+        .filter(p => p.sport === 'mls' && !p.isDisabled && p.status === 'pending')
         .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))
         .slice(0, 3);
       res.json({
@@ -470,7 +470,7 @@ export async function registerRoutes(app: Express) {
       const date = (req.query.date as string) || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
       const picks = await storage.getPicksByDate(date);
       const soccerLegs = picks
-        .filter(p => p.sport === 'soccer' && !p.isDisabled)
+        .filter(p => p.sport === 'soccer' && !p.isDisabled && p.status === 'pending')
         .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))
         .slice(0, 3);
       res.json({
@@ -492,7 +492,7 @@ export async function registerRoutes(app: Express) {
       const date = (req.query.date as string) || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
       const picks = await storage.getPicksByDate(date);
       const powerPick = picks
-        .filter(p => p.isPowerPick && !p.isDisabled)
+        .filter(p => p.isPowerPick && !p.isDisabled && p.status === 'pending')
         .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0] || null;
       res.json({
         tab: 'Power Pick',
@@ -506,12 +506,12 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // All picks for today (combined)
+  // All picks for today (combined — only pending shown on main page)
   app.get('/api/picks/today', async (req, res) => {
     try {
       const date = (req.query.date as string) || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
       const picks = await storage.getPicksByDate(date);
-      const active = picks.filter(p => !p.isDisabled);
+      const active = picks.filter(p => !p.isDisabled && p.status === 'pending');
       res.json({
         date,
         nba:    active.filter(p => p.sport === 'nba').slice(0, 3),
@@ -520,6 +520,33 @@ export async function registerRoutes(app: Express) {
         power:  active.filter(p => p.isPowerPick).slice(0, 1),
         total:  active.length,
       });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Public Results Page API ─────────────────────────────────────────────────
+  // Returns only settled results (won/lost/void) — never pending picks
+  app.get('/api/results', async (req, res) => {
+    try {
+      const results = await storage.getResults(200);
+      const settled = results.filter(r => ['won', 'lost', 'void'].includes(r.result));
+      const summary = await storage.getWinLossSummary();
+      res.json({
+        results: settled,
+        summary,
+        lastUpdated: new Date().toISOString(),
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Public Win/Loss Summary ─────────────────────────────────────────────────
+  app.get('/api/results/summary', async (req, res) => {
+    try {
+      const summary = await storage.getWinLossSummary();
+      res.json(summary);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
