@@ -1201,9 +1201,19 @@ export async function registerRoutes(app: Express) {
         tier = 'pro';
       }
 
+      // PAID TIERS DISABLED UNTIL 2026-03-20 — grant free tier only
+      const paidTiersDisabledUntil = new Date('2026-03-20');
+      const now = new Date();
+      if (now < paidTiersDisabledUntil) {
+        tier = 'free';
+        console.log(`[PayPal IPN] Paid tiers disabled until 2026-03-20 — granting free tier to ${payerEmail}`);
+      }
       if (payerEmail && tier !== 'free') {
         await storage.createOrUpdateMember(payerEmail, tier);
         console.log(`[PayPal IPN] Tier ${tier} granted to ${payerEmail}`);
+      } else if (payerEmail) {
+        await storage.createOrUpdateMember(payerEmail, 'free');
+        console.log(`[PayPal IPN] Free tier granted to ${payerEmail} (paid tiers disabled)`);
       }
     } catch (err) {
       console.error('[PayPal IPN] Error processing IPN:', err);
@@ -1246,7 +1256,10 @@ export async function registerRoutes(app: Express) {
         return res.status(409).json({ error: 'Username already taken. Please choose another.' });
       }
       const passwordHash = await bcrypt.hash(password, 10);
-      const tier = plan === 'lifetime' ? 'lifetime' : plan === 'vip-monthly' ? 'vip' : 'free';
+      // PAID TIERS DISABLED UNTIL 2026-03-20
+      const paidDisabledUntil = new Date('2026-03-20');
+      const rawTier = plan === 'lifetime' ? 'lifetime' : plan === 'vip-monthly' ? 'vip' : 'free';
+      const tier = new Date() < paidDisabledUntil && rawTier !== 'free' ? 'free' : rawTier;
       // Upsert member with username and password
       await pool.query(
         `INSERT INTO members (email, username, password_hash, tier, is_active, created_at)
