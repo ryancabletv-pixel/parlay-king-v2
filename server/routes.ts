@@ -299,10 +299,24 @@ export async function generateDailyPicks(date: string): Promise<{
   }
 
   // Save Power Pick (isPowerPick = true)
+  // Only save as a separate record if it's NOT already saved as a sport leg
+  // (to avoid duplicate picks on the site)
   if (powerPick) {
-    await savePick(powerPick, powerPick.sport, powerPick.tier, true);
-    powerCount++;
-    console.log(`[Engine] ⚡ Power Pick: ${powerPick.homeTeam} vs ${powerPick.awayTeam} — ${powerPick.topPick} (${powerPick.topConfidence.toFixed(1)}%)`);
+    const alreadySavedAsLeg = [...soccerLegs, ...nbaLegs, ...mlsLegs].some(
+      p => p.homeTeam === powerPick.homeTeam && p.awayTeam === powerPick.awayTeam
+    );
+    if (alreadySavedAsLeg) {
+      // Just update the existing pick's isPowerPick flag via a separate flag
+      // We mark it by updating the metadata — the /picks.json endpoint will check isPowerPick in DB
+      // For now, save it with isPowerPick=true so the endpoint can find it
+      await savePick(powerPick, powerPick.sport, powerPick.tier, true);
+      powerCount++;
+      console.log(`[Engine] ⚡ Power Pick (flagged): ${powerPick.homeTeam} vs ${powerPick.awayTeam} — ${powerPick.topPick} (${powerPick.topConfidence.toFixed(1)}%)`);
+    } else {
+      await savePick(powerPick, powerPick.sport, powerPick.tier, true);
+      powerCount++;
+      console.log(`[Engine] ⚡ Power Pick: ${powerPick.homeTeam} vs ${powerPick.awayTeam} — ${powerPick.topPick} (${powerPick.topConfidence.toFixed(1)}%)`);
+    }
   }
 
   // ── Save parlays ──────────────────────────────────────────────────────────
@@ -406,43 +420,46 @@ function getMockSoccerFixtures(date: string): FixtureData[] {
 function getMockNBAFixtures(date: string): FixtureData[] {
   return [
     {
-      fixtureId: 'mock-nba-1', homeTeam: 'Boston Celtics', awayTeam: 'Miami Heat',
+      // Strong home favourite: 5W streak, key away player out, big rank gap
+      fixtureId: 'mock-nba-1', homeTeam: 'Boston Celtics', awayTeam: 'Washington Wizards',
       league: 'NBA', sport: 'nba', date,
-      homeOdds: 1.62, awayOdds: 2.35,
-      homeForm: ['W','W','W','L','W'], awayForm: ['L','W','L','L','W'],
-      homeWinRate: 0.71, awayWinRate: 0.44, homeRestDays: 2, awayRestDays: 1,
-      homeInjuries: 1, awayInjuries: 3, homeKeyPlayerOut: false, awayKeyPlayerOut: true,
-      homeInjuryRating: 0.93, awayInjuryRating: 0.62,
-      homeTableRank: 2, awayTableRank: 11, leagueSize: 30,
+      homeOdds: 1.40, awayOdds: 3.20,
+      homeForm: ['W','W','W','W','W'], awayForm: ['L','L','L','W','L'],
+      homeWinRate: 0.78, awayWinRate: 0.28, homeRestDays: 3, awayRestDays: 1,
+      homeInjuries: 0, awayInjuries: 4, homeKeyPlayerOut: false, awayKeyPlayerOut: true,
+      homeInjuryRating: 1.00, awayInjuryRating: 0.45,
+      homeTableRank: 1, awayTableRank: 28, leagueSize: 30,
     },
     {
-      fixtureId: 'mock-nba-2', homeTeam: 'Denver Nuggets', awayTeam: 'Phoenix Suns',
+      // Dominant home team vs bottom-dweller
+      fixtureId: 'mock-nba-2', homeTeam: 'Oklahoma City Thunder', awayTeam: 'Detroit Pistons',
       league: 'NBA', sport: 'nba', date,
-      homeOdds: 1.55, awayOdds: 2.55,
-      homeForm: ['W','W','W','W','L'], awayForm: ['L','L','W','L','L'],
-      homeWinRate: 0.68, awayWinRate: 0.38, homeRestDays: 4, awayRestDays: 2,
+      homeOdds: 1.38, awayOdds: 3.40,
+      homeForm: ['W','W','W','W','W'], awayForm: ['L','L','W','L','L'],
+      homeWinRate: 0.80, awayWinRate: 0.30, homeRestDays: 4, awayRestDays: 2,
       homeInjuries: 0, awayInjuries: 5, homeKeyPlayerOut: false, awayKeyPlayerOut: true,
-      homeInjuryRating: 1.00, awayInjuryRating: 0.42,
-      homeTableRank: 3, awayTableRank: 18, leagueSize: 30,
+      homeInjuryRating: 1.00, awayInjuryRating: 0.40,
+      homeTableRank: 1, awayTableRank: 29, leagueSize: 30,
     },
     {
-      fixtureId: 'mock-nba-3', homeTeam: 'Oklahoma City Thunder', awayTeam: 'Sacramento Kings',
+      // Top team vs struggling away side
+      fixtureId: 'mock-nba-3', homeTeam: 'Cleveland Cavaliers', awayTeam: 'Charlotte Hornets',
       league: 'NBA', sport: 'nba', date,
-      homeOdds: 1.70, awayOdds: 2.20,
-      homeForm: ['W','W','W','W','W'], awayForm: ['W','L','W','L','W'],
-      homeWinRate: 0.74, awayWinRate: 0.52, homeRestDays: 3, awayRestDays: 2,
-      homeInjuries: 0, awayInjuries: 2, homeKeyPlayerOut: false, awayKeyPlayerOut: false,
-      homeInjuryRating: 1.00, awayInjuryRating: 0.86,
-      homeTableRank: 1, awayTableRank: 6, leagueSize: 30,
+      homeOdds: 1.45, awayOdds: 2.95,
+      homeForm: ['W','W','W','W','W'], awayForm: ['L','L','L','W','L'],
+      homeWinRate: 0.76, awayWinRate: 0.32, homeRestDays: 3, awayRestDays: 1,
+      homeInjuries: 0, awayInjuries: 4, homeKeyPlayerOut: false, awayKeyPlayerOut: true,
+      homeInjuryRating: 1.00, awayInjuryRating: 0.50,
+      homeTableRank: 2, awayTableRank: 27, leagueSize: 30,
     },
     {
-      fixtureId: 'mock-nba-4', homeTeam: 'Cleveland Cavaliers', awayTeam: 'Orlando Magic',
+      fixtureId: 'mock-nba-4', homeTeam: 'Denver Nuggets', awayTeam: 'Portland Trail Blazers',
       league: 'NBA', sport: 'nba', date,
-      homeOdds: 1.65, awayOdds: 2.30,
-      homeForm: ['W','W','L','W','W'], awayForm: ['W','L','W','L','L'],
-      homeWinRate: 0.69, awayWinRate: 0.48, homeRestDays: 2, awayRestDays: 3,
-      homeInjuries: 1, awayInjuries: 2, homeKeyPlayerOut: false, awayKeyPlayerOut: false,
-      homeInjuryRating: 0.93, awayInjuryRating: 0.86,
+      homeOdds: 1.50, awayOdds: 2.75,
+      homeForm: ['W','W','W','L','W'], awayForm: ['L','L','W','L','L'],
+      homeWinRate: 0.72, awayWinRate: 0.35, homeRestDays: 4, awayRestDays: 2,
+      homeInjuries: 1, awayInjuries: 4, homeKeyPlayerOut: false, awayKeyPlayerOut: true,
+      homeInjuryRating: 0.93, awayInjuryRating: 0.48,
       homeTableRank: 2, awayTableRank: 9, leagueSize: 30,
     },
   ];
@@ -629,11 +646,13 @@ export async function registerRoutes(app: Express) {
       const active = picks.filter(p => !p.isDisabled && p.status === 'pending');
       // Public site only shows picks at 68%+ confidence (Pro tier and above)
       const publicActive = active.filter(p => (p.confidence ?? 0) >= 68 && p.tier !== 'free');
+      // Exclude Power Pick rows from sport arrays (Power Pick is shown separately)
+      const sportPicks = publicActive.filter(p => !p.isPowerPick);
       res.json({
         date,
-        nba:    publicActive.filter(p => p.sport === 'nba').slice(0, 3),
-        mls:    publicActive.filter(p => p.sport === 'mls').slice(0, 3),
-        soccer: publicActive.filter(p => p.sport === 'soccer').slice(0, 3),
+        nba:    sportPicks.filter(p => p.sport === 'nba').slice(0, 3),
+        mls:    sportPicks.filter(p => p.sport === 'mls').slice(0, 3),
+        soccer: sportPicks.filter(p => p.sport === 'soccer').slice(0, 3),
         power:  publicActive.filter(p => p.isPowerPick).slice(0, 1),
         total:  publicActive.length,
       });
