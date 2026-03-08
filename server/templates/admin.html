@@ -703,23 +703,57 @@
         </div>
         <div id="nba-enabled-status" style="font-size:12px;color:var(--text-dim);margin-bottom:20px">ON — NBA parlay section visible</div>
         <div id="nba-legs-container">
-          ${[1,2,3].map(i => `
+          <!-- LEG 1 -->
           <div style="background:var(--bg3);border:1px solid var(--gold-border);border-radius:10px;padding:16px;margin-bottom:14px">
-            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG ${i}</div>
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG 1</div>
             <div class="grid-2" style="gap:10px;margin-bottom:10px">
-              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="nba-leg${i}-home" placeholder="e.g. Boston Celtics"></div>
-              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="nba-leg${i}-away" placeholder="e.g. Miami Heat"></div>
+              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="nba-leg1-home" placeholder="e.g. Boston Celtics"></div>
+              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="nba-leg1-away" placeholder="e.g. Miami Heat"></div>
             </div>
             <div class="grid-3" style="gap:10px">
-              <div><label class="login-label">PICK</label><input class="login-input" id="nba-leg${i}-pick" placeholder="e.g. Boston Celtics Win"></div>
-              <div><label class="login-label">SPREAD</label><input class="login-input" id="nba-leg${i}-spread" placeholder="e.g. -5.5"></div>
-              <div><label class="login-label">TOTAL (O/U)</label><input class="login-input" id="nba-leg${i}-total" placeholder="e.g. O 218.5"></div>
+              <div><label class="login-label">PICK</label><input class="login-input" id="nba-leg1-pick" placeholder="e.g. Boston Celtics Win"></div>
+              <div><label class="login-label">SPREAD</label><input class="login-input" id="nba-leg1-spread" placeholder="e.g. -5.5"></div>
+              <div><label class="login-label">TOTAL (O/U)</label><input class="login-input" id="nba-leg1-total" placeholder="e.g. O 218.5"></div>
             </div>
             <div class="grid-2" style="gap:10px;margin-top:10px">
-              <div><label class="login-label">ODDS</label><input class="login-input" id="nba-leg${i}-odds" placeholder="e.g. -110"></div>
-              <div><label class="login-label">V3 CONFIDENCE %</label><input class="login-input" id="nba-leg${i}-conf" type="number" min="60" max="100" placeholder="e.g. 71.2"></div>
+              <div><label class="login-label">ODDS</label><input class="login-input" id="nba-leg1-odds" placeholder="e.g. -110"></div>
+              <div><label class="login-label">V3 CONFIDENCE %</label><input class="login-input" id="nba-leg1-conf" type="number" min="60" max="100" placeholder="e.g. 71.2"></div>
             </div>
-          </div>`).join('')}
+          </div>
+          <!-- LEG 2 -->
+          <div style="background:var(--bg3);border:1px solid var(--gold-border);border-radius:10px;padding:16px;margin-bottom:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG 2</div>
+            <div class="grid-2" style="gap:10px;margin-bottom:10px">
+              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="nba-leg2-home" placeholder="e.g. Boston Celtics"></div>
+              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="nba-leg2-away" placeholder="e.g. Miami Heat"></div>
+            </div>
+            <div class="grid-3" style="gap:10px">
+              <div><label class="login-label">PICK</label><input class="login-input" id="nba-leg2-pick" placeholder="e.g. Boston Celtics Win"></div>
+              <div><label class="login-label">SPREAD</label><input class="login-input" id="nba-leg2-spread" placeholder="e.g. -5.5"></div>
+              <div><label class="login-label">TOTAL (O/U)</label><input class="login-input" id="nba-leg2-total" placeholder="e.g. O 218.5"></div>
+            </div>
+            <div class="grid-2" style="gap:10px;margin-top:10px">
+              <div><label class="login-label">ODDS</label><input class="login-input" id="nba-leg2-odds" placeholder="e.g. -110"></div>
+              <div><label class="login-label">V3 CONFIDENCE %</label><input class="login-input" id="nba-leg2-conf" type="number" min="60" max="100" placeholder="e.g. 71.2"></div>
+            </div>
+          </div>
+          <!-- LEG 3 -->
+          <div style="background:var(--bg3);border:1px solid var(--gold-border);border-radius:10px;padding:16px;margin-bottom:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG 3</div>
+            <div class="grid-2" style="gap:10px;margin-bottom:10px">
+              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="nba-leg3-home" placeholder="e.g. Boston Celtics"></div>
+              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="nba-leg3-away" placeholder="e.g. Miami Heat"></div>
+            </div>
+            <div class="grid-3" style="gap:10px">
+              <div><label class="login-label">PICK</label><input class="login-input" id="nba-leg3-pick" placeholder="e.g. Boston Celtics Win"></div>
+              <div><label class="login-label">SPREAD</label><input class="login-input" id="nba-leg3-spread" placeholder="e.g. -5.5"></div>
+              <div><label class="login-label">TOTAL (O/U)</label><input class="login-input" id="nba-leg3-total" placeholder="e.g. O 218.5"></div>
+            </div>
+            <div class="grid-2" style="gap:10px;margin-top:10px">
+              <div><label class="login-label">ODDS</label><input class="login-input" id="nba-leg3-odds" placeholder="e.g. -110"></div>
+              <div><label class="login-label">V3 CONFIDENCE %</label><input class="login-input" id="nba-leg3-conf" type="number" min="60" max="100" placeholder="e.g. 71.2"></div>
+            </div>
+          </div>
         </div>
         <button class="btn btn-gold" onclick="saveNbaParlay()">&#128190; Save NBA Parlay</button>
         <div id="nba-msg" style="margin-top:12px;font-size:13px"></div>
@@ -742,23 +776,48 @@
         </div>
         <div id="soc-enabled-status" style="font-size:12px;color:var(--text-dim);margin-bottom:20px">ON — Soccer parlay section visible</div>
         <div id="soc-legs-container">
-          ${[1,2,3].map(i => `
+          <!-- LEG 1 -->
           <div style="background:var(--bg3);border:1px solid var(--gold-border);border-radius:10px;padding:16px;margin-bottom:14px">
-            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG ${i}</div>
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG 1</div>
             <div class="grid-2" style="gap:10px;margin-bottom:10px">
-              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="soc-leg${i}-home" placeholder="e.g. Villarreal"></div>
-              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="soc-leg${i}-away" placeholder="e.g. Elche"></div>
+              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="soc-leg1-home" placeholder="e.g. Villarreal"></div>
+              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="soc-leg1-away" placeholder="e.g. Elche"></div>
             </div>
             <div class="grid-3" style="gap:10px">
-              <div><label class="login-label">PICK</label><input class="login-input" id="soc-leg${i}-pick" placeholder="e.g. Villarreal Win"></div>
-              <div><label class="login-label">LEAGUE</label><input class="login-input" id="soc-leg${i}-league" placeholder="e.g. La Liga"></div>
-              <div><label class="login-label">ODDS</label><input class="login-input" id="soc-leg${i}-odds" placeholder="e.g. 1.85"></div>
+              <div><label class="login-label">PICK</label><input class="login-input" id="soc-leg1-pick" placeholder="e.g. Villarreal Win"></div>
+              <div><label class="login-label">LEAGUE</label><input class="login-input" id="soc-leg1-league" placeholder="e.g. La Liga"></div>
+              <div><label class="login-label">ODDS</label><input class="login-input" id="soc-leg1-odds" placeholder="e.g. 1.85"></div>
             </div>
-            <div style="margin-top:10px">
-              <label class="login-label">V3 CONFIDENCE %</label>
-              <input class="login-input" id="soc-leg${i}-conf" type="number" min="60" max="100" placeholder="e.g. 71.4" style="max-width:200px">
+            <div style="margin-top:10px"><label class="login-label">V3 CONFIDENCE %</label><input class="login-input" id="soc-leg1-conf" type="number" min="60" max="100" placeholder="e.g. 71.4" style="max-width:200px"></div>
+          </div>
+          <!-- LEG 2 -->
+          <div style="background:var(--bg3);border:1px solid var(--gold-border);border-radius:10px;padding:16px;margin-bottom:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG 2</div>
+            <div class="grid-2" style="gap:10px;margin-bottom:10px">
+              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="soc-leg2-home" placeholder="e.g. Villarreal"></div>
+              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="soc-leg2-away" placeholder="e.g. Elche"></div>
             </div>
-          </div>`).join('')}
+            <div class="grid-3" style="gap:10px">
+              <div><label class="login-label">PICK</label><input class="login-input" id="soc-leg2-pick" placeholder="e.g. Villarreal Win"></div>
+              <div><label class="login-label">LEAGUE</label><input class="login-input" id="soc-leg2-league" placeholder="e.g. La Liga"></div>
+              <div><label class="login-label">ODDS</label><input class="login-input" id="soc-leg2-odds" placeholder="e.g. 1.85"></div>
+            </div>
+            <div style="margin-top:10px"><label class="login-label">V3 CONFIDENCE %</label><input class="login-input" id="soc-leg2-conf" type="number" min="60" max="100" placeholder="e.g. 71.4" style="max-width:200px"></div>
+          </div>
+          <!-- LEG 3 -->
+          <div style="background:var(--bg3);border:1px solid var(--gold-border);border-radius:10px;padding:16px;margin-bottom:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG 3</div>
+            <div class="grid-2" style="gap:10px;margin-bottom:10px">
+              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="soc-leg3-home" placeholder="e.g. Villarreal"></div>
+              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="soc-leg3-away" placeholder="e.g. Elche"></div>
+            </div>
+            <div class="grid-3" style="gap:10px">
+              <div><label class="login-label">PICK</label><input class="login-input" id="soc-leg3-pick" placeholder="e.g. Villarreal Win"></div>
+              <div><label class="login-label">LEAGUE</label><input class="login-input" id="soc-leg3-league" placeholder="e.g. La Liga"></div>
+              <div><label class="login-label">ODDS</label><input class="login-input" id="soc-leg3-odds" placeholder="e.g. 1.85"></div>
+            </div>
+            <div style="margin-top:10px"><label class="login-label">V3 CONFIDENCE %</label><input class="login-input" id="soc-leg3-conf" type="number" min="60" max="100" placeholder="e.g. 71.4" style="max-width:200px"></div>
+          </div>
         </div>
         <button class="btn btn-gold" onclick="saveSoccerParlay()">&#128190; Save Soccer Parlay</button>
         <div id="soc-msg" style="margin-top:12px;font-size:13px"></div>
@@ -781,22 +840,45 @@
         </div>
         <div id="mls-enabled-status" style="font-size:12px;color:var(--text-dim);margin-bottom:20px">ON — MLS parlay section visible</div>
         <div id="mls-legs-container">
-          ${[1,2,3].map(i => `
+          <!-- LEG 1 -->
           <div style="background:var(--bg3);border:1px solid var(--gold-border);border-radius:10px;padding:16px;margin-bottom:14px">
-            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG ${i}</div>
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG 1</div>
             <div class="grid-2" style="gap:10px;margin-bottom:10px">
-              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="mls-leg${i}-home" placeholder="e.g. NY Red Bulls"></div>
-              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="mls-leg${i}-away" placeholder="e.g. CF Montreal"></div>
+              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="mls-leg1-home" placeholder="e.g. NY Red Bulls"></div>
+              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="mls-leg1-away" placeholder="e.g. CF Montreal"></div>
             </div>
             <div class="grid-2" style="gap:10px">
-              <div><label class="login-label">PICK</label><input class="login-input" id="mls-leg${i}-pick" placeholder="e.g. NY Red Bulls Win"></div>
-              <div><label class="login-label">ODDS</label><input class="login-input" id="mls-leg${i}-odds" placeholder="e.g. 1.75"></div>
+              <div><label class="login-label">PICK</label><input class="login-input" id="mls-leg1-pick" placeholder="e.g. NY Red Bulls Win"></div>
+              <div><label class="login-label">ODDS</label><input class="login-input" id="mls-leg1-odds" placeholder="e.g. 1.75"></div>
             </div>
-            <div style="margin-top:10px">
-              <label class="login-label">V3 CONFIDENCE %</label>
-              <input class="login-input" id="mls-leg${i}-conf" type="number" min="60" max="100" placeholder="e.g. 73.8" style="max-width:200px">
+            <div style="margin-top:10px"><label class="login-label">V3 CONFIDENCE %</label><input class="login-input" id="mls-leg1-conf" type="number" min="60" max="100" placeholder="e.g. 73.8" style="max-width:200px"></div>
+          </div>
+          <!-- LEG 2 -->
+          <div style="background:var(--bg3);border:1px solid var(--gold-border);border-radius:10px;padding:16px;margin-bottom:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG 2</div>
+            <div class="grid-2" style="gap:10px;margin-bottom:10px">
+              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="mls-leg2-home" placeholder="e.g. NY Red Bulls"></div>
+              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="mls-leg2-away" placeholder="e.g. CF Montreal"></div>
             </div>
-          </div>`).join('')}
+            <div class="grid-2" style="gap:10px">
+              <div><label class="login-label">PICK</label><input class="login-input" id="mls-leg2-pick" placeholder="e.g. NY Red Bulls Win"></div>
+              <div><label class="login-label">ODDS</label><input class="login-input" id="mls-leg2-odds" placeholder="e.g. 1.75"></div>
+            </div>
+            <div style="margin-top:10px"><label class="login-label">V3 CONFIDENCE %</label><input class="login-input" id="mls-leg2-conf" type="number" min="60" max="100" placeholder="e.g. 73.8" style="max-width:200px"></div>
+          </div>
+          <!-- LEG 3 -->
+          <div style="background:var(--bg3);border:1px solid var(--gold-border);border-radius:10px;padding:16px;margin-bottom:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:12px">LEG 3</div>
+            <div class="grid-2" style="gap:10px;margin-bottom:10px">
+              <div><label class="login-label">HOME TEAM</label><input class="login-input" id="mls-leg3-home" placeholder="e.g. NY Red Bulls"></div>
+              <div><label class="login-label">AWAY TEAM</label><input class="login-input" id="mls-leg3-away" placeholder="e.g. CF Montreal"></div>
+            </div>
+            <div class="grid-2" style="gap:10px">
+              <div><label class="login-label">PICK</label><input class="login-input" id="mls-leg3-pick" placeholder="e.g. NY Red Bulls Win"></div>
+              <div><label class="login-label">ODDS</label><input class="login-input" id="mls-leg3-odds" placeholder="e.g. 1.75"></div>
+            </div>
+            <div style="margin-top:10px"><label class="login-label">V3 CONFIDENCE %</label><input class="login-input" id="mls-leg3-conf" type="number" min="60" max="100" placeholder="e.g. 73.8" style="max-width:200px"></div>
+          </div>
         </div>
         <button class="btn btn-gold" onclick="saveMlsParlay()">&#128190; Save MLS Parlay</button>
         <div id="mls-msg" style="margin-top:12px;font-size:13px"></div>
