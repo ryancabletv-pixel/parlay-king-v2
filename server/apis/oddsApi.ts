@@ -180,8 +180,12 @@ export interface OddsGame {
   home_odds:        number | null;
   away_odds:        number | null;
   draw_odds:        number | null;
-  bookmaker:        string;// ── Core fetch helper ────────────────────────────────────────────
-async function fetchOdds(sportKey: string, isManual = false): Promise<OddsGame[]> {
+  bookmaker:        string;
+}
+
+// ── Core fetch helper ────────────────────────────────────────────────────────────────
+async function fetchOdds(sportKey: string, isManual?: boolean): Promise<OddsGame[]> {
+  const _isManual = isManual === true;
   const cacheKey = `odds:${sportKey}`;
 
   // Check cache first — no API call if fresh
@@ -190,8 +194,8 @@ async function fetchOdds(sportKey: string, isManual = false): Promise<OddsGame[]
 
   // Budget check before every call
   // Automated tasks stop at 90; manual dashboard actions can use up to 100
-  if (!checkBudget(sportKey, '/odds', isManual)) {
-    const msg = isManual
+  if (!checkBudget(sportKey, '/odds', _isManual)) {
+    const msg = _isManual
       ? `[OddsAPI] ABSOLUTE CEILING (100) hit — returning empty for ${sportKey}`
       : `[OddsAPI] AUTO CEILING (90/100) hit — returning empty for ${sportKey}. Use manual refresh to force a call.`;
     console.warn(msg);
