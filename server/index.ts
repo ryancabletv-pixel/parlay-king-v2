@@ -234,8 +234,8 @@ async function initializeExpress() {
           </ul>
           <h2>3. Payment Processing</h2>
           <p>All payments are processed by PayPal. We do not store, process, or transmit your credit card or bank account information. PayPal’s privacy policy governs the handling of your payment data.</p>
-          <h2>4. Data Sharing</h2>
-          <p>We do not sell, trade, or share your personal information with third parties, except as required by law or as necessary to process your payment (PayPal).</p>
+          <h2>4. Data Sharing — We Do Not Share Your Data</h2>
+          <p><strong>We do not sell, rent, trade, lease, or share your personal information with any third party for marketing or commercial purposes — ever.</strong> Your email address, subscription details, and account data are used solely to operate your subscription and deliver picks content. The only external party that receives any of your data is PayPal, and only for the purpose of processing your payment. PayPal's own privacy policy governs how they handle that data.</p>
           <h2>5. Data Security</h2>
           <p>We use industry-standard security measures to protect your information. Your account data is stored in an encrypted database hosted on NeonDB.</p>
           <h2>6. Cookies</h2>
@@ -255,20 +255,19 @@ async function initializeExpress() {
         <div class="container">
           <h1>Refund &amp; Cancellation Policy</h1>
           <p><strong>Last Updated: March 8, 2026</strong></p>
-          <div class="disclaimer-box"><p>We want you to be satisfied with your subscription. Please read this policy carefully before subscribing.</p></div>
-          <h2>Pro Monthly Subscription</h2>
+          <div class="disclaimer-box"><p>⚠️ <strong>ALL SALES ARE FINAL.</strong> Because our product is digital data — sports picks and analysis generated in real-time by the Gold Standard V3 Titan XII model — it is delivered immediately upon purchase and cannot be returned. By completing your purchase, you acknowledge and agree that all sales are final and non-refundable.</p></div>
+          <h2>Digital Product — No Refunds</h2>
+          <p>Soccer NBA Parlay King sells <strong>digital sports information and analysis</strong>. Once a subscription is activated, the digital content (daily picks, predictions, expert analysis) is delivered immediately and continuously. Because the product is intangible digital data that is consumed upon delivery, <strong>all sales are final and no refunds will be issued</strong> under any circumstances.</p>
+          <p>This policy applies to all subscription tiers including:</p>
           <ul>
-            <li><strong>Cancellation:</strong> You may cancel at any time from your account dashboard. Your access continues until the end of the current billing period.</li>
-            <li><strong>Refunds:</strong> We offer a <strong>3-day money-back guarantee</strong> for new Pro Monthly subscribers. If you are not satisfied within 3 days of your first payment, contact us for a full refund.</li>
-            <li><strong>Renewal Refunds:</strong> Refunds are not available for renewal charges after the 3-day window. Please cancel before your renewal date to avoid future charges.</li>
+            <li><strong>Pro Monthly Subscription</strong> — billed monthly, all charges are final</li>
+            <li><strong>Lifetime Access</strong> — one-time payment, final and non-refundable</li>
           </ul>
-          <h2>Lifetime Access</h2>
-          <ul>
-            <li><strong>Refunds:</strong> Lifetime access purchases are eligible for a full refund within <strong>7 days</strong> of purchase if you are not satisfied.</li>
-            <li>After 7 days, Lifetime purchases are final and non-refundable.</li>
-          </ul>
-          <h2>How to Request a Refund</h2>
-          <p>Email us at <a href="mailto:soccernbaparlayking@gmail.com">soccernbaparlayking@gmail.com</a> with your order details and reason for the refund. We will process eligible refunds within 5 business days via PayPal.</p>
+          <h2>Cancellation</h2>
+          <p>You may cancel your Pro Monthly subscription at any time from your account dashboard. Cancellation stops future billing but does not entitle you to a refund for any charges already made. Your access will continue until the end of the current billing period.</p>
+          <h2>Disputes</h2>
+          <p>If you believe there has been an unauthorized charge or billing error, please contact us <strong>before</strong> filing a dispute with PayPal. We will investigate and resolve legitimate billing errors promptly.</p>
+          <p>Email: <a href="mailto:soccernbaparlayking@gmail.com">soccernbaparlayking@gmail.com</a></p>
           <h2>Contact</h2>
           <p><a href="mailto:soccernbaparlayking@gmail.com">soccernbaparlayking@gmail.com</a></p>
           <div class="footer"><p>&copy; 2026 Soccer NBA Parlay King. All rights reserved.</p></div>
