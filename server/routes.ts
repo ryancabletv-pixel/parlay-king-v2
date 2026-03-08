@@ -1142,6 +1142,17 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // GET /api/admin/picks-today — alias for Parlay Builder (returns today's picks with { picks: [...] } shape)
+  app.get('/api/admin/picks-today', requireAuth, async (req, res) => {
+    try {
+      const today = new Date().toLocaleDateString('en-CA');
+      const picks = await storage.getPicksByDate(today);
+      res.json({ picks, date: today, total: picks.length });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.post('/api/admin/picks', requireAuth, async (req, res) => {
     try {
       const pick = await storage.createPick(req.body);
@@ -1615,25 +1626,42 @@ export async function registerRoutes(app: Express) {
         return res.status(409).json({ error: 'Username already taken. Please choose another.' });
       }
       const passwordHash = await bcrypt.hash(password, 10);
-      // PAID TIERS DISABLED UNTIL 2026-03-20
-      const paidDisabledUntil = new Date('2026-03-20');
-      const rawTier = plan === 'lifetime' ? 'lifetime' : plan === 'vip-monthly' ? 'vip' : 'free';
-      const tier = new Date() < paidDisabledUntil && rawTier !== 'free' ? 'free' : rawTier;
-      // Upsert member with username and password
+      // Determine tier, expiry, and lock from plan
+      let tier = 'free';
+      let expiresAt: Date | null = null;
+      let tierLockedUntil: Date | null = null;
+      let subscriptionPlan = plan || 'free';
+      if (plan === 'lifetime') {
+        tier = 'lifetime';
+        expiresAt = null;          // never expires
+        tierLockedUntil = null;    // no lock needed — permanent
+      } else if (plan === 'pro-monthly') {
+        tier = 'pro';
+        expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);  // 30 days
+        tierLockedUntil = expiresAt;  // locked until subscription ends
+      } else if (plan === 'vip-monthly') {
+        tier = 'vip';
+        expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        tierLockedUntil = expiresAt;
+      }
+      // Upsert member with username, password, tier, expiry, and lock
       await pool.query(
-        `INSERT INTO members (email, username, password_hash, tier, is_active, created_at)
-         VALUES ($1, $2, $3, $4, true, NOW())
+        `INSERT INTO members (email, username, password_hash, tier, subscription_plan, expires_at, tier_locked_until, is_active, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW())
          ON CONFLICT (email) DO UPDATE SET
            username = EXCLUDED.username,
            password_hash = EXCLUDED.password_hash,
            tier = EXCLUDED.tier,
+           subscription_plan = EXCLUDED.subscription_plan,
+           expires_at = EXCLUDED.expires_at,
+           tier_locked_until = EXCLUDED.tier_locked_until,
            is_active = true`,
-        [email, username, passwordHash, tier]
+        [email, username, passwordHash, tier, subscriptionPlan, expiresAt, tierLockedUntil]
       );
       await pool.end();
-      // Issue JWT
-      const token = jwt.sign({ email, username, tier }, JWT_SECRET, { expiresIn: '90d' });
-      return res.json({ success: true, token, tier, username });
+      // Issue JWT with expiry info
+      const token = jwt.sign({ email, username, tier, expiresAt: expiresAt?.toISOString() || null }, JWT_SECRET, { expiresIn: '90d' });
+      return res.json({ success: true, token, tier, username, expiresAt: expiresAt?.toISOString() || null, subscriptionPlan });
     } catch (err: any) {
       console.error('[Auth Register]', err.message);
       return res.status(500).json({ error: 'Registration failed. Please try again.' });
@@ -1665,12 +1693,29 @@ export async function registerRoutes(app: Express) {
       if (!valid) {
         return res.status(401).json({ error: 'Invalid username or password.' });
       }
+      // Check if subscription has expired — if so, downgrade to free
+      let activeTier = member.tier;
+      if (member.expires_at && new Date(member.expires_at) < new Date() && member.tier !== 'lifetime') {
+        activeTier = 'free';
+        // Update DB to reflect expired tier
+        const pool2 = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+        await pool2.query('UPDATE members SET tier = $1, tier_locked_until = NULL WHERE email = $2', ['free', member.email]);
+        await pool2.end();
+      }
       const token = jwt.sign(
-        { email: member.email, username: member.username, tier: member.tier },
+        { email: member.email, username: member.username, tier: activeTier, expiresAt: member.expires_at || null },
         JWT_SECRET,
         { expiresIn: '90d' }
       );
-      return res.json({ success: true, token, tier: member.tier, username: member.username, email: member.email });
+      return res.json({
+        success: true, token,
+        tier: activeTier,
+        username: member.username,
+        email: member.email,
+        expiresAt: member.expires_at || null,
+        tierLockedUntil: member.tier_locked_until || null,
+        subscriptionPlan: member.subscription_plan || null,
+      });
     } catch (err: any) {
       console.error('[Auth Login]', err.message);
       return res.status(500).json({ error: 'Login failed. Please try again.' });
@@ -2398,9 +2443,237 @@ export async function registerRoutes(app: Express) {
       }
       const token = authHeader.slice(7);
       const decoded = jwt.verify(token, JWT_SECRET) as any;
-      return res.json({ success: true, email: decoded.email, username: decoded.username, tier: decoded.tier });
+      // Re-fetch live data from DB to get latest expiry and lock status
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const result = await pool.query('SELECT tier, expires_at, tier_locked_until, subscription_plan FROM members WHERE email = $1', [decoded.email]);
+      await pool.end();
+      const row = result.rows[0];
+      const activeTier = row ? row.tier : decoded.tier;
+      return res.json({
+        success: true,
+        email: decoded.email,
+        username: decoded.username,
+        tier: activeTier,
+        expiresAt: row?.expires_at || null,
+        tierLockedUntil: row?.tier_locked_until || null,
+        subscriptionPlan: row?.subscription_plan || null,
+      });
     } catch {
       return res.status(401).json({ error: 'Invalid or expired session. Please log in again.' });
+    }
+  });
+
+  // ── MEMBER DASHBOARD ────────────────────────────────────────────────────────
+
+  // GET /api/member/dashboard — returns tier info, expiry countdown, and today's picks for the member's tier
+  app.get('/api/member/dashboard', async (req: Request, res: Response) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Not authenticated.' });
+      }
+      const token = authHeader.slice(7);
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const result = await pool.query('SELECT * FROM members WHERE email = $1', [decoded.email]);
+      await pool.end();
+      if (result.rows.length === 0) return res.status(404).json({ error: 'Member not found.' });
+      const member = result.rows[0];
+      // Check expiry
+      let activeTier = member.tier;
+      let daysRemaining: number | null = null;
+      let hoursRemaining: number | null = null;
+      let isExpired = false;
+      if (member.expires_at && member.tier !== 'lifetime') {
+        const expiryMs = new Date(member.expires_at).getTime() - Date.now();
+        if (expiryMs <= 0) {
+          isExpired = true;
+          activeTier = 'free';
+        } else {
+          daysRemaining = Math.floor(expiryMs / (1000 * 60 * 60 * 24));
+          hoursRemaining = Math.floor((expiryMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        }
+      }
+      // Fetch today's picks for this tier
+      const today = new Date().toISOString().split('T')[0];
+      const tierFilter = activeTier === 'lifetime' ? ['pro', 'vip', 'free'] :
+                         activeTier === 'pro'      ? ['pro', 'vip', 'free'] :
+                         activeTier === 'vip'      ? ['vip', 'free'] : ['free'];
+      const pool2 = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const picksResult = await pool2.query(
+        `SELECT * FROM picks WHERE date = $1 AND tier = ANY($2) AND is_disabled = false ORDER BY confidence DESC LIMIT 20`,
+        [today, tierFilter]
+      );
+      await pool2.end();
+      return res.json({
+        success: true,
+        member: {
+          email: member.email,
+          username: member.username,
+          tier: activeTier,
+          subscriptionPlan: member.subscription_plan,
+          expiresAt: member.expires_at || null,
+          isLifetime: activeTier === 'lifetime',
+          isExpired,
+          daysRemaining,
+          hoursRemaining,
+          tierLockedUntil: member.tier_locked_until || null,
+          canUpgrade: isExpired || activeTier === 'free',
+        },
+        picks: picksResult.rows,
+        picksDate: today,
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/member/parlay-builder — returns today's top picks formatted for the Parlay Builder with sportsbook deep-links
+  app.get('/api/member/parlay-builder', async (req: Request, res: Response) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Not authenticated.' });
+      }
+      const token = authHeader.slice(7);
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const memberTier = decoded.tier || 'free';
+      const today = new Date().toISOString().split('T')[0];
+      const tierFilter = memberTier === 'lifetime' ? ['pro', 'vip', 'free'] :
+                         memberTier === 'pro'      ? ['pro', 'vip', 'free'] :
+                         memberTier === 'vip'      ? ['vip', 'free'] : ['free'];
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const picksResult = await pool.query(
+        `SELECT * FROM picks WHERE date = $1 AND tier = ANY($2) AND is_disabled = false ORDER BY confidence DESC LIMIT 10`,
+        [today, tierFilter]
+      );
+      await pool.end();
+      // Build parlay legs with sportsbook deep-links
+      const sportsbooks = [
+        { name: 'DraftKings', url: 'https://sportsbook.draftkings.com', logo: 'dk' },
+        { name: 'FanDuel', url: 'https://sportsbook.fanduel.com', logo: 'fd' },
+        { name: 'BetMGM', url: 'https://sports.betmgm.com', logo: 'mgm' },
+        { name: 'Caesars', url: 'https://sportsbook.caesars.com', logo: 'czr' },
+        { name: 'PointsBet', url: 'https://pointsbet.com', logo: 'pb' },
+        { name: 'BetRivers', url: 'https://betrivers.com', logo: 'br' },
+        { name: 'ESPN BET', url: 'https://espnbet.com', logo: 'espn' },
+        { name: 'Bet365', url: 'https://bet365.com', logo: 'b365' },
+      ];
+      const legs = picksResult.rows.map((pick: any) => {
+        const searchQuery = encodeURIComponent(`${pick.home_team} vs ${pick.away_team}`);
+        return {
+          id: pick.id,
+          homeTeam: pick.home_team,
+          awayTeam: pick.away_team,
+          league: pick.league,
+          sport: pick.sport,
+          prediction: pick.prediction,
+          confidence: pick.confidence,
+          odds: pick.odds,
+          tier: pick.tier,
+          isPowerPick: pick.is_power_pick,
+          sportsbookLinks: sportsbooks.map(sb => ({
+            name: sb.name,
+            url: `${sb.url}/search?q=${searchQuery}`,
+            logo: sb.logo,
+          })),
+        };
+      });
+      return res.json({
+        success: true,
+        date: today,
+        memberTier,
+        legs,
+        sportsbooks,
+        totalLegs: legs.length,
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/auth/upgrade-check — check if a member is eligible to upgrade their tier
+  app.post('/api/auth/upgrade-check', async (req: Request, res: Response) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Not authenticated.' });
+      }
+      const token = authHeader.slice(7);
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const result = await pool.query('SELECT tier, expires_at, tier_locked_until FROM members WHERE email = $1', [decoded.email]);
+      await pool.end();
+      if (result.rows.length === 0) return res.status(404).json({ error: 'Member not found.' });
+      const member = result.rows[0];
+      const isLocked = member.tier_locked_until && new Date(member.tier_locked_until) > new Date();
+      const isExpired = member.expires_at && new Date(member.expires_at) < new Date();
+      const canUpgrade = !isLocked || isExpired || member.tier === 'free';
+      return res.json({
+        success: true,
+        currentTier: member.tier,
+        canUpgrade,
+        isLocked: !!isLocked,
+        lockExpiresAt: member.tier_locked_until || null,
+        message: canUpgrade
+          ? 'You are eligible to upgrade your plan.'
+          : `Your current subscription is active until ${new Date(member.tier_locked_until).toLocaleDateString()}. You can upgrade once it expires.`,
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── ADMIN MEMBER MANAGEMENT ──────────────────────────────────────────────────
+
+  // POST /api/admin/members/:id/set-tier — manually set a member's tier, expiry, and lock
+  app.post('/api/admin/members/:id/set-tier', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { tier, expiresAt, subscriptionPlan } = req.body;
+      if (!tier) return res.status(400).json({ error: 'tier is required' });
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const expiry = expiresAt ? new Date(expiresAt) : (tier === 'lifetime' ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+      const lockUntil = tier === 'lifetime' || tier === 'free' ? null : expiry;
+      await pool.query(
+        `UPDATE members SET tier = $1, subscription_plan = $2, expires_at = $3, tier_locked_until = $4 WHERE id = $5`,
+        [tier, subscriptionPlan || tier, expiry, lockUntil, id]
+      );
+      await pool.end();
+      picksCache = null; // clear cache
+      return res.json({ success: true, message: `Member #${id} updated to ${tier} tier.` });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/admin/members-full — full member list with tier, expiry, lock, and subscription info
+  app.get('/api/admin/members-full', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const result = await pool.query(
+        `SELECT id, email, username, tier, subscription_plan, expires_at, tier_locked_until, is_active, last_active, created_at
+         FROM members ORDER BY created_at DESC`
+      );
+      await pool.end();
+      const now = new Date();
+      const members = result.rows.map((m: any) => {
+        const isExpired = m.expires_at && new Date(m.expires_at) < now && m.tier !== 'lifetime';
+        const isLocked = m.tier_locked_until && new Date(m.tier_locked_until) > now;
+        const daysLeft = m.expires_at && !isExpired
+          ? Math.ceil((new Date(m.expires_at).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          : null;
+        return { ...m, isExpired, isLocked, daysLeft };
+      });
+      return res.json({ success: true, members, total: members.length });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
     }
   });
 }

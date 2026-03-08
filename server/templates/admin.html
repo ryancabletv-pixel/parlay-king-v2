@@ -380,6 +380,8 @@
       <div class="nav-item" onclick="showPage('history-records')"><span class="nav-icon">📊</span>History Records</div>
       <div class="nav-item" onclick="showPage('site-settings')"><span class="nav-icon">⚙️</span>Site Settings</div>
       <div class="nav-item" onclick="showPage('api-budget')"><span class="nav-icon">📊</span>API Budget</div>
+      <div class="nav-item" onclick="showPage('parlay-builder')"><span class="nav-icon">🎯</span>Parlay Builder</div>
+      <div class="nav-item" onclick="showPage('member-mgmt')"><span class="nav-icon">👥</span>Member Management</div>
     </div>
   </div>
 
@@ -1243,6 +1245,55 @@
       </div>
     </div><!-- /page-api-budget -->
 
+    <!-- ===== PARLAY BUILDER ===== -->
+    <div class="page" id="page-parlay-builder">
+      <div class="page-header">
+        <div class="page-title">🎯 Parlay Builder</div>
+        <div class="page-sub">Today's top picks with sportsbook deep-links for Pro &amp; Lifetime members</div>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div class="section-title">📋 Today's Parlay Legs</div>
+          <button class="btn btn-gold btn-sm" onclick="loadParlayBuilder()">🔄 Refresh</button>
+        </div>
+        <div id="parlay-builder-legs">Loading...</div>
+      </div>
+      <div class="section-card" style="margin-top:16px">
+        <div class="section-title">🏦 Connected Sportsbooks</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:12px">
+          <a href="https://sportsbook.draftkings.com" target="_blank" class="btn" style="background:#1b2838;border:1px solid #d4af37;color:#d4af37;text-align:center;padding:10px">🏆 DraftKings</a>
+          <a href="https://sportsbook.fanduel.com" target="_blank" class="btn" style="background:#1b2838;border:1px solid #00bfff;color:#00bfff;text-align:center;padding:10px">🔵 FanDuel</a>
+          <a href="https://sports.betmgm.com" target="_blank" class="btn" style="background:#1b2838;border:1px solid #ff6b35;color:#ff6b35;text-align:center;padding:10px">🦁 BetMGM</a>
+          <a href="https://sportsbook.caesars.com" target="_blank" class="btn" style="background:#1b2838;border:1px solid #00cc66;color:#00cc66;text-align:center;padding:10px">👑 Caesars</a>
+          <a href="https://espnbet.com" target="_blank" class="btn" style="background:#1b2838;border:1px solid #ff0000;color:#ff0000;text-align:center;padding:10px">📺 ESPN BET</a>
+          <a href="https://betrivers.com" target="_blank" class="btn" style="background:#1b2838;border:1px solid #888;color:#ccc;text-align:center;padding:10px">🌊 BetRivers</a>
+          <a href="https://pointsbet.com" target="_blank" class="btn" style="background:#1b2838;border:1px solid #9b59b6;color:#9b59b6;text-align:center;padding:10px">📍 PointsBet</a>
+          <a href="https://bet365.com" target="_blank" class="btn" style="background:#1b2838;border:1px solid #00aa44;color:#00aa44;text-align:center;padding:10px">🌍 Bet365</a>
+        </div>
+      </div>
+    </div><!-- /page-parlay-builder -->
+
+    <!-- ===== MEMBER MANAGEMENT ===== -->
+    <div class="page" id="page-member-mgmt">
+      <div class="page-header">
+        <div class="page-title">👥 Member Management</div>
+        <div class="page-sub">Pro &amp; Lifetime subscriber management with tier control and expiry tracking</div>
+      </div>
+      <div class="grid-4" style="margin-bottom:16px">
+        <div class="stat-card"><div class="stat-label">TOTAL MEMBERS</div><div class="stat-value gold" id="mgmt-total">—</div></div>
+        <div class="stat-card"><div class="stat-label">PRO SUBSCRIBERS</div><div class="stat-value" style="color:#d4af37" id="mgmt-pro">—</div></div>
+        <div class="stat-card"><div class="stat-label">LIFETIME MEMBERS</div><div class="stat-value" style="color:#ff6b35" id="mgmt-lifetime">—</div></div>
+        <div class="stat-card"><div class="stat-label">EXPIRING SOON (7d)</div><div class="stat-value" style="color:#ff9900" id="mgmt-expiring">—</div></div>
+      </div>
+      <div class="section-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div class="section-title">📋 All Subscribers</div>
+          <button class="btn btn-gold btn-sm" onclick="loadMemberMgmt()">🔄 Refresh</button>
+        </div>
+        <div id="mgmt-table" class="table-scroll">Loading...</div>
+      </div>
+    </div><!-- /page-member-mgmt -->
+
   </div><!-- /main -->
 </div><!-- /app -->
 
@@ -1333,6 +1384,8 @@ function showPage(name) {
     'history-records': loadHistoryRecords,
     'site-settings':   loadSiteSettings,
     'api-budget':      loadApiBudget,
+    'parlay-builder':  loadParlayBuilder,
+    'member-mgmt':     loadMemberMgmt,
   };
   loaders[name]?.();
   closeSidebar(); // auto-close sidebar on mobile after nav
@@ -1586,27 +1639,59 @@ async function loadTierResults() {
 // ── Members ───────────────────────────────────────────────────────────────────
 async function loadMembers() {
   try {
-    const [members, active] = await Promise.all([api('/api/admin/members'), api('/api/admin/active-users')]);
+    const [membersData, active] = await Promise.all([api('/api/admin/members-full'), api('/api/admin/active-users')]);
+    const members = membersData.members || [];
     document.getElementById('members-total').textContent = members.length;
-    document.getElementById('members-active').textContent = active.count;
+    document.getElementById('members-active').textContent = active.count || 0;
     if (!members.length) {
       document.getElementById('members-table').innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No members yet.</div>';
       return;
     }
+    const tierColor = { free: '#888', vip: '#00bfff', pro: '#d4af37', lifetime: '#ff6b35' };
     document.getElementById('members-table').innerHTML = `
       <table>
-        <thead><tr><th>Email</th><th>Tier</th><th>Last Active</th><th>Status</th></tr></thead>
-        <tbody>${members.slice(0,50).map(m => `
+        <thead><tr><th>Email / Username</th><th>Tier</th><th>Subscription</th><th>Expires</th><th>Lock</th><th>Last Active</th><th>Actions</th></tr></thead>
+        <tbody>${members.slice(0,100).map(m => {
+          const expLabel = m.tier === 'lifetime' ? '<span style="color:#ff6b35">&#9854; Lifetime</span>' :
+            m.isExpired ? '<span style="color:#ff4444">Expired</span>' :
+            m.daysLeft !== null ? `<span style="color:${m.daysLeft <= 5 ? '#ff9900' : '#00cc66'}">${m.daysLeft}d left</span>` : '—';
+          const lockLabel = m.isLocked ? '<span style="color:#ff9900">&#128274; Locked</span>' : '<span style="color:#888">Unlocked</span>';
+          return `
           <tr>
-            <td>${m.email}</td>
-            <td><span class="badge-tier ${m.tier}">${m.tier.toUpperCase()}</span></td>
-            <td style="color:var(--text-dim)">${m.last_active ? new Date(m.last_active).toLocaleDateString() : '—'}</td>
-            <td><span class="status-dot ${m.is_active ? 'green' : 'red'}"></span>${m.is_active ? 'Active' : 'Inactive'}</td>
-          </tr>`).join('')}
+            <td><div style="font-weight:600">${m.email}</div><div style="color:var(--text-dim);font-size:0.8rem">${m.username || '—'}</div></td>
+            <td><span style="background:${tierColor[m.tier]||'#888'};color:#000;padding:2px 8px;border-radius:4px;font-weight:700;font-size:0.8rem">${(m.tier||'free').toUpperCase()}</span></td>
+            <td style="color:var(--text-dim);font-size:0.85rem">${m.subscription_plan || '—'}</td>
+            <td>${expLabel}</td>
+            <td>${lockLabel}</td>
+            <td style="color:var(--text-dim);font-size:0.8rem">${m.last_active ? new Date(m.last_active).toLocaleDateString() : '—'}</td>
+            <td>
+              <select id="tier-sel-${m.id}" style="background:#1e293b;color:#fff;border:1px solid #333;border-radius:4px;padding:3px 6px;font-size:0.8rem">
+                <option value="free" ${m.tier==='free'?'selected':''}>Free</option>
+                <option value="vip" ${m.tier==='vip'?'selected':''}>VIP</option>
+                <option value="pro" ${m.tier==='pro'?'selected':''}>Pro</option>
+                <option value="lifetime" ${m.tier==='lifetime'?'selected':''}>Lifetime</option>
+              </select>
+              <button onclick="adminSetTier(${m.id})" style="margin-left:4px;background:#d4af37;color:#000;border:none;border-radius:4px;padding:3px 8px;font-size:0.8rem;cursor:pointer">Set</button>
+            </td>
+          </tr>`;
+        }).join('')}
         </tbody>
       </table>`;
   } catch(e) {
     document.getElementById('members-table').innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+  }
+}
+
+async function adminSetTier(memberId) {
+  const sel = document.getElementById(`tier-sel-${memberId}`);
+  if (!sel) return;
+  const tier = sel.value;
+  try {
+    const r = await api(`/api/admin/members/${memberId}/set-tier`, { method: 'POST', body: JSON.stringify({ tier }) });
+    showNotification(`Member #${memberId} updated to ${tier.toUpperCase()} tier`, 'success');
+    loadMembers();
+  } catch(e) {
+    showNotification(`Error: ${e.message}`, 'error');
   }
 }
 
@@ -2628,6 +2713,126 @@ async function loadApiBudget() {
   } catch(e) {
     wrap.innerHTML = '<div style="color:var(--red);font-size:13px">\u274c Error: ' + e.message + '</div>';
     notify('Error loading budget: ' + e.message, 'error');
+  }
+}
+
+// ── Parlay Builder ──────────────────────────────────────────────────────────
+async function loadParlayBuilder() {
+  const el = document.getElementById('parlay-builder-legs');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-dim);padding:20px">Loading today\'s picks...</div>';
+  try {
+    // Use the admin picks endpoint to get today's top picks (no member auth needed from admin)
+    const data = await api('/api/admin/picks-today');
+    const picks = (data.picks || []).slice(0, 10);
+    if (!picks.length) {
+      el.innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No picks available today. Run the engine first.</div>';
+      return;
+    }
+    const sportsbooks = [
+      { name: 'DraftKings', url: 'https://sportsbook.draftkings.com/search?q=', color: '#d4af37' },
+      { name: 'FanDuel',    url: 'https://sportsbook.fanduel.com/search?q=',    color: '#00bfff' },
+      { name: 'BetMGM',     url: 'https://sports.betmgm.com/en/sports?q=',      color: '#ff6b35' },
+      { name: 'Caesars',    url: 'https://sportsbook.caesars.com/us/nj/bet#search?q=', color: '#00cc66' },
+      { name: 'ESPN BET',   url: 'https://espnbet.com/search?q=',               color: '#ff0000' },
+      { name: 'BetRivers',  url: 'https://betrivers.com/?page=sportsbook&q=',   color: '#888' },
+    ];
+    const tierBadge = { free: '#888', vip: '#00bfff', pro: '#d4af37', lifetime: '#ff6b35' };
+    el.innerHTML = picks.map((p, i) => {
+      const q = encodeURIComponent(`${p.home_team || p.homeTeam} ${p.away_team || p.awayTeam}`);
+      const conf = parseFloat(p.confidence || 0).toFixed(1);
+      const tier = p.tier || 'free';
+      const links = sportsbooks.map(sb =>
+        `<a href="${sb.url}${q}" target="_blank" style="display:inline-block;padding:4px 10px;border-radius:4px;border:1px solid ${sb.color};color:${sb.color};font-size:0.75rem;text-decoration:none;margin:2px">${sb.name}</a>`
+      ).join('');
+      return `
+        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:14px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="font-weight:700;font-size:1rem">${p.home_team || p.homeTeam} vs ${p.away_team || p.awayTeam}</div>
+            <span style="background:${tierBadge[tier]};color:#000;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700">${tier.toUpperCase()}</span>
+          </div>
+          <div style="color:var(--text-dim);font-size:0.85rem;margin-bottom:6px">${p.league || ''} &bull; ${p.sport || ''}</div>
+          <div style="display:flex;gap:16px;margin-bottom:10px">
+            <div><span style="color:var(--text-dim);font-size:0.8rem">PICK</span><br><span style="color:#fff;font-weight:600">${p.prediction || p.best_pick || '—'}</span></div>
+            <div><span style="color:var(--text-dim);font-size:0.8rem">CONFIDENCE</span><br><span style="color:${conf >= 70 ? '#00cc66' : conf >= 65 ? '#d4af37' : '#ff9900'};font-weight:700">${conf}%</span></div>
+            <div><span style="color:var(--text-dim);font-size:0.8rem">ODDS</span><br><span style="color:#fff">${p.odds || 'Auto'}</span></div>
+          </div>
+          <div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:6px">Bet on this pick:</div>
+          <div>${links}</div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+  }
+}
+
+// ── Member Management ─────────────────────────────────────────────────────────
+async function loadMemberMgmt() {
+  try {
+    const data = await api('/api/admin/members-full');
+    const members = data.members || [];
+    document.getElementById('mgmt-total').textContent = members.length;
+    document.getElementById('mgmt-pro').textContent = members.filter(m => m.tier === 'pro').length;
+    document.getElementById('mgmt-lifetime').textContent = members.filter(m => m.tier === 'lifetime').length;
+    document.getElementById('mgmt-expiring').textContent = members.filter(m => m.daysLeft !== null && m.daysLeft <= 7 && !m.isExpired).length;
+    if (!members.length) {
+      document.getElementById('mgmt-table').innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No subscribers yet.</div>';
+      return;
+    }
+    const tierColor = { free: '#888', vip: '#00bfff', pro: '#d4af37', lifetime: '#ff6b35' };
+    document.getElementById('mgmt-table').innerHTML = `
+      <table>
+        <thead><tr><th>#</th><th>Email / Username</th><th>Tier</th><th>Plan</th><th>Subscription Expires</th><th>Countdown</th><th>Lock Status</th><th>Joined</th><th>Set Tier</th></tr></thead>
+        <tbody>${members.map((m, i) => {
+          const expDate = m.expires_at ? new Date(m.expires_at).toLocaleDateString() : (m.tier === 'lifetime' ? 'Never' : '—');
+          const countdownHtml = m.tier === 'lifetime'
+            ? '<span style="color:#ff6b35;font-weight:700">♾️ Lifetime</span>'
+            : m.isExpired
+              ? '<span style="color:#ff4444;font-weight:700">EXPIRED</span>'
+              : m.daysLeft !== null
+                ? `<div style="font-weight:700;color:${m.daysLeft <= 3 ? '#ff4444' : m.daysLeft <= 7 ? '#ff9900' : '#00cc66'}">${m.daysLeft}d remaining</div><div style="font-size:0.75rem;color:var(--text-dim)">Expires ${expDate}</div>`
+                : '—';
+          const lockHtml = m.isLocked
+            ? `<span style="color:#ff9900">🔒 Locked until ${new Date(m.tier_locked_until).toLocaleDateString()}</span>`
+            : '<span style="color:#888">🔓 Unlocked</span>';
+          return `
+            <tr>
+              <td style="color:var(--text-dim)">${i+1}</td>
+              <td><div style="font-weight:600">${m.email}</div><div style="color:var(--text-dim);font-size:0.8rem">@${m.username || '—'}</div></td>
+              <td><span style="background:${tierColor[m.tier]||'#888'};color:#000;padding:2px 8px;border-radius:4px;font-weight:700;font-size:0.8rem">${(m.tier||'free').toUpperCase()}</span></td>
+              <td style="color:var(--text-dim);font-size:0.85rem">${m.subscription_plan || '—'}</td>
+              <td style="font-size:0.85rem">${expDate}</td>
+              <td>${countdownHtml}</td>
+              <td>${lockHtml}</td>
+              <td style="color:var(--text-dim);font-size:0.8rem">${m.created_at ? new Date(m.created_at).toLocaleDateString() : '—'}</td>
+              <td>
+                <select id="mgmt-tier-${m.id}" style="background:#1e293b;color:#fff;border:1px solid #333;border-radius:4px;padding:3px 6px;font-size:0.8rem">
+                  <option value="free" ${m.tier==='free'?'selected':''}>Free</option>
+                  <option value="vip" ${m.tier==='vip'?'selected':''}>VIP</option>
+                  <option value="pro" ${m.tier==='pro'?'selected':''}>Pro</option>
+                  <option value="lifetime" ${m.tier==='lifetime'?'selected':''}>Lifetime</option>
+                </select>
+                <button onclick="mgmtSetTier(${m.id})" style="margin-left:4px;background:#d4af37;color:#000;border:none;border-radius:4px;padding:3px 8px;font-size:0.8rem;cursor:pointer">Apply</button>
+              </td>
+            </tr>`;
+        }).join('')}
+        </tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('mgmt-table').innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
+  }
+}
+
+async function mgmtSetTier(memberId) {
+  const sel = document.getElementById(`mgmt-tier-${memberId}`);
+  if (!sel) return;
+  const tier = sel.value;
+  try {
+    await api(`/api/admin/members/${memberId}/set-tier`, { method: 'POST', body: JSON.stringify({ tier }) });
+    showNotification(`Member #${memberId} → ${tier.toUpperCase()} tier applied`, 'success');
+    loadMemberMgmt();
+  } catch(e) {
+    showNotification(`Error: ${e.message}`, 'error');
   }
 }
 
