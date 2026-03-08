@@ -643,6 +643,24 @@ function getMockMLSFixtures(date: string): FixtureData[] {
 export async function registerRoutes(app: Express) {
   await storage.initializeDatabase();
 
+  // ── Schema Migration: add new member columns if they don’t exist ────────────────────
+  try {
+    const { Pool } = await import('pg');
+    const migPool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    await migPool.query(`
+      ALTER TABLE members
+        ADD COLUMN IF NOT EXISTS subscription_plan TEXT DEFAULT 'free',
+        ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT NULL,
+        ADD COLUMN IF NOT EXISTS tier_locked_until TIMESTAMPTZ DEFAULT NULL,
+        ADD COLUMN IF NOT EXISTS username TEXT DEFAULT NULL,
+        ADD COLUMN IF NOT EXISTS password_hash TEXT DEFAULT NULL;
+    `);
+    await migPool.end();
+    console.log('[Migration] members table columns ensured.');
+  } catch (migErr: any) {
+    console.warn('[Migration] members table migration warning:', migErr.message);
+  }
+
   // ── Authentication ──────────────────────────────────────────────────────────
   app.post('/api/admin/login', (req, res) => {
     const { password } = req.body;
