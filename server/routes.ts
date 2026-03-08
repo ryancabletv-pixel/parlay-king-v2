@@ -1758,14 +1758,15 @@ export async function registerRoutes(app: Express) {
           const outcomes: { label: string; conf: number }[] = [];
           if (pred) {
             const p = pred.predictions;
-            if (p.homeWin)    outcomes.push({ label: `${g.home_team} Win`, conf: p.homeWin * 100 });
-            if (p.awayWin)    outcomes.push({ label: `${g.away_team} Win`, conf: p.awayWin * 100 });
-            if (p.draw)       outcomes.push({ label: 'Draw', conf: p.draw * 100 });
-            if (p.homeOrDraw) outcomes.push({ label: `${g.home_team} Win or Draw`, conf: p.homeOrDraw * 100 });
-            if (p.awayOrDraw) outcomes.push({ label: `${g.away_team} Win or Draw`, conf: p.awayOrDraw * 100 });
-            if (p.over25)     outcomes.push({ label: 'Over 2.5 Goals', conf: p.over25 * 100 });
-            if (p.under25)    outcomes.push({ label: 'Under 2.5 Goals', conf: p.under25 * 100 });
-            if (p.btts)       outcomes.push({ label: 'Both Teams to Score', conf: p.btts * 100 });
+            // Engine already returns values on 0-100 scale — no * 100 needed
+            if (p.homeWin)    outcomes.push({ label: `${g.home_team} Win`, conf: p.homeWin });
+            if (p.awayWin)    outcomes.push({ label: `${g.away_team} Win`, conf: p.awayWin });
+            if (p.draw)       outcomes.push({ label: 'Draw', conf: p.draw });
+            if (p.homeOrDraw) outcomes.push({ label: `${g.home_team} Win or Draw`, conf: p.homeOrDraw });
+            if (p.awayOrDraw) outcomes.push({ label: `${g.away_team} Win or Draw`, conf: p.awayOrDraw });
+            if (p.over25)     outcomes.push({ label: 'Over 2.5 Goals', conf: p.over25 });
+            if (p.under25)    outcomes.push({ label: 'Under 2.5 Goals', conf: p.under25 });
+            if (p.btts)       outcomes.push({ label: 'Both Teams to Score', conf: p.btts });
           }
           return {
             id: g.id,
@@ -1827,14 +1828,15 @@ export async function registerRoutes(app: Express) {
       const conf = pred.topConfidence;
       const outcomes: { label: string; conf: number }[] = [];
       const p = pred.predictions;
-      if (p.homeWin)    outcomes.push({ label: `${g.home_team} Win`, conf: p.homeWin * 100 });
-      if (p.awayWin)    outcomes.push({ label: `${g.away_team} Win`, conf: p.awayWin * 100 });
-      if (p.draw)       outcomes.push({ label: 'Draw', conf: p.draw * 100 });
-      if (p.homeOrDraw) outcomes.push({ label: `${g.home_team} Win or Draw`, conf: p.homeOrDraw * 100 });
-      if (p.awayOrDraw) outcomes.push({ label: `${g.away_team} Win or Draw`, conf: p.awayOrDraw * 100 });
-      if (p.over25)     outcomes.push({ label: 'Over 2.5 Goals', conf: p.over25 * 100 });
-      if (p.under25)    outcomes.push({ label: 'Under 2.5 Goals', conf: p.under25 * 100 });
-      if (p.btts)       outcomes.push({ label: 'Both Teams to Score', conf: p.btts * 100 });
+      // Engine already returns values on 0-100 scale — no * 100 needed
+      if (p.homeWin)    outcomes.push({ label: `${g.home_team} Win`, conf: p.homeWin });
+      if (p.awayWin)    outcomes.push({ label: `${g.away_team} Win`, conf: p.awayWin });
+      if (p.draw)       outcomes.push({ label: 'Draw', conf: p.draw });
+      if (p.homeOrDraw) outcomes.push({ label: `${g.home_team} Win or Draw`, conf: p.homeOrDraw });
+      if (p.awayOrDraw) outcomes.push({ label: `${g.away_team} Win or Draw`, conf: p.awayOrDraw });
+      if (p.over25)     outcomes.push({ label: 'Over 2.5 Goals', conf: p.over25 });
+      if (p.under25)    outcomes.push({ label: 'Under 2.5 Goals', conf: p.under25 });
+      if (p.btts)       outcomes.push({ label: 'Both Teams to Score', conf: p.btts });
       res.json({
         success: true,
         game: {
