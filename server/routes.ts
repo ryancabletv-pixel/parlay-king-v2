@@ -655,9 +655,11 @@ export async function registerRoutes(app: Express) {
       // Public site only shows picks at 68%+ confidence (Pro tier and above)
       // Free tier picks (64-67%) are filtered out from the main site display
       const publicActive = active.filter(p => (p.confidence ?? 0) >= 68 && p.tier !== 'free');
-      const soccerPicks = publicActive.filter(p => p.sport === 'soccer').slice(0, 3);
-      const mlsPicks    = publicActive.filter(p => p.sport === 'mls').slice(0, 3);
-      const nbaPicks    = publicActive.filter(p => p.sport === 'nba').slice(0, 3);
+      // Exclude Power Pick rows from sport lists to avoid duplicates
+      const sportOnly   = publicActive.filter(p => !p.isPowerPick);
+      const soccerPicks = sportOnly.filter(p => p.sport === 'soccer').slice(0, 3);
+      const mlsPicks    = sportOnly.filter(p => p.sport === 'mls').slice(0, 3);
+      const nbaPicks    = sportOnly.filter(p => p.sport === 'nba').slice(0, 3);
       const powerPick   = publicActive.find(p => p.isPowerPick) ||
                           [...publicActive].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
 
