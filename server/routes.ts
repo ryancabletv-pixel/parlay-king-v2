@@ -1940,15 +1940,20 @@ export async function registerRoutes(app: Express) {
   app.post('/api/admin/featured-game', requireAuth, async (req, res) => {
     try {
       const { homeTeam, awayTeam, league, sport, homeOdds, awayOdds, drawOdds, confidence, pick, liveOnSite } = req.body;
+      const conf = parseFloat(confidence) || 0;
+      // Auto-generate odds from confidence if not manually provided
+      const autoHomeOdds = homeOdds  || confidenceToAmericanOdds(conf);
+      const autoAwayOdds = awayOdds  || confidenceToAmericanOdds(Math.max(conf - 10, 45));
+      const autoDrawOdds = drawOdds  || (sport === 'soccer' ? '+280' : '');
       await Promise.all([
         storage.setEngineConfig('fg_home',       homeTeam   || ''),
         storage.setEngineConfig('fg_away',       awayTeam   || ''),
         storage.setEngineConfig('fg_league',     league     || ''),
         storage.setEngineConfig('fg_sport',      sport      || 'soccer'),
-        storage.setEngineConfig('fg_home_odds',  String(homeOdds  || '')),
-        storage.setEngineConfig('fg_away_odds',  String(awayOdds  || '')),
-        storage.setEngineConfig('fg_draw_odds',  String(drawOdds  || '')),
-        storage.setEngineConfig('fg_confidence', String(confidence || '')),
+        storage.setEngineConfig('fg_home_odds',  autoHomeOdds),
+        storage.setEngineConfig('fg_away_odds',  autoAwayOdds),
+        storage.setEngineConfig('fg_draw_odds',  autoDrawOdds),
+        storage.setEngineConfig('fg_confidence', String(conf || '')),
         storage.setEngineConfig('fg_pick',       pick       || ''),
         storage.setEngineConfig('fg_live',       liveOnSite ? 'true' : 'false'),
       ]);
@@ -1956,6 +1961,27 @@ export async function registerRoutes(app: Express) {
       res.json({ success: true, message: liveOnSite ? 'Featured game is LIVE on site' : 'Featured game saved (not live)' });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
+
+  // ── Odds Auto-Generator ─────────────────────────────────────────────────────
+  // Converts V3 confidence % → American odds (no API calls, pure math)
+  // Formula: confidence → implied probability → American moneyline
+  // e.g. 75% confidence → -300, 60% → -150, 55% → -122, 50% → +100, 45% → +122
+  function confidenceToAmericanOdds(confidence: number): string {
+    if (!confidence || confidence <= 0) return '';
+    // Apply a slight vig adjustment (book margin ~5%) to make odds realistic
+    const vig = 0.05;
+    const impliedProb = Math.min(Math.max(confidence / 100, 0.01), 0.99);
+    const viggedProb  = impliedProb * (1 + vig);
+    if (viggedProb >= 0.5) {
+      // Favourite: negative odds
+      const odds = Math.round(-(viggedProb / (1 - viggedProb)) * 100);
+      return String(odds); // e.g. -300
+    } else {
+      // Underdog: positive odds
+      const odds = Math.round(((1 - viggedProb) / viggedProb) * 100);
+      return '+' + String(odds); // e.g. +250
+    }
+  }
 
   // ── TAB 2: EXPERT ANALYSIS ───────────────────────────────────────────────────
   // GET  /api/admin/expert-analysis  — load current analysis text + visibility
@@ -2009,13 +2035,15 @@ export async function registerRoutes(app: Express) {
       const saves: Promise<void>[] = [];
       (legs || []).slice(0,3).forEach((leg: any, i: number) => {
         const n = i + 1;
+        const conf = parseFloat(leg.confidence) || 0;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
         saves.push(storage.setEngineConfig(`nba_leg${n}_home`,   leg.homeTeam   || ''));
         saves.push(storage.setEngineConfig(`nba_leg${n}_away`,   leg.awayTeam   || ''));
         saves.push(storage.setEngineConfig(`nba_leg${n}_pick`,   leg.pick       || ''));
         saves.push(storage.setEngineConfig(`nba_leg${n}_spread`, leg.spread     || ''));
         saves.push(storage.setEngineConfig(`nba_leg${n}_total`,  leg.total      || ''));
-        saves.push(storage.setEngineConfig(`nba_leg${n}_odds`,   leg.odds       || ''));
-        saves.push(storage.setEngineConfig(`nba_leg${n}_conf`,   String(leg.confidence || '')));
+        saves.push(storage.setEngineConfig(`nba_leg${n}_odds`,   autoOdds));
+        saves.push(storage.setEngineConfig(`nba_leg${n}_conf`,   String(conf || '')));
       });
       saves.push(storage.setEngineConfig('nba_parlay_enabled', enabled !== false ? 'true' : 'false'));
       await Promise.all(saves);
@@ -2046,11 +2074,13 @@ export async function registerRoutes(app: Express) {
       const saves: Promise<void>[] = [];
       (legs || []).slice(0,3).forEach((leg: any, i: number) => {
         const n = i + 1;
+        const conf = parseFloat(leg.confidence) || 0;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
         saves.push(storage.setEngineConfig(`soc_leg${n}_home`,   leg.homeTeam   || ''));
         saves.push(storage.setEngineConfig(`soc_leg${n}_away`,   leg.awayTeam   || ''));
         saves.push(storage.setEngineConfig(`soc_leg${n}_pick`,   leg.pick       || ''));
-        saves.push(storage.setEngineConfig(`soc_leg${n}_odds`,   leg.odds       || ''));
-        saves.push(storage.setEngineConfig(`soc_leg${n}_conf`,   String(leg.confidence || '')));
+        saves.push(storage.setEngineConfig(`soc_leg${n}_odds`,   autoOdds));
+        saves.push(storage.setEngineConfig(`soc_leg${n}_conf`,   String(conf || '')));
         saves.push(storage.setEngineConfig(`soc_leg${n}_league`, leg.league     || ''));
       });
       saves.push(storage.setEngineConfig('soc_parlay_enabled', enabled !== false ? 'true' : 'false'));
@@ -2081,11 +2111,13 @@ export async function registerRoutes(app: Express) {
       const saves: Promise<void>[] = [];
       (legs || []).slice(0,3).forEach((leg: any, i: number) => {
         const n = i + 1;
+        const conf = parseFloat(leg.confidence) || 0;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
         saves.push(storage.setEngineConfig(`mls_leg${n}_home`,   leg.homeTeam   || ''));
         saves.push(storage.setEngineConfig(`mls_leg${n}_away`,   leg.awayTeam   || ''));
         saves.push(storage.setEngineConfig(`mls_leg${n}_pick`,   leg.pick       || ''));
-        saves.push(storage.setEngineConfig(`mls_leg${n}_odds`,   leg.odds       || ''));
-        saves.push(storage.setEngineConfig(`mls_leg${n}_conf`,   String(leg.confidence || '')));
+        saves.push(storage.setEngineConfig(`mls_leg${n}_odds`,   autoOdds));
+        saves.push(storage.setEngineConfig(`mls_leg${n}_conf`,   String(conf || '')));
       });
       saves.push(storage.setEngineConfig('mls_parlay_enabled', enabled !== false ? 'true' : 'false'));
       await Promise.all(saves);
@@ -2115,14 +2147,16 @@ export async function registerRoutes(app: Express) {
   app.post('/api/admin/power-pick-manual', requireAuth, async (req, res) => {
     try {
       const { homeTeam, awayTeam, league, sport, pick, confidence, odds, analysis, enabled } = req.body;
+      const conf = parseFloat(confidence) || 0;
+      const autoOdds = odds || confidenceToAmericanOdds(conf);
       await Promise.all([
         storage.setEngineConfig('pp_home',       homeTeam   || ''),
         storage.setEngineConfig('pp_away',       awayTeam   || ''),
         storage.setEngineConfig('pp_league',     league     || ''),
         storage.setEngineConfig('pp_sport',      sport      || 'nba'),
         storage.setEngineConfig('pp_pick',       pick       || ''),
-        storage.setEngineConfig('pp_confidence', String(confidence || '')),
-        storage.setEngineConfig('pp_odds',       odds       || ''),
+        storage.setEngineConfig('pp_confidence', String(conf || '')),
+        storage.setEngineConfig('pp_odds',       autoOdds),
         storage.setEngineConfig('pp_analysis',   analysis   || ''),
         storage.setEngineConfig('pp_enabled',    enabled !== false ? 'true' : 'false'),
       ]);

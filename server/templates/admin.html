@@ -1362,6 +1362,8 @@ function initApp() {
   document.getElementById('top-date').textContent = new Date().toLocaleDateString('en-US', {weekday:'short',month:'short',day:'numeric',year:'numeric'});
   loadDashboard();
   setInterval(loadDashboard, 60000);
+  // Wire confidence → auto-odds on all site control tabs
+  setTimeout(initAutoOddsWiring, 500);
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -2013,6 +2015,53 @@ async function initV3Validator() {
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ── TAB 1: FEATURED GAME ─────────────────────────────────────────────────────
+// ── Auto-Odds Utility (mirrors server-side confidenceToAmericanOdds) ──────────
+function autoOddsFromConf(conf) {
+  if (!conf || conf <= 0) return '';
+  const vig = 0.05;
+  const impliedProb = Math.min(Math.max(conf / 100, 0.01), 0.99);
+  const viggedProb  = impliedProb * (1 + vig);
+  if (viggedProb >= 0.5) {
+    return String(Math.round(-(viggedProb / (1 - viggedProb)) * 100));
+  } else {
+    return '+' + String(Math.round(((1 - viggedProb) / viggedProb) * 100));
+  }
+}
+
+// Wire confidence → odds auto-fill for all tabs
+function wireAutoOdds(confId, oddsId) {
+  const confEl = document.getElementById(confId);
+  const oddsEl = document.getElementById(oddsId);
+  if (!confEl || !oddsEl) return;
+  confEl.addEventListener('input', () => {
+    const conf = parseFloat(confEl.value);
+    if (conf > 0 && !oddsEl.dataset.manuallySet) {
+      oddsEl.value = autoOddsFromConf(conf);
+      oddsEl.style.borderColor = 'var(--gold)';
+      oddsEl.title = 'Auto-generated from V3 confidence — edit to override';
+    }
+  });
+  oddsEl.addEventListener('input', () => {
+    // Mark as manually set so auto-fill stops overwriting
+    oddsEl.dataset.manuallySet = oddsEl.value ? '1' : '';
+    oddsEl.style.borderColor = oddsEl.value ? 'var(--blue)' : '';
+    oddsEl.title = oddsEl.value ? 'Manual override' : '';
+  });
+}
+
+function initAutoOddsWiring() {
+  // Featured Game
+  wireAutoOdds('fg-confidence', 'fg-home-odds');
+  // NBA legs
+  ['nba-leg1','nba-leg2','nba-leg3'].forEach(p => wireAutoOdds(p+'-conf', p+'-odds'));
+  // Soccer legs
+  ['soc-leg1','soc-leg2','soc-leg3'].forEach(p => wireAutoOdds(p+'-conf', p+'-odds'));
+  // MLS legs
+  ['mls-leg1','mls-leg2','mls-leg3'].forEach(p => wireAutoOdds(p+'-conf', p+'-odds'));
+  // Power Pick
+  wireAutoOdds('pp-confidence', 'pp-odds');
+}
+
 async function loadFeaturedGame() {
   try {
     const d = await api('/api/admin/featured-game');
