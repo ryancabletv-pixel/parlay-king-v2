@@ -88,20 +88,28 @@ interface BudgetEntry {
   used: number;
 }
 
-const BUDGET_CEILING = 100;
+const BUDGET_CEILING = 100;      // Absolute daily limit from The Odds API
+const AUTO_CEILING   = 90;        // Automated tasks stop here; 10 reserved for manual dashboard
 let budgetUsedToday  = 0;
 let budgetResetDate  = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
 const budgetLedger: BudgetEntry[] = [];
 
-function checkBudget(sport: string, endpoint: string): boolean {
+/**
+ * checkBudget — call before every API request.
+ * @param isManual  true = admin dashboard action (uses full 100 ceiling)
+ *                  false = automated background task (stops at 90)
+ */
+function checkBudget(sport: string, endpoint: string, isManual = false): boolean {
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
   if (today !== budgetResetDate) {
     budgetUsedToday = 0;
     budgetResetDate = today;
     console.log(`[BudgetLedger] New day — quota reset to 0/${BUDGET_CEILING}`);
   }
-  if (budgetUsedToday >= BUDGET_CEILING) {
-    console.warn(`[BudgetLedger] HARD CEILING REACHED (${budgetUsedToday}/${BUDGET_CEILING}) — blocking call to ${endpoint} for ${sport}`);
+  const ceiling = isManual ? BUDGET_CEILING : AUTO_CEILING;
+  if (budgetUsedToday >= ceiling) {
+    const label = isManual ? 'ABSOLUTE CEILING' : 'AUTO CEILING (90/100 — 10 reserved for manual)';
+    console.warn(`[BudgetLedger] ${label} REACHED (${budgetUsedToday}/${ceiling}) — blocking call to ${endpoint} for ${sport}`);
     return false;
   }
   return true;
@@ -120,12 +128,16 @@ function recordCall(sport: string, endpoint: string, remaining: number, used: nu
 }
 
 export function getBudgetStatus() {
+  const usedToday = budgetUsedToday;
   return {
-    ceiling: BUDGET_CEILING,
-    used_today: budgetUsedToday,
-    remaining: Math.max(0, BUDGET_CEILING - budgetUsedToday),
-    reset_date: budgetResetDate,
-    ledger: budgetLedger.slice(-20), // last 20 entries
+    ceiling:          BUDGET_CEILING,
+    auto_ceiling:     AUTO_CEILING,
+    used_today:       usedToday,
+    remaining:        Math.max(0, BUDGET_CEILING - usedToday),
+    remaining_auto:   Math.max(0, AUTO_CEILING   - usedToday),
+    throttle_active:  usedToday >= AUTO_CEILING,
+    reset_date:       budgetResetDate,
+    ledger:           budgetLedger.slice(-20),
   };
 }
 
@@ -168,11 +180,8 @@ export interface OddsGame {
   home_odds:        number | null;
   away_odds:        number | null;
   draw_odds:        number | null;
-  bookmaker:        string;
-}
-
-// ── Core fetch helper ────────────────────────────────────────
-async function fetchOdds(sportKey: string): Promise<OddsGame[]> {
+  bookmaker:        string;// ── Core fetch helper ────────────────────────────────────────────
+async function fetchOdds(sportKey: string, isManual = false): Promise<OddsGame[]> {
   const cacheKey = `odds:${sportKey}`;
 
   // Check cache first — no API call if fresh
@@ -180,8 +189,12 @@ async function fetchOdds(sportKey: string): Promise<OddsGame[]> {
   if (cached) return cached.data as OddsGame[];
 
   // Budget check before every call
-  if (!checkBudget(sportKey, '/odds')) {
-    console.warn(`[OddsAPI] Budget ceiling hit — returning NULL for ${sportKey}`);
+  // Automated tasks stop at 90; manual dashboard actions can use up to 100
+  if (!checkBudget(sportKey, '/odds', isManual)) {
+    const msg = isManual
+      ? `[OddsAPI] ABSOLUTE CEILING (100) hit — returning empty for ${sportKey}`
+      : `[OddsAPI] AUTO CEILING (90/100) hit — returning empty for ${sportKey}. Use manual refresh to force a call.`;
+    console.warn(msg);
     return [];   // GUARDRAIL 1: return empty, never mock
   }
 
@@ -364,11 +377,15 @@ export async function getNBAOdds(): Promise<OddsGame[]> {
 export function getBudgetLedger() {
   const s = getBudgetStatus();
   return {
-    used: s.used_today,
-    remaining: s.remaining,
-    cacheHits: cache.size,
-    lastReset: s.reset_date,
-    ledger: s.ledger,
+    used:            s.used_today,
+    remaining:       s.remaining,
+    remaining_auto:  s.remaining_auto,
+    throttle_active: s.throttle_active,
+    auto_ceiling:    s.auto_ceiling,
+    ceiling:         s.ceiling,
+    cacheHits:       cache.size,
+    lastReset:       s.reset_date,
+    ledger:          s.ledger,
   };
 }
 

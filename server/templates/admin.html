@@ -261,6 +261,13 @@
       <div class="nav-item" onclick="showPage('parlay-mls')"><span class="nav-icon">🇺🇸</span>3-Leg MLS</div>
       <div class="nav-item" onclick="showPage('power-pick')"><span class="nav-icon">⚡</span>Power Pick</div>
     </div>
+    <div class="nav-section">
+      <div class="nav-label" style="color:#ff9800">Universal Control</div>
+      <div class="nav-item" onclick="showPage('vip-content')"><span class="nav-icon">💎</span>VIP Content</div>
+      <div class="nav-item" onclick="showPage('history-records')"><span class="nav-icon">📊</span>History Records</div>
+      <div class="nav-item" onclick="showPage('site-settings')"><span class="nav-icon">⚙️</span>Site Settings</div>
+      <div class="nav-item" onclick="showPage('api-budget')"><span class="nav-icon">📊</span>API Budget</div>
+    </div>
   </div>
 
   <!-- Top Bar -->
@@ -840,6 +847,167 @@
       </div>
     </div><!-- /page-power-pick -->
 
+    <!-- ===== UNIVERSAL CONTROL: VIP CONTENT ===== -->
+    <div class="page" id="page-vip-content">
+      <div class="page-header">
+        <div class="page-title">💎 VIP Content</div>
+        <div class="page-subtitle">Control the paywall section copy and CTA. Manual Override ON → your text appears; OFF → default copy shown.</div>
+      </div>
+      <div class="card" style="max-width:700px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <span style="font-weight:700;color:var(--gold)">Manual Override</span>
+          <label class="sc-toggle"><input type="checkbox" id="vip-override-toggle"><span class="sc-slider"></span></label>
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="login-label">BADGE LABEL (e.g. ✨ VIP ELITE)</label>
+          <input class="login-input" id="vip-badge" placeholder="e.g. &#x2728; VIP ELITE">
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="login-label">HEADLINE</label>
+          <input class="login-input" id="vip-headline" placeholder="e.g. Unlock Full Access">
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="login-label">SUB-HEADLINE</label>
+          <input class="login-input" id="vip-subheadline" placeholder="e.g. Get every pick from the Titan XII engine">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div><label class="login-label">FEATURE 1</label><input class="login-input" id="vip-f1" placeholder="e.g. ✅ All 3-Leg Parlays"></div>
+          <div><label class="login-label">FEATURE 2</label><input class="login-input" id="vip-f2" placeholder="e.g. ✅ Power Pick Daily"></div>
+          <div><label class="login-label">FEATURE 3</label><input class="login-input" id="vip-f3" placeholder="e.g. ✅ Expert Analysis"></div>
+          <div><label class="login-label">FEATURE 4</label><input class="login-input" id="vip-f4" placeholder="e.g. ✅ Priority Support"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div><label class="login-label">CTA BUTTON TEXT</label><input class="login-input" id="vip-cta-text" placeholder="e.g. Join VIP Now"></div>
+          <div><label class="login-label">CTA LINK</label><input class="login-input" id="vip-cta-link" placeholder="e.g. /pricing"></div>
+        </div>
+        <div style="margin-bottom:20px">
+          <label class="login-label">IMAGE URL (optional)</label>
+          <input class="login-input" id="vip-image-url" placeholder="https://...">
+        </div>
+        <button class="btn btn-gold" onclick="saveVipContent()">&#128190; Save VIP Content</button>
+        <div id="vip-msg" style="margin-top:12px;font-size:13px"></div>
+      </div>
+    </div><!-- /page-vip-content -->
+
+    <!-- ===== UNIVERSAL CONTROL: HISTORY RECORDS ===== -->
+    <div class="page" id="page-history-records">
+      <div class="page-header">
+        <div class="page-title">📊 History Records</div>
+        <div class="page-subtitle">Manually add or remove historical win/loss records displayed on the Results page.</div>
+      </div>
+      <div class="card" style="max-width:900px">
+        <!-- Add new entry form -->
+        <div style="background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.2);border-radius:10px;padding:16px;margin-bottom:20px">
+          <div style="font-weight:700;color:var(--gold);margin-bottom:12px">&#43; Add New Record</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+            <div><label class="login-label">DATE</label><input class="login-input" id="hist-date" type="date"></div>
+            <div><label class="login-label">MATCHUP</label><input class="login-input" id="hist-matchup" placeholder="Team A vs Team B"></div>
+            <div><label class="login-label">PICK</label><input class="login-input" id="hist-pick" placeholder="e.g. Team A Win"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+            <div><label class="login-label">RESULT</label>
+              <select class="login-input" id="hist-result">
+                <option value="won">✅ Won</option>
+                <option value="lost">❌ Lost</option>
+                <option value="void">⏸️ Void</option>
+              </select>
+            </div>
+            <div><label class="login-label">ODDS</label><input class="login-input" id="hist-odds" placeholder="e.g. -115"></div>
+            <div><label class="login-label">SPORT</label>
+              <select class="login-input" id="hist-sport">
+                <option value="soccer">Soccer</option>
+                <option value="nba">NBA</option>
+                <option value="mls">MLS</option>
+              </select>
+            </div>
+            <div><label class="login-label">LEAGUE</label><input class="login-input" id="hist-league" placeholder="e.g. Premier League"></div>
+          </div>
+          <div style="margin-bottom:12px"><label class="login-label">NOTES (optional)</label><input class="login-input" id="hist-notes" placeholder="Any additional context"></div>
+          <button class="btn btn-gold" onclick="addHistoryEntry()">&#43; Add Record</button>
+        </div>
+        <!-- Existing entries table -->
+        <div id="history-table-wrap">
+          <div style="color:var(--text-dim);font-size:13px">Loading records...</div>
+        </div>
+        <div id="hist-msg" style="margin-top:12px;font-size:13px"></div>
+      </div>
+    </div><!-- /page-history-records -->
+
+    <!-- ===== UNIVERSAL CONTROL: SITE SETTINGS ===== -->
+    <div class="page" id="page-site-settings">
+      <div class="page-header">
+        <div class="page-title">⚙️ Site Settings</div>
+        <div class="page-subtitle">Control site-wide alerts, maintenance mode, engine label, footer text, and social links.</div>
+      </div>
+      <div class="card" style="max-width:700px">
+        <!-- Alert Banner -->
+        <div style="background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.2);border-radius:10px;padding:16px;margin-bottom:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <span style="font-weight:700;color:var(--gold)">📢 Site Alert Banner</span>
+            <label class="sc-toggle"><input type="checkbox" id="alert-enabled-toggle"><span class="sc-slider"></span></label>
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:10px">
+            <div><label class="login-label">ALERT MESSAGE</label><input class="login-input" id="alert-text" placeholder="e.g. New V3 Engine Live!"></div>
+            <div><label class="login-label">TYPE</label>
+              <select class="login-input" id="alert-type">
+                <option value="info">Info (Blue)</option>
+                <option value="success">Success (Green)</option>
+                <option value="warning">Warning (Orange)</option>
+                <option value="danger">Danger (Red)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <!-- Maintenance Mode -->
+        <div style="background:rgba(255,82,82,0.06);border:1px solid rgba(255,82,82,0.2);border-radius:10px;padding:16px;margin-bottom:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <span style="font-weight:700;color:#ff5252">🔧 Maintenance Mode</span>
+            <label class="sc-toggle"><input type="checkbox" id="maintenance-toggle"><span class="sc-slider"></span></label>
+          </div>
+          <div><label class="login-label">MAINTENANCE MESSAGE</label><input class="login-input" id="maintenance-msg" placeholder="Site is under maintenance. Check back soon."></div>
+        </div>
+        <!-- Engine & Branding -->
+        <div style="margin-bottom:16px">
+          <label class="login-label">ENGINE LABEL</label>
+          <input class="login-input" id="engine-label" placeholder="Gold Standard V3 Titan XII">
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="login-label">FOOTER DISCLAIMER</label>
+          <input class="login-input" id="footer-disclaimer" placeholder="For entertainment purposes only. Please gamble responsibly.">
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="login-label">CONTACT EMAIL</label>
+          <input class="login-input" id="contact-email" placeholder="Glenoring@gmail.com">
+        </div>
+        <!-- Social Links -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+          <div><label class="login-label">TWITTER / X URL</label><input class="login-input" id="twitter-url" placeholder="https://twitter.com/..."></div>
+          <div><label class="login-label">INSTAGRAM URL</label><input class="login-input" id="instagram-url" placeholder="https://instagram.com/..."></div>
+          <div><label class="login-label">DISCORD URL</label><input class="login-input" id="discord-url" placeholder="https://discord.gg/..."></div>
+        </div>
+        <button class="btn btn-gold" onclick="saveSiteSettings()">&#128190; Save Settings</button>
+        <div id="settings-msg" style="margin-top:12px;font-size:13px"></div>
+      </div>
+    </div><!-- /page-site-settings -->
+
+    <!-- ===== UNIVERSAL CONTROL: API BUDGET ===== -->
+    <div class="page" id="page-api-budget">
+      <div class="page-header">
+        <div class="page-title">📊 API Budget</div>
+        <div class="page-subtitle">Live API call usage. Auto-tasks stop at 90/100. 10 calls reserved for manual dashboard actions. Click Refresh to update.</div>
+      </div>
+      <div class="card" style="max-width:600px">
+        <div id="budget-status-wrap" style="margin-bottom:20px">
+          <div style="color:var(--text-dim);font-size:13px">Loading budget status...</div>
+        </div>
+        <button class="btn btn-gold" onclick="loadApiBudget()">&#128260; Manual Refresh</button>
+        <div style="margin-top:20px">
+          <div style="font-weight:700;color:var(--gold);margin-bottom:10px">Recent API Calls</div>
+          <div id="budget-ledger-wrap" style="font-size:12px;color:var(--text-dim)">Loading ledger...</div>
+        </div>
+      </div>
+    </div><!-- /page-api-budget -->
+
   </div><!-- /main -->
 </div><!-- /app -->
 
@@ -926,6 +1094,10 @@ function showPage(name) {
     'parlay-soccer':   loadParlaySoccer,
     'parlay-mls':      loadParlayMls,
     'power-pick':      loadPowerPick,
+    'vip-content':     loadVipContent,
+    'history-records': loadHistoryRecords,
+    'site-settings':   loadSiteSettings,
+    'api-budget':      loadApiBudget,
   };
   loaders[name]?.();
 }
@@ -1895,6 +2067,248 @@ async function savePowerPick() {
     msg.textContent = '❌ ' + e.message;
     msg.style.color = 'var(--red)';
     notify(e.message, 'error');
+  }
+}
+
+
+// -- TAB 7: VIP CONTENT --------------------------------------------------------
+async function loadVipContent() {
+  try {
+    const d = await api('/api/admin/vip-content');
+    document.getElementById('vip-override-toggle').checked = d.overrideOn;
+    document.getElementById('vip-badge').value       = d.badgeLabel  || '';
+    document.getElementById('vip-headline').value    = d.headline    || '';
+    document.getElementById('vip-subheadline').value = d.subheadline || '';
+    document.getElementById('vip-f1').value          = d.feature1    || '';
+    document.getElementById('vip-f2').value          = d.feature2    || '';
+    document.getElementById('vip-f3').value          = d.feature3    || '';
+    document.getElementById('vip-f4').value          = d.feature4    || '';
+    document.getElementById('vip-cta-text').value    = d.ctaText     || '';
+    document.getElementById('vip-cta-link').value    = d.ctaLink     || '';
+    document.getElementById('vip-image-url').value   = d.imageUrl    || '';
+  } catch(e) { notify('Error loading VIP content: ' + e.message, 'error'); }
+}
+
+async function saveVipContent() {
+  const msg = document.getElementById('vip-msg');
+  msg.textContent = 'Saving...';
+  try {
+    const d = await api('/api/admin/vip-content', {
+      method: 'POST',
+      body: JSON.stringify({
+        badgeLabel:  document.getElementById('vip-badge').value,
+        headline:    document.getElementById('vip-headline').value,
+        subheadline: document.getElementById('vip-subheadline').value,
+        feature1:    document.getElementById('vip-f1').value,
+        feature2:    document.getElementById('vip-f2').value,
+        feature3:    document.getElementById('vip-f3').value,
+        feature4:    document.getElementById('vip-f4').value,
+        ctaText:     document.getElementById('vip-cta-text').value,
+        ctaLink:     document.getElementById('vip-cta-link').value,
+        imageUrl:    document.getElementById('vip-image-url').value,
+        overrideOn:  document.getElementById('vip-override-toggle').checked,
+      })
+    });
+    msg.textContent = '\u2705 ' + d.message;
+    msg.style.color = 'var(--green)';
+    notify(d.message);
+  } catch(e) {
+    msg.textContent = '\u274c ' + e.message;
+    msg.style.color = 'var(--red)';
+    notify(e.message, 'error');
+  }
+}
+
+// -- TAB 8: HISTORY RECORDS ----------------------------------------------------
+let _historyEntries = [];
+
+async function loadHistoryRecords() {
+  try {
+    const d = await api('/api/admin/history-entries');
+    _historyEntries = d.entries || [];
+    renderHistoryTable();
+  } catch(e) { notify('Error loading history: ' + e.message, 'error'); }
+}
+
+function renderHistoryTable() {
+  const wrap = document.getElementById('history-table-wrap');
+  if (!_historyEntries.length) {
+    wrap.innerHTML = '<div style="color:var(--text-dim);font-size:13px">No records yet. Add one above.</div>';
+    return;
+  }
+  const rows = _historyEntries.map(e =>
+    '<tr style="border-bottom:1px solid rgba(212,175,55,0.1)">' +
+    '<td style="padding:8px 6px;font-size:12px;color:var(--text-dim)">' + e.date + '</td>' +
+    '<td style="padding:8px 6px;font-size:12px">' + e.matchup + '</td>' +
+    '<td style="padding:8px 6px;font-size:12px;color:var(--gold)">' + e.pick + '</td>' +
+    '<td style="padding:8px 6px;font-size:12px;color:' + (e.result==='won'?'var(--green)':e.result==='lost'?'var(--red)':'var(--text-dim)') + '">' + e.result.toUpperCase() + '</td>' +
+    '<td style="padding:8px 6px;font-size:12px">' + e.odds + '</td>' +
+    '<td style="padding:8px 6px;font-size:12px;color:var(--text-dim)">' + e.sport.toUpperCase() + '</td>' +
+    '<td style="padding:8px 6px"><button onclick="deleteHistoryEntry(\'' + e.id + '\')" style="background:rgba(255,82,82,0.15);border:1px solid rgba(255,82,82,0.3);color:#ff5252;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px">\u274c</button></td>' +
+    '</tr>'
+  ).join('');
+  wrap.innerHTML = '<table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid rgba(212,175,55,0.3)">' +
+    '<th style="padding:8px 6px;font-size:11px;color:var(--text-dim);text-align:left">DATE</th>' +
+    '<th style="padding:8px 6px;font-size:11px;color:var(--text-dim);text-align:left">MATCHUP</th>' +
+    '<th style="padding:8px 6px;font-size:11px;color:var(--text-dim);text-align:left">PICK</th>' +
+    '<th style="padding:8px 6px;font-size:11px;color:var(--text-dim);text-align:left">RESULT</th>' +
+    '<th style="padding:8px 6px;font-size:11px;color:var(--text-dim);text-align:left">ODDS</th>' +
+    '<th style="padding:8px 6px;font-size:11px;color:var(--text-dim);text-align:left">SPORT</th>' +
+    '<th style="padding:8px 6px;font-size:11px;color:var(--text-dim);text-align:left">DEL</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+async function addHistoryEntry() {
+  const msg = document.getElementById('hist-msg');
+  const entry = {
+    id:      'hist_' + Date.now(),
+    date:    document.getElementById('hist-date').value,
+    matchup: document.getElementById('hist-matchup').value,
+    pick:    document.getElementById('hist-pick').value,
+    result:  document.getElementById('hist-result').value,
+    odds:    document.getElementById('hist-odds').value,
+    sport:   document.getElementById('hist-sport').value,
+    league:  document.getElementById('hist-league').value,
+    notes:   document.getElementById('hist-notes').value,
+  };
+  if (!entry.date || !entry.matchup || !entry.pick) {
+    msg.textContent = '\u274c Date, Matchup, and Pick are required.';
+    msg.style.color = 'var(--red)';
+    return;
+  }
+  _historyEntries.unshift(entry);
+  try {
+    const d = await api('/api/admin/history-entries', {
+      method: 'POST',
+      body: JSON.stringify({ entries: _historyEntries })
+    });
+    msg.textContent = '\u2705 ' + d.message;
+    msg.style.color = 'var(--green)';
+    notify(d.message);
+    renderHistoryTable();
+    ['hist-date','hist-matchup','hist-pick','hist-odds','hist-league','hist-notes'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+  } catch(e) {
+    _historyEntries.shift();
+    msg.textContent = '\u274c ' + e.message;
+    msg.style.color = 'var(--red)';
+    notify(e.message, 'error');
+  }
+}
+
+async function deleteHistoryEntry(id) {
+  if (!confirm('Delete this record?')) return;
+  try {
+    await api('/api/admin/history-entries/' + id, { method: 'DELETE' });
+    _historyEntries = _historyEntries.filter(e => e.id !== id);
+    renderHistoryTable();
+    notify('Record deleted');
+  } catch(e) { notify('Delete failed: ' + e.message, 'error'); }
+}
+
+// -- TAB 9: SITE SETTINGS ------------------------------------------------------
+async function loadSiteSettings() {
+  try {
+    const d = await api('/api/admin/site-settings');
+    document.getElementById('alert-enabled-toggle').checked = d.alertEnabled;
+    document.getElementById('alert-text').value             = d.alertText        || '';
+    document.getElementById('alert-type').value             = d.alertType        || 'info';
+    document.getElementById('maintenance-toggle').checked   = d.maintenanceMode;
+    document.getElementById('maintenance-msg').value        = d.maintenanceMsg   || '';
+    document.getElementById('engine-label').value           = d.engineLabel      || '';
+    document.getElementById('footer-disclaimer').value      = d.footerDisclaimer || '';
+    document.getElementById('contact-email').value          = d.contactEmail     || '';
+    document.getElementById('twitter-url').value            = d.twitterUrl       || '';
+    document.getElementById('instagram-url').value          = d.instagramUrl     || '';
+    document.getElementById('discord-url').value            = d.discordUrl       || '';
+  } catch(e) { notify('Error loading settings: ' + e.message, 'error'); }
+}
+
+async function saveSiteSettings() {
+  const msg = document.getElementById('settings-msg');
+  msg.textContent = 'Saving...';
+  try {
+    const d = await api('/api/admin/site-settings', {
+      method: 'POST',
+      body: JSON.stringify({
+        alertEnabled:     document.getElementById('alert-enabled-toggle').checked,
+        alertText:        document.getElementById('alert-text').value,
+        alertType:        document.getElementById('alert-type').value,
+        maintenanceMode:  document.getElementById('maintenance-toggle').checked,
+        maintenanceMsg:   document.getElementById('maintenance-msg').value,
+        engineLabel:      document.getElementById('engine-label').value,
+        footerDisclaimer: document.getElementById('footer-disclaimer').value,
+        contactEmail:     document.getElementById('contact-email').value,
+        twitterUrl:       document.getElementById('twitter-url').value,
+        instagramUrl:     document.getElementById('instagram-url').value,
+        discordUrl:       document.getElementById('discord-url').value,
+      })
+    });
+    msg.textContent = '\u2705 ' + d.message;
+    msg.style.color = 'var(--green)';
+    notify(d.message);
+  } catch(e) {
+    msg.textContent = '\u274c ' + e.message;
+    msg.style.color = 'var(--red)';
+    notify(e.message, 'error');
+  }
+}
+
+// -- TAB 10: API BUDGET (zero-refresh -- only loads on manual click) ------------
+async function loadApiBudget() {
+  const wrap   = document.getElementById('budget-status-wrap');
+  const ledger = document.getElementById('budget-ledger-wrap');
+  wrap.innerHTML   = '<div style="color:var(--text-dim);font-size:13px">Fetching budget status...</div>';
+  ledger.innerHTML = '';
+  try {
+    const d = await api('/api/admin/api-budget');
+    const pct = Math.round((d.used_today / d.ceiling) * 100);
+    const barColor = d.throttle_active ? '#ff5252' : d.throttle_warning ? '#ff9800' : '#00e676';
+    const alertRgb = d.throttle_active ? '255,82,82' : d.throttle_warning ? '255,152,0' : '0,230,118';
+    wrap.innerHTML =
+      '<div style="margin-bottom:16px">' +
+        '<div style="display:flex;justify-content:space-between;margin-bottom:6px">' +
+          '<span style="font-weight:700;color:var(--gold)">Daily API Usage</span>' +
+          '<span style="font-size:13px;color:' + barColor + '">' + d.used_today + ' / ' + d.ceiling + ' calls</span>' +
+        '</div>' +
+        '<div style="background:rgba(255,255,255,0.05);border-radius:6px;height:12px;overflow:hidden">' +
+          '<div style="width:' + pct + '%;height:100%;background:' + barColor + ';border-radius:6px;transition:width 0.4s"></div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="background:rgba(' + alertRgb + ',0.08);border:1px solid rgba(' + alertRgb + ',0.3);border-radius:8px;padding:12px;margin-bottom:16px">' +
+        '<div style="font-size:13px;color:' + barColor + '">' + d.message + '</div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">' +
+        '<div style="background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.2);border-radius:8px;padding:12px;text-align:center">' +
+          '<div style="font-size:22px;font-weight:800;color:var(--gold)">' + d.used_today + '</div>' +
+          '<div style="font-size:11px;color:var(--text-dim)">USED TODAY</div>' +
+        '</div>' +
+        '<div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.2);border-radius:8px;padding:12px;text-align:center">' +
+          '<div style="font-size:22px;font-weight:800;color:#00e676">' + d.remaining_auto + '</div>' +
+          '<div style="font-size:11px;color:var(--text-dim)">AUTO CALLS LEFT</div>' +
+        '</div>' +
+        '<div style="background:rgba(255,152,0,0.06);border:1px solid rgba(255,152,0,0.2);border-radius:8px;padding:12px;text-align:center">' +
+          '<div style="font-size:22px;font-weight:800;color:#ff9800">' + d.manual_reserve + '</div>' +
+          '<div style="font-size:11px;color:var(--text-dim)">MANUAL RESERVE</div>' +
+        '</div>' +
+      '</div>';
+    if (d.ledger && d.ledger.length) {
+      const rows = d.ledger.slice().reverse().map(e =>
+        '<div style="display:grid;grid-template-columns:160px 120px 1fr 60px;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)">' +
+          '<span style="color:var(--text-dim)">' + new Date(e.timestamp).toLocaleTimeString() + '</span>' +
+          '<span style="color:var(--gold)">' + e.sport + '</span>' +
+          '<span>' + e.endpoint + '</span>' +
+          '<span style="color:#00e676">' + e.remaining + ' left</span>' +
+        '</div>'
+      ).join('');
+      ledger.innerHTML = rows;
+    } else {
+      ledger.innerHTML = '<div style="color:var(--text-dim);font-size:12px">No API calls recorded today.</div>';
+    }
+  } catch(e) {
+    wrap.innerHTML = '<div style="color:var(--red);font-size:13px">\u274c Error: ' + e.message + '</div>';
+    notify('Error loading budget: ' + e.message, 'error');
   }
 }
 

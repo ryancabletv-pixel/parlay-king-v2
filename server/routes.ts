@@ -1050,8 +1050,37 @@ export async function registerRoutes(app: Express) {
           visible: true,
           updated_at: now,
         },
-        manual_lock: false,
-        locked_sections: [],
+        manual_lock: cfg['maintenance_mode'] === 'true',
+        locked_sections: cfg['maintenance_mode'] === 'true' ? ['all'] : [],
+        site_settings: {
+          alertEnabled:     cfg['alert_enabled']    === 'true',
+          alertText:        cfg['alert_text']        || '',
+          alertType:        cfg['alert_type']        || 'info',
+          maintenanceMode:  cfg['maintenance_mode']  === 'true',
+          maintenanceMsg:   cfg['maintenance_msg']   || 'Site is under maintenance. Check back soon.',
+          engineLabel:      cfg['engine_label']      || 'Gold Standard V3 Titan XII',
+          footerDisclaimer: cfg['footer_disclaimer'] || 'For entertainment purposes only. Please gamble responsibly.',
+          contactEmail:     cfg['contact_email']     || 'Glenoring@gmail.com',
+          twitterUrl:       cfg['twitter_url']       || '',
+          instagramUrl:     cfg['instagram_url']     || '',
+          discordUrl:       cfg['discord_url']       || '',
+        },
+        vip_content: cfg['vip_override'] === 'true' ? {
+          headline:    cfg['vip_headline']    || '',
+          subheadline: cfg['vip_subheadline'] || '',
+          feature1:    cfg['vip_feature1']    || '',
+          feature2:    cfg['vip_feature2']    || '',
+          feature3:    cfg['vip_feature3']    || '',
+          feature4:    cfg['vip_feature4']    || '',
+          ctaText:     cfg['vip_cta_text']    || '',
+          ctaLink:     cfg['vip_cta_link']    || '',
+          badgeLabel:  cfg['vip_badge_label'] || '',
+          imageUrl:    cfg['vip_image_url']   || '',
+          overrideOn:  true,
+        } : null,
+        history_manual: (() => {
+          try { return JSON.parse(cfg['history_entries'] || '[]'); } catch { return []; }
+        })(),
         featured_games: publicActive.slice(0, 3).map((p, i) => ({
           rank: i + 1,
           game: `${p.homeTeam} vs ${p.awayTeam}`,
@@ -2105,6 +2134,176 @@ export async function registerRoutes(app: Express) {
       });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ── UNIVERSAL MANUAL CONTROL — VIP, HISTORY, SETTINGS TABS ──────────────────
+  // All state stored in engine_config key-value table. Zero API calls.
+  // Every save clears the picks.json cache for instant (<3s) site updates.
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // ── TAB 7: VIP CONTENT CONTROL ───────────────────────────────────────────────
+  // Controls the paywall content: headline, sub-headline, feature list, CTA text
+  // Manual Override ON → site shows your text; OFF → site shows default copy
+  app.get('/api/admin/vip-content', requireAuth, async (req, res) => {
+    try {
+      const cfg = await storage.getEngineConfig();
+      res.json({
+        headline:     cfg['vip_headline']     || '',
+        subheadline:  cfg['vip_subheadline']  || '',
+        feature1:     cfg['vip_feature1']     || '',
+        feature2:     cfg['vip_feature2']     || '',
+        feature3:     cfg['vip_feature3']     || '',
+        feature4:     cfg['vip_feature4']     || '',
+        ctaText:      cfg['vip_cta_text']     || '',
+        ctaLink:      cfg['vip_cta_link']     || '',
+        badgeLabel:   cfg['vip_badge_label']  || '',
+        imageUrl:     cfg['vip_image_url']    || '',
+        overrideOn:   cfg['vip_override']     === 'true',
+      });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.post('/api/admin/vip-content', requireAuth, async (req, res) => {
+    try {
+      const { headline, subheadline, feature1, feature2, feature3, feature4,
+              ctaText, ctaLink, badgeLabel, imageUrl, overrideOn } = req.body;
+      await Promise.all([
+        storage.setEngineConfig('vip_headline',    headline    || ''),
+        storage.setEngineConfig('vip_subheadline', subheadline || ''),
+        storage.setEngineConfig('vip_feature1',    feature1    || ''),
+        storage.setEngineConfig('vip_feature2',    feature2    || ''),
+        storage.setEngineConfig('vip_feature3',    feature3    || ''),
+        storage.setEngineConfig('vip_feature4',    feature4    || ''),
+        storage.setEngineConfig('vip_cta_text',    ctaText     || ''),
+        storage.setEngineConfig('vip_cta_link',    ctaLink     || ''),
+        storage.setEngineConfig('vip_badge_label', badgeLabel  || ''),
+        storage.setEngineConfig('vip_image_url',   imageUrl    || ''),
+        storage.setEngineConfig('vip_override',    overrideOn ? 'true' : 'false'),
+      ]);
+      clearPicksCache();
+      res.json({ success: true, message: overrideOn ? 'VIP content override is LIVE' : 'VIP content saved (override OFF — default shown)' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  // ── TAB 8: HISTORY / WIN-LOSS RECORDS ────────────────────────────────────────
+  // Manual entry for historical win/loss records shown on the Results page.
+  // Each entry: date, matchup, pick, result (won/lost/void), odds, sport
+  app.get('/api/admin/history-entries', requireAuth, async (req, res) => {
+    try {
+      const cfg = await storage.getEngineConfig();
+      const raw = cfg['history_entries'] || '[]';
+      let entries: any[] = [];
+      try { entries = JSON.parse(raw); } catch { entries = []; }
+      res.json({ entries });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.post('/api/admin/history-entries', requireAuth, async (req, res) => {
+    try {
+      const { entries } = req.body;
+      if (!Array.isArray(entries)) return res.status(400).json({ error: 'entries must be an array' });
+      // Validate each entry has required fields
+      const clean = entries.map((e: any) => ({
+        id:      e.id      || `hist_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+        date:    e.date    || '',
+        matchup: e.matchup || '',
+        pick:    e.pick    || '',
+        result:  ['won','lost','void'].includes(e.result) ? e.result : 'void',
+        odds:    e.odds    || '',
+        sport:   e.sport   || 'soccer',
+        league:  e.league  || '',
+        notes:   e.notes   || '',
+      }));
+      await storage.setEngineConfig('history_entries', JSON.stringify(clean));
+      clearPicksCache();
+      res.json({ success: true, count: clean.length, message: `${clean.length} history record(s) saved` });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  // DELETE single history entry by id
+  app.delete('/api/admin/history-entries/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const cfg = await storage.getEngineConfig();
+      let entries: any[] = [];
+      try { entries = JSON.parse(cfg['history_entries'] || '[]'); } catch { entries = []; }
+      const filtered = entries.filter((e: any) => e.id !== id);
+      await storage.setEngineConfig('history_entries', JSON.stringify(filtered));
+      clearPicksCache();
+      res.json({ success: true, message: `Entry ${id} deleted` });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  // ── TAB 9: SITE-WIDE SETTINGS ────────────────────────────────────────────────
+  // Controls: site alert banner, maintenance mode, engine version label,
+  //           footer disclaimer, social links, and contact email.
+  app.get('/api/admin/site-settings', requireAuth, async (req, res) => {
+    try {
+      const cfg = await storage.getEngineConfig();
+      res.json({
+        alertEnabled:     cfg['alert_enabled']      === 'true',
+        alertText:        cfg['alert_text']          || '',
+        alertType:        cfg['alert_type']          || 'info',   // info | warning | success | danger
+        maintenanceMode:  cfg['maintenance_mode']    === 'true',
+        maintenanceMsg:   cfg['maintenance_msg']     || 'Site is under maintenance. Check back soon.',
+        engineLabel:      cfg['engine_label']        || 'Gold Standard V3 Titan XII',
+        footerDisclaimer: cfg['footer_disclaimer']   || 'For entertainment purposes only. Please gamble responsibly.',
+        contactEmail:     cfg['contact_email']       || 'Glenoring@gmail.com',
+        twitterUrl:       cfg['twitter_url']         || '',
+        instagramUrl:     cfg['instagram_url']       || '',
+        discordUrl:       cfg['discord_url']         || '',
+      });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.post('/api/admin/site-settings', requireAuth, async (req, res) => {
+    try {
+      const { alertEnabled, alertText, alertType, maintenanceMode, maintenanceMsg,
+              engineLabel, footerDisclaimer, contactEmail, twitterUrl, instagramUrl, discordUrl } = req.body;
+      await Promise.all([
+        storage.setEngineConfig('alert_enabled',      alertEnabled     ? 'true' : 'false'),
+        storage.setEngineConfig('alert_text',          alertText        || ''),
+        storage.setEngineConfig('alert_type',          alertType        || 'info'),
+        storage.setEngineConfig('maintenance_mode',    maintenanceMode  ? 'true' : 'false'),
+        storage.setEngineConfig('maintenance_msg',     maintenanceMsg   || ''),
+        storage.setEngineConfig('engine_label',        engineLabel      || 'Gold Standard V3 Titan XII'),
+        storage.setEngineConfig('footer_disclaimer',   footerDisclaimer || ''),
+        storage.setEngineConfig('contact_email',       contactEmail     || ''),
+        storage.setEngineConfig('twitter_url',         twitterUrl       || ''),
+        storage.setEngineConfig('instagram_url',       instagramUrl     || ''),
+        storage.setEngineConfig('discord_url',         discordUrl       || ''),
+      ]);
+      clearPicksCache();
+      res.json({ success: true, message: 'Site settings saved and cache cleared' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  // ── API THROTTLE GUARD STATUS ─────────────────────────────────────────────────
+  // GET /api/admin/api-budget — returns live budget status (no API call made)
+  // Zero-refresh: admin dashboard reads this on load only; never polls automatically
+  app.get('/api/admin/api-budget', requireAuth, async (req, res) => {
+    try {
+      const { getBudgetStatus } = await import('./apis/oddsApi.js');
+      const status = getBudgetStatus();
+      res.json({
+        ...status,
+        throttle_warning: status.used_today >= 80,
+        throttle_active:  status.used_today >= 90,
+        manual_reserve:   Math.max(0, 100 - status.used_today),
+        message: status.used_today >= 90
+          ? `⛔ AUTO TASKS PAUSED — ${status.used_today}/100 calls used. ${100 - status.used_today} manual calls remaining.`
+          : status.used_today >= 80
+          ? `⚠️ WARNING — ${status.used_today}/100 calls used. Approaching auto-task limit (90).`
+          : `✅ ${status.used_today}/100 calls used. ${90 - status.used_today} auto-task calls remaining.`,
+      });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  // ── PICKS.JSON SITE-SETTINGS INJECTION ───────────────────────────────────────
+  // Expose site settings (alert, maintenance, engine label) in /picks.json
+  // so the client.html can read and render them without any template changes.
+  // This is already handled by the /picks.json endpoint reading engineConfig.
+  // The client.html reads data.site_settings from picks.json on every load.
 
   // GET /api/auth/me — verify JWT and return current user info
   app.get('/api/auth/me', async (req: Request, res: Response) => {

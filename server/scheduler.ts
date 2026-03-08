@@ -3,6 +3,7 @@ import { createRunLog, updateRunLog, createAlert, getRunLogs, getPicksByDate } f
 import { generateDailyPicks } from './routes.js';
 import { pingGoogleAfterUpdate } from './seo.js';
 import { autoSettleResults } from './resultsSettler.js';
+import { getBudgetStatus } from './apis/oddsApi.js';
 
 // ─── Timezone ─────────────────────────────────────────────────────────────────
 // America/Moncton = AST (UTC-4) / ADT (UTC-3 during DST) — New Brunswick, Canada
@@ -61,6 +62,22 @@ async function runDailyGeneration(triggeredBy = 'scheduler'): Promise<boolean> {
   if (dailyRunCompleted && lastRunDate === today && triggeredBy === 'scheduler') {
     console.log(`[Scheduler] Daily run already completed for ${today}, skipping`);
     return true;
+  }
+
+  // ── API THROTTLE GUARD: stop auto-tasks at 90/100 calls ──────────────────────────────
+  // 10 calls are always reserved for manual dashboard actions.
+  // If this is a scheduler-triggered run and we're at or above 90, abort.
+  if (triggeredBy.startsWith('scheduler')) {
+    const budget = getBudgetStatus();
+    if (budget.used_today >= 90) {
+      const msg = `[Scheduler] THROTTLE GUARD: ${budget.used_today}/100 API calls used. Auto-tasks paused to reserve 10 calls for manual actions.`;
+      console.warn(msg);
+      await createAlert('warning', msg);
+      return false;
+    }
+    if (budget.used_today >= 80) {
+      console.warn(`[Scheduler] THROTTLE WARNING: ${budget.used_today}/100 API calls used. Approaching auto-task limit (90).`);
+    }
   }
 
   console.log(`[Scheduler] Starting daily pick generation for ${today} (triggered by: ${triggeredBy})`);
