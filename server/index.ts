@@ -139,18 +139,25 @@ async function initializeExpress() {
       app.use(express.static(distPath));
     }
 
-    // Admin HTML fallback
+    // Template paths
     const adminHtmlPath = path.join(process.cwd(), 'server/templates/admin.html');
+    const clientHtmlPath = path.join(process.cwd(), 'server/templates/client.html');
 
+    // ── PUBLIC SITE — root and all public pages ──
     app.get('/', (req, res) => {
       const ua = req.headers['user-agent'] || '';
-      if (!ua.includes('Mozilla')) {
-        return res.send('OK');
-      }
-      if (fs.existsSync(adminHtmlPath)) {
-        return res.sendFile(adminHtmlPath);
-      }
-      res.redirect('/admin');
+      if (!ua.includes('Mozilla')) return res.send('OK');
+      if (fs.existsSync(clientHtmlPath)) return res.sendFile(clientHtmlPath);
+      res.redirect('/picks');
+    });
+
+    // Public pages — all serve the client SPA
+    const publicPages = ['/picks', '/soccer-picks', '/nba-picks', '/parlays', '/results', '/vip', '/pro'];
+    publicPages.forEach(page => {
+      app.get(page, (_req: any, res: any) => {
+        if (fs.existsSync(clientHtmlPath)) return res.sendFile(clientHtmlPath);
+        res.redirect('/');
+      });
     });
 
     app.get('/admin', (req, res) => {
@@ -179,15 +186,20 @@ async function initializeExpress() {
     const { registerRoutes } = await import('./routes.js');
     await registerRoutes(app);
 
-    // SPA fallback — serve admin app for all unmatched routes
+    // SPA fallback — public pages get client.html, /admin paths get admin.html
     app.get('*', (req, res) => {
       if (req.path.startsWith('/api/')) {
         return res.status(404).json({ error: 'Not found' });
       }
-      const indexPath = path.join(distPath, 'index.html');
-      if (fs.existsSync(indexPath)) {
-        return res.sendFile(indexPath);
+      // Admin paths
+      if (req.path.startsWith('/admin') || req.path.startsWith('/master-control') || req.path.startsWith('/dashboard') || req.path.startsWith('/recovery')) {
+        if (fs.existsSync(adminHtmlPath)) return res.sendFile(adminHtmlPath);
+        return res.send(getAdminFallbackHtml());
       }
+      // All other paths → public client site
+      if (fs.existsSync(clientHtmlPath)) return res.sendFile(clientHtmlPath);
+      const indexPath = path.join(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) return res.sendFile(indexPath);
       res.send(getAdminFallbackHtml());
     });
 

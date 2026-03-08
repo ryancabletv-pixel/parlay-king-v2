@@ -44580,15 +44580,19 @@ async function initializeExpress() {
       app.use(express.static(distPath));
     }
     const adminHtmlPath = path2.join(process.cwd(), "server/templates/admin.html");
+    const clientHtmlPath = path2.join(process.cwd(), "server/templates/client.html");
     app.get("/", (req, res) => {
       const ua = req.headers["user-agent"] || "";
-      if (!ua.includes("Mozilla")) {
-        return res.send("OK");
-      }
-      if (fs2.existsSync(adminHtmlPath)) {
-        return res.sendFile(adminHtmlPath);
-      }
-      res.redirect("/admin");
+      if (!ua.includes("Mozilla")) return res.send("OK");
+      if (fs2.existsSync(clientHtmlPath)) return res.sendFile(clientHtmlPath);
+      res.redirect("/picks");
+    });
+    const publicPages = ["/picks", "/soccer-picks", "/nba-picks", "/parlays", "/results", "/vip", "/pro"];
+    publicPages.forEach((page) => {
+      app.get(page, (_req, res) => {
+        if (fs2.existsSync(clientHtmlPath)) return res.sendFile(clientHtmlPath);
+        res.redirect("/");
+      });
     });
     app.get("/admin", (req, res) => {
       if (fs2.existsSync(adminHtmlPath)) {
@@ -44615,10 +44619,13 @@ async function initializeExpress() {
       if (req.path.startsWith("/api/")) {
         return res.status(404).json({ error: "Not found" });
       }
-      const indexPath = path2.join(distPath, "index.html");
-      if (fs2.existsSync(indexPath)) {
-        return res.sendFile(indexPath);
+      if (req.path.startsWith("/admin") || req.path.startsWith("/master-control") || req.path.startsWith("/dashboard") || req.path.startsWith("/recovery")) {
+        if (fs2.existsSync(adminHtmlPath)) return res.sendFile(adminHtmlPath);
+        return res.send(getAdminFallbackHtml());
       }
+      if (fs2.existsSync(clientHtmlPath)) return res.sendFile(clientHtmlPath);
+      const indexPath = path2.join(distPath, "index.html");
+      if (fs2.existsSync(indexPath)) return res.sendFile(indexPath);
       res.send(getAdminFallbackHtml());
     });
     expressApp = app;

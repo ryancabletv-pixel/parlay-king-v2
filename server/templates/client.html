@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parlay King — Gold Standard V3 Titan XII Picks</title>
+  <meta name="description" content="Daily expert soccer, NBA, and MLS parlay picks powered by the Gold Standard V3 Titan XII 12-factor AI engine. Free and VIP picks updated every day at 1AM AST.">
+  <meta name="keywords" content="parlay picks, soccer picks, NBA picks, MLS picks, sports betting, daily picks, parlay king">
+  <meta property="og:title" content="Parlay King — Gold Standard V3 Titan XII">
+  <meta property="og:description" content="Daily expert parlay picks — Soccer, NBA, MLS. Powered by 12-factor AI engine.">
+  <meta property="og:url" content="https://soccernbaparlayking.vip">
+  <link rel="canonical" href="https://soccernbaparlayking.vip">
+  <style>
+    :root {
+      --gold: #FFD700;
+      --gold-dim: #B8960C;
+      --gold-bg: rgba(255,215,0,0.08);
+      --gold-border: rgba(255,215,0,0.25);
+      --bg: #080810;
+      --bg2: #0f0f1a;
+      --bg3: #161628;
+      --text: #e8e8f0;
+      --text-dim: #888899;
+      --green: #00e676;
+      --red: #ff4444;
+      --blue: #4fc3f7;
+      --orange: #ff9800;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #0a0a18 0%, #12122a 100%);
+      border-bottom: 1px solid var(--gold-border);
+      padding: 16px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-logo { display: flex; align-items: center; gap: 10px; }
+    .header-trophy { font-size: 28px; }
+    .header-title { font-size: 18px; font-weight: 900; letter-spacing: 3px; color: var(--gold); }
+    .header-sub { font-size: 9px; color: var(--text-dim); letter-spacing: 2px; margin-top: 2px; }
+    .header-badge {
+      background: var(--gold-bg); border: 1px solid var(--gold-border);
+      border-radius: 20px; padding: 6px 12px;
+      font-size: 11px; color: var(--gold); letter-spacing: 1px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .live-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(180deg, #12122a 0%, var(--bg) 100%);
+      padding: 40px 20px 30px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255,215,0,0.1);
+    }
+    .hero-title { font-size: 32px; font-weight: 900; letter-spacing: 4px; color: var(--gold); margin-bottom: 8px; }
+    .hero-sub { font-size: 13px; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 20px; }
+    .hero-stats { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+    .hero-stat { text-align: center; }
+    .hero-stat-val { font-size: 24px; font-weight: 900; color: var(--gold); }
+    .hero-stat-label { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; margin-top: 2px; }
+    .date-badge {
+      display: inline-block; background: var(--gold-bg); border: 1px solid var(--gold-border);
+      border-radius: 20px; padding: 6px 16px; font-size: 12px; color: var(--gold);
+      letter-spacing: 1px; margin-top: 16px;
+    }
+
+    /* ── Tabs ── */
+    .tabs-container { padding: 20px 16px 0; }
+    .tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      flex-shrink: 0; padding: 10px 18px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: var(--bg2); color: var(--text-dim);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; white-space: nowrap;
+    }
+    .tab:hover { border-color: var(--gold-border); color: var(--text); }
+    .tab.active {
+      background: var(--gold-bg); border-color: var(--gold);
+      color: var(--gold);
+    }
+    .tab-icon { margin-right: 6px; }
+
+    /* ── Picks Content ── */
+    .picks-content { padding: 16px; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Pick Card ── */
+    .pick-card {
+      background: var(--bg2);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+    .pick-card:hover { border-color: var(--gold-border); }
+    .pick-card.power-card {
+      background: linear-gradient(135deg, rgba(255,215,0,0.06) 0%, var(--bg2) 100%);
+      border-color: var(--gold-border);
+    }
+    .pick-card.locked {
+      opacity: 0.7;
+      position: relative;
+      overflow: hidden;
+    }
+    .pick-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .pick-league { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; }
+    .pick-tier-badge {
+      font-size: 10px; padding: 3px 8px; border-radius: 10px;
+      font-weight: 700; letter-spacing: 1px;
+    }
+    .tier-free { background: rgba(0,230,118,0.1); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+    .tier-pro { background: rgba(255,215,0,0.1); color: var(--gold); border: 1px solid var(--gold-border); }
+    .tier-vip { background: rgba(79,195,247,0.1); color: var(--blue); border: 1px solid rgba(79,195,247,0.3); }
+    .pick-matchup { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .pick-vs { color: var(--text-dim); font-weight: 400; font-size: 13px; }
+    .pick-prediction {
+      font-size: 14px; font-weight: 800; color: var(--gold);
+      margin-bottom: 10px;
+    }
+    .pick-footer { display: flex; align-items: center; justify-content: space-between; }
+    .confidence-bar-wrap { flex: 1; margin-right: 12px; }
+    .confidence-label { font-size: 10px; color: var(--text-dim); margin-bottom: 4px; display: flex; justify-content: space-between; }
+    .confidence-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+    .confidence-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #FFD700, #FFA500); transition: width 0.8s ease; }
+    .confidence-fill.high { background: linear-gradient(90deg, #00e676, #00b248); }
+    .pick-leg-num {
+      font-size: 11px; color: var(--text-dim); background: var(--bg3);
+      border-radius: 6px; padding: 4px 8px; font-weight: 700;
+    }
+
+    /* ── Power Pick ── */
+    .power-banner {
+      background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,165,0,0.08) 100%);
+      border: 1px solid var(--gold-border);
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .power-icon { font-size: 28px; }
+    .power-title { font-size: 14px; font-weight: 900; color: var(--gold); letter-spacing: 2px; }
+    .power-desc { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+    /* ── Blank / No Games ── */
+    .no-games {
+      text-align: center; padding: 50px 20px;
+      color: var(--text-dim);
+    }
+    .no-games-icon { font-size: 48px; margin-bottom: 16px; }
+    .no-games-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .no-games-sub { font-size: 13px; }
+
+    /* ── Lock Overlay ── */
+    .lock-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, transparent 30%, rgba(8,8,16,0.95) 70%);
+      display: flex; align-items: flex-end; justify-content: center;
+      padding-bottom: 16px;
+    }
+    .lock-btn {
+      background: linear-gradient(135deg, var(--gold), #FFA500);
+      color: #000; border: none; padding: 10px 24px;
+      border-radius: 8px; font-size: 13px; font-weight: 800;
+      cursor: pointer; letter-spacing: 1px;
+    }
+
+    /* ── Parlay Summary ── */
+    .parlay-summary {
+      background: var(--bg3); border: 1px solid var(--gold-border);
+      border-radius: 12px; padding: 16px; margin-top: 16px;
+    }
+    .parlay-title { font-size: 12px; color: var(--text-dim); letter-spacing: 2px; margin-bottom: 12px; text-transform: uppercase; }
+    .parlay-legs { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .parlay-leg { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .parlay-leg-dot { width: 8px; height: 8px; background: var(--gold); border-radius: 50%; flex-shrink: 0; }
+    .parlay-leg-text { color: var(--text); }
+    .parlay-leg-conf { margin-left: auto; color: var(--gold); font-weight: 700; font-size: 12px; }
+    .parlay-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .parlay-odds { font-size: 18px; font-weight: 900; color: var(--gold); }
+    .parlay-odds-label { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; }
+
+    /* ── VIP CTA ── */
+    .vip-cta {
+      background: linear-gradient(135deg, rgba(79,195,247,0.08) 0%, rgba(255,215,0,0.06) 100%);
+      border: 1px solid rgba(79,195,247,0.3);
+      border-radius: 12px; padding: 20px; margin: 16px 0;
+      text-align: center;
+    }
+    .vip-cta-title { font-size: 16px; font-weight: 900; color: var(--blue); margin-bottom: 6px; }
+    .vip-cta-sub { font-size: 12px; color: var(--text-dim); margin-bottom: 14px; }
+    .vip-btn {
+      background: linear-gradient(135deg, var(--blue), #0288d1);
+      color: #000; border: none; padding: 12px 28px;
+      border-radius: 8px; font-size: 14px; font-weight: 800;
+      cursor: pointer; letter-spacing: 1px; text-decoration: none; display: inline-block;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      background: var(--bg2); border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 24px 20px; text-align: center; margin-top: 30px;
+    }
+    .footer-logo { font-size: 16px; font-weight: 900; letter-spacing: 3px; color: var(--gold); margin-bottom: 6px; }
+    .footer-sub { font-size: 11px; color: var(--text-dim); margin-bottom: 12px; }
+    .footer-links { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+    .footer-link { font-size: 12px; color: var(--text-dim); text-decoration: none; }
+    .footer-link:hover { color: var(--gold); }
+    .footer-disclaimer { font-size: 10px; color: rgba(255,255,255,0.2); margin-top: 16px; line-height: 1.5; }
+
+    /* ── Loading ── */
+    .loading { text-align: center; padding: 40px; color: var(--text-dim); }
+    .spinner { width: 32px; height: 32px; border: 3px solid rgba(255,215,0,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Results Nav ── */
+    .nav-bar {
+      display: flex; justify-content: center; gap: 8px;
+      padding: 12px 16px; flex-wrap: wrap;
+    }
+    .nav-link {
+      font-size: 12px; color: var(--text-dim); text-decoration: none;
+      padding: 6px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);
+      transition: all 0.2s;
+    }
+    .nav-link:hover { color: var(--gold); border-color: var(--gold-border); }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-logo">
+    <div class="header-trophy">🏆</div>
+    <div>
+      <div class="header-title">PARLAY KING</div>
+      <div class="header-sub">GOLD STANDARD V3 TITAN XII</div>
+    </div>
+  </div>
+  <div class="header-badge">
+    <div class="live-dot"></div>
+    LIVE PICKS
+  </div>
+</div>
+
+<!-- Nav Bar -->
+<div class="nav-bar">
+  <a href="/" class="nav-link">🏠 Home</a>
+  <a href="/results" class="nav-link">📊 Results</a>
+  <a href="/vip" class="nav-link">⭐ VIP</a>
+  <a href="/pro" class="nav-link">🔥 Pro</a>
+</div>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-title">TODAY'S PICKS</div>
+  <div class="hero-sub">12-Factor AI Engine · All Leagues Scanned · 68%+ Confidence Only</div>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-val" id="stat-winrate">87.5%</div>
+      <div class="hero-stat-label">WIN RATE</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val" id="stat-picks">—</div>
+      <div class="hero-stat-label">TODAY'S PICKS</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">12</div>
+      <div class="hero-stat-label">FACTORS</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">1AM</div>
+      <div class="hero-stat-label">DAILY UPDATE</div>
+    </div>
+  </div>
+  <div class="date-badge" id="today-date">Loading...</div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs-container">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('soccer')" id="tab-soccer">
+      <span class="tab-icon">⚽</span>3-Leg Soccer
+    </div>
+    <div class="tab" onclick="switchTab('mls')" id="tab-mls">
+      <span class="tab-icon">🇺🇸</span>3-Leg MLS
+    </div>
+    <div class="tab" onclick="switchTab('nba')" id="tab-nba">
+      <span class="tab-icon">🏀</span>3-Leg NBA
+    </div>
+    <div class="tab" onclick="switchTab('power')" id="tab-power">
+      <span class="tab-icon">⚡</span>Power Pick
+    </div>
+  </div>
+</div>
+
+<!-- Picks Content -->
+<div class="picks-content">
+
+  <!-- Soccer Tab -->
+  <div class="tab-panel active" id="panel-soccer">
+    <div class="loading" id="loading-soccer">
+      <div class="spinner"></div>
+      Loading soccer picks...
+    </div>
+    <div id="picks-soccer" style="display:none"></div>
+  </div>
+
+  <!-- MLS Tab -->
+  <div class="tab-panel" id="panel-mls">
+    <div class="loading" id="loading-mls">
+      <div class="spinner"></div>
+      Loading MLS picks...
+    </div>
+    <div id="picks-mls" style="display:none"></div>
+  </div>
+
+  <!-- NBA Tab -->
+  <div class="tab-panel" id="panel-nba">
+    <div class="loading" id="loading-nba">
+      <div class="spinner"></div>
+      Loading NBA picks...
+    </div>
+    <div id="picks-nba" style="display:none"></div>
+  </div>
+
+  <!-- Power Pick Tab -->
+  <div class="tab-panel" id="panel-power">
+    <div class="loading" id="loading-power">
+      <div class="spinner"></div>
+      Loading power pick...
+    </div>
+    <div id="picks-power" style="display:none"></div>
+  </div>
+
+</div>
+
+<!-- VIP CTA -->
+<div style="padding: 0 16px;">
+  <div class="vip-cta">
+    <div class="vip-cta-title">⭐ Unlock VIP & Pro Picks</div>
+    <div class="vip-cta-sub">Get access to all high-confidence picks, early releases, and premium parlays</div>
+    <a href="/vip" class="vip-btn">🔓 UPGRADE NOW</a>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div class="footer-logo">🏆 PARLAY KING</div>
+  <div class="footer-sub">Gold Standard V3 Titan XII · 12-Factor AI Engine</div>
+  <div class="footer-links">
+    <a href="/" class="footer-link">Home</a>
+    <a href="/picks" class="footer-link">All Picks</a>
+    <a href="/results" class="footer-link">Results</a>
+    <a href="/vip" class="footer-link">VIP</a>
+    <a href="/pro" class="footer-link">Pro</a>
+    <a href="/parlays" class="footer-link">Parlays</a>
+  </div>
+  <div class="footer-disclaimer">
+    For entertainment purposes only. Please gamble responsibly. 18+ only.<br>
+    Picks are generated by AI and do not guarantee outcomes.
+  </div>
+</div>
+
+<script>
+  // ── State ──
+  let allData = null;
+  let currentTab = 'soccer';
+
+  // ── Tab Switching ──
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+  }
+
+  // ── Date ──
+  function formatDate(d) {
+    const date = new Date(d + 'T12:00:00');
+    return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  // ── Confidence Color ──
+  function confColor(c) {
+    if (c >= 75) return 'high';
+    return '';
+  }
+
+  // ── Tier Badge ──
+  function tierBadge(tier) {
+    const map = { free: 'tier-free', pro: 'tier-pro', vip: 'tier-vip' };
+    const label = { free: 'FREE', pro: 'PRO', vip: 'VIP' };
+    return `<span class="pick-tier-badge ${map[tier] || 'tier-free'}">${label[tier] || 'FREE'}</span>`;
+  }
+
+  // ── Render Pick Card ──
+  function renderPickCard(pick, legNum, totalLegs) {
+    const isLocked = pick.tier !== 'free';
+    const conf = pick.confidence || 0;
+    return `
+      <div class="pick-card ${pick.isPowerPick ? 'power-card' : ''} ${isLocked ? 'locked' : ''}">
+        <div class="pick-header">
+          <div class="pick-league">${pick.league || 'Unknown League'}</div>
+          ${tierBadge(pick.tier)}
+        </div>
+        <div class="pick-matchup">
+          ${pick.homeTeam} <span class="pick-vs">vs</span> ${pick.awayTeam}
+        </div>
+        <div class="pick-prediction">
+          ${pick.isPowerPick ? '⚡ ' : ''}${pick.prediction}
+        </div>
+        <div class="pick-footer">
+          <div class="confidence-bar-wrap">
+            <div class="confidence-label">
+              <span>Confidence</span>
+              <span>${conf}%</span>
+            </div>
+            <div class="confidence-bar">
+              <div class="confidence-fill ${confColor(conf)}" style="width:${conf}%"></div>
+            </div>
+          </div>
+          <div class="pick-leg-num">LEG ${legNum}/${totalLegs}</div>
+        </div>
+        ${isLocked ? `<div class="lock-overlay"><button class="lock-btn" onclick="window.location.href='/vip'">🔓 UNLOCK PICK</button></div>` : ''}
+      </div>
+    `;
+  }
+
+  // ── Render Parlay Summary ──
+  function renderParlaySummary(picks, sport) {
+    if (!picks || picks.length === 0) return '';
+    const legs = picks.map(p => `
+      <div class="parlay-leg">
+        <div class="parlay-leg-dot"></div>
+        <div class="parlay-leg-text">${p.homeTeam} vs ${p.awayTeam} — ${p.prediction}</div>
+        <div class="parlay-leg-conf">${p.confidence}%</div>
+      </div>
+    `).join('');
+    // Approximate combined odds
+    const combinedProb = picks.reduce((acc, p) => acc * (p.confidence / 100), 1);
+    const approxOdds = (1 / combinedProb).toFixed(2);
+    return `
+      <div class="parlay-summary">
+        <div class="parlay-title">📋 ${sport.toUpperCase()} 3-LEG PARLAY SUMMARY</div>
+        <div class="parlay-legs">${legs}</div>
+        <div class="parlay-footer">
+          <div>
+            <div class="parlay-odds-label">APPROX. COMBINED ODDS</div>
+            <div class="parlay-odds">+${Math.round((approxOdds - 1) * 100)}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="parlay-odds-label">LEGS</div>
+            <div class="parlay-odds">${picks.length}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ── Render No Games ──
+  function renderNoGames(sport) {
+    const msgs = {
+      mls: { icon: '🇺🇸', title: 'No MLS Games Today', sub: 'MLS picks will appear when games are scheduled. Check back tomorrow.' },
+      nba: { icon: '🏀', title: 'No NBA Games Today', sub: 'NBA picks will appear on game days. Check back tomorrow.' },
+      soccer: { icon: '⚽', title: 'No Soccer Picks Today', sub: 'Soccer picks are updated daily at 1AM AST.' },
+      power: { icon: '⚡', title: 'No Power Pick Today', sub: 'A Power Pick will appear when a game exceeds 75% confidence.' },
+    };
+    const m = msgs[sport] || msgs.soccer;
+    return `
+      <div class="no-games">
+        <div class="no-games-icon">${m.icon}</div>
+        <div class="no-games-title">${m.title}</div>
+        <div class="no-games-sub">${m.sub}</div>
+      </div>
+    `;
+  }
+
+  // ── Render Tab ──
+  function renderTab(sport, picks) {
+    const loadingEl = document.getElementById('loading-' + sport);
+    const picksEl = document.getElementById('picks-' + sport);
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (!picksEl) return;
+    picksEl.style.display = 'block';
+
+    if (!picks || picks.length === 0) {
+      picksEl.innerHTML = renderNoGames(sport);
+      return;
+    }
+
+    if (sport === 'power') {
+      const pick = picks[0];
+      picksEl.innerHTML = `
+        <div class="power-banner">
+          <div class="power-icon">⚡</div>
+          <div>
+            <div class="power-title">POWER PICK OF THE DAY</div>
+            <div class="power-desc">Highest confidence pick · All 12 factors passed · 68%+ threshold</div>
+          </div>
+        </div>
+        ${renderPickCard(pick, 1, 1)}
+      `;
+      return;
+    }
+
+    let html = '';
+    picks.slice(0, 3).forEach((pick, i) => {
+      html += renderPickCard(pick, i + 1, Math.min(picks.length, 3));
+    });
+    html += renderParlaySummary(picks.slice(0, 3), sport);
+    picksEl.innerHTML = html;
+  }
+
+  // ── Load All Picks ──
+  async function loadPicks() {
+    try {
+      const res = await fetch('/api/picks/today');
+      const data = await res.json();
+      allData = data;
+
+      // Update date
+      const dateEl = document.getElementById('today-date');
+      if (dateEl && data.date) dateEl.textContent = '📅 ' + formatDate(data.date);
+
+      // Update pick count
+      const total = (data.nba||[]).length + (data.mls||[]).length + (data.soccer||[]).length + (data.power||[]).length;
+      const statEl = document.getElementById('stat-picks');
+      if (statEl) statEl.textContent = total;
+
+      // Render each tab
+      renderTab('soccer', data.soccer || []);
+      renderTab('mls', data.mls || []);
+      renderTab('nba', data.nba || []);
+      renderTab('power', data.power || []);
+
+    } catch (err) {
+      console.error('Failed to load picks:', err);
+      ['soccer','mls','nba','power'].forEach(sport => {
+        const loadingEl = document.getElementById('loading-' + sport);
+        if (loadingEl) loadingEl.innerHTML = '<div style="color:#ff4444">Failed to load picks. Please refresh.</div>';
+      });
+    }
+  }
+
+  // ── Init ──
+  document.addEventListener('DOMContentLoaded', loadPicks);
+</script>
+</body>
+</html>
