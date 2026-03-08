@@ -152,7 +152,11 @@ async function initializeExpress() {
     });
 
     // Public pages — all serve the client SPA
-    const publicPages = ['/picks', '/soccer-picks', '/nba-picks', '/parlays', '/results', '/vip', '/pro'];
+    const publicPages = [
+      '/picks', '/soccer-picks', '/nba-picks', '/parlays', '/results', '/vip', '/pro',
+      '/register', '/login', '/account', '/pricing', '/faq', '/chat',
+      '/analytics', '/member-dashboard',
+    ];
     publicPages.forEach(page => {
       app.get(page, (_req: any, res: any) => {
         if (fs.existsSync(clientHtmlPath)) return res.sendFile(clientHtmlPath);

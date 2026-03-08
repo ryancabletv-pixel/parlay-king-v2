@@ -39,9 +39,18 @@ const SITE_PAGES = [
   { url: '/nba-picks',     priority: '0.9', changefreq: 'daily'   },
   { url: '/parlays',       priority: '0.8', changefreq: 'daily'   },
   { url: '/results',       priority: '0.8', changefreq: 'daily'   },
-  { url: '/vip',           priority: '0.7', changefreq: 'weekly'  },
-  { url: '/pro',           priority: '0.7', changefreq: 'weekly'  },
-  { url: '/admin',         priority: '0.3', changefreq: 'monthly' },
+  { url: '/analytics',     priority: '0.8', changefreq: 'daily'   },
+  { url: '/pricing',       priority: '0.9', changefreq: 'weekly'  },
+  { url: '/faq',           priority: '0.7', changefreq: 'weekly'  },
+  { url: '/vip',           priority: '0.8', changefreq: 'weekly'  },
+  { url: '/pro',           priority: '0.8', changefreq: 'weekly'  },
+  { url: '/register',      priority: '0.6', changefreq: 'monthly' },
+  { url: '/login',         priority: '0.5', changefreq: 'monthly' },
+  { url: '/account',       priority: '0.5', changefreq: 'monthly' },
+  { url: '/terms',         priority: '0.4', changefreq: 'monthly' },
+  { url: '/privacy',       priority: '0.4', changefreq: 'monthly' },
+  { url: '/refund',        priority: '0.4', changefreq: 'monthly' },
+  { url: '/disclaimer',    priority: '0.4', changefreq: 'monthly' },
 ];
 
 // ─── Sitemap XML Generator ────────────────────────────────────────────────────

@@ -66,10 +66,14 @@ export const runLogs = pgTable('run_logs', {
 export const members = pgTable('members', {
   id: serial('id').primaryKey(),
   email: text('email').notNull().unique(),
-  tier: text('tier').notNull().default('free'),
+  username: text('username').unique(),
+  passwordHash: text('password_hash'),
+  tier: text('tier').notNull().default('free'),         // free | vip | pro | lifetime
+  subscriptionPlan: text('subscription_plan'),          // vip-monthly | pro-monthly | lifetime
   token: text('token'),
   lastActive: timestamp('last_active'),
-  expiresAt: timestamp('expires_at'),
+  expiresAt: timestamp('expires_at'),                   // null = lifetime / never expires
+  tierLockedUntil: timestamp('tier_locked_until'),      // cannot downgrade/switch until this date
   isActive: boolean('is_active').default(true),
   metadata: jsonb('metadata'),
   createdAt: timestamp('created_at').defaultNow(),

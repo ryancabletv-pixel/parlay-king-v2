@@ -2049,20 +2049,26 @@ function pkUpdateAccountPage() {
   if (tier === 'vip' || tier === 'pro') {
     if (nameEl) nameEl.textContent = 'VIP Elite Member';
     if (descEl) descEl.textContent = 'Full access: Soccer, NBA, MLS & Power Pick';
-    if (expiry && expiryEl) expiryEl.textContent = 'Renews: ' + new Date(expiry).toLocaleDateString();
+    if (expiry && expiryEl) {
+      var expDate = new Date(expiry);
+      var now = new Date();
+      var daysLeft = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
+      expiryEl.textContent = 'Renews: ' + expDate.toLocaleDateString() + (daysLeft > 0 ? ' (' + daysLeft + ' days left)' : ' (expired)');
+    } else if (expiryEl) { expiryEl.textContent = ''; }
     if (card) card.style.borderColor = '#d4af37';
     if (upgradeBtn) upgradeBtn.style.display = 'none';
     if (manageBtn) manageBtn.style.display = 'block';
   } else if (tier === 'lifetime') {
     if (nameEl) nameEl.textContent = 'Lifetime Royalty Member';
     if (descEl) descEl.textContent = 'Lifetime access — all features, forever';
-    if (expiryEl) expiryEl.textContent = 'Never expires';
+    if (expiryEl) expiryEl.textContent = 'Never expires — you are set for life';
     if (card) card.style.borderColor = '#00cc66';
     if (upgradeBtn) upgradeBtn.style.display = 'none';
     if (manageBtn) manageBtn.style.display = 'none';
   } else {
     if (nameEl) nameEl.textContent = 'Free Tier Member';
     if (descEl) descEl.textContent = 'You have access to the daily Soccer 3-Leg Parlay';
+    if (expiryEl) expiryEl.textContent = '';
     if (upgradeBtn) upgradeBtn.style.display = 'block';
     if (manageBtn) manageBtn.style.display = 'none';
   }
@@ -2130,7 +2136,12 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="page-register" class="page-section" style="display:none;">
 <div class="container" style="padding:40px 20px; max-width:480px; margin:0 auto;">
   <h1 style="color:#d4af37;font-size:2rem;margin-bottom:8px;text-align:center;">&#128081; Create Your Account</h1>
-  <p style="color:#888;text-align:center;margin-bottom:30px;">Secure your tier access — log in anytime from any device</p>
+  <p style="color:#888;text-align:center;margin-bottom:12px;">Secure your tier access — log in anytime from any device</p>
+  <!-- Plan badge — shown after PayPal payment -->
+  <div id="register-plan-badge" style="display:none;background:rgba(0,204,102,0.1);border:1px solid #00cc66;border-radius:8px;padding:10px 16px;margin-bottom:20px;text-align:center;">
+    <span style="color:#00cc66;font-weight:700;font-size:0.95rem;">&#10003; Payment received — set up your account below to access your dashboard</span><br>
+    <span id="register-plan-label" style="color:#aaa;font-size:0.85rem;"></span>
+  </div>
   <div id="register-error" style="display:none;background:rgba(255,68,68,0.1);border:1px solid #ff4444;color:#ff6666;padding:12px;border-radius:8px;margin-bottom:16px;font-size:0.9rem;"></div>
   <div id="register-success" style="display:none;background:rgba(0,204,102,0.1);border:1px solid #00cc66;color:#00cc66;padding:12px;border-radius:8px;margin-bottom:16px;font-size:0.9rem;"></div>
   <div style="background:#1a1f2e;border:1px solid rgba(212,175,55,0.3);border-radius:12px;padding:28px;">
@@ -2155,6 +2166,25 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 <script>
+// Update the plan badge on the register page
+function pkUpdateRegisterPlan() {
+  var plan = localStorage.getItem('subscription_plan');
+  var badge = document.getElementById('register-plan-badge');
+  var label = document.getElementById('register-plan-label');
+  if (plan && plan !== 'free' && badge) {
+    var planNames = { 'vip-monthly': 'VIP Monthly — $14/mo', 'pro-monthly': 'Pro Monthly — $29/mo', 'lifetime': 'Lifetime Royalty — $499 one-time' };
+    if (label) label.textContent = 'Plan: ' + (planNames[plan] || plan);
+    badge.style.display = 'block';
+  } else if (badge) {
+    badge.style.display = 'none';
+  }
+  // Pre-fill email if coming from payment
+  var storedEmail = localStorage.getItem('pk_email');
+  if (storedEmail) {
+    var emailEl = document.getElementById('reg-email');
+    if (emailEl) emailEl.value = storedEmail;
+  }
+}
 function pkDoRegister() {
   var email = document.getElementById('reg-email').value.trim();
   var username = document.getElementById('reg-username').value.trim();
@@ -2168,7 +2198,7 @@ function pkDoRegister() {
   if (!email || !username || !password) { errEl.textContent = 'All fields are required.'; errEl.style.display = 'block'; return; }
   if (password !== password2) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
   if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.style.display = 'block'; return; }
-  var plan = localStorage.getItem('subscription_plan') || 'vip-monthly';
+  var plan = localStorage.getItem('subscription_plan') || 'free';
   btn.textContent = 'Creating account...';
   btn.disabled = true;
   fetch('/api/auth/register', {
@@ -2186,12 +2216,18 @@ function pkDoRegister() {
       localStorage.setItem('pk_username', data.username);
       localStorage.setItem('pk_email', email);
       localStorage.setItem('userTier', data.tier);
-      sucEl.textContent = 'Account created! Welcome, ' + data.username + '. Taking you to your dashboard...';
+      if (data.expiresAt) localStorage.setItem('subscription_expiry', data.expiresAt);
+      if (data.subscriptionPlan) localStorage.setItem('subscription_plan', data.subscriptionPlan);
+      // Update nav label immediately
+      var navLabel = document.getElementById('nav-account-label');
+      if (navLabel) navLabel.textContent = data.username;
+      sucEl.textContent = '\u2705 Account created! Welcome, ' + data.username + '. Your ' + (data.tier || 'free').toUpperCase() + ' tier is now active. Taking you to your dashboard...';
       sucEl.style.display = 'block';
       setTimeout(function() {
-        if (typeof showPage === 'function') showPage('home');
+        if (typeof showPage === 'function') showPage('account');
         if (typeof applyTierGating === 'function') applyTierGating();
-      }, 1500);
+        if (typeof pkUpdateAccountPage === 'function') pkUpdateAccountPage();
+      }, 1800);
     }
   }).catch(function() {
     errEl.textContent = 'Network error. Please try again.';
@@ -2200,13 +2236,9 @@ function pkDoRegister() {
     btn.disabled = false;
   });
 }
-// Pre-fill email if coming from payment
+// Pre-fill email and show plan badge on page load
 document.addEventListener('DOMContentLoaded', function() {
-  var storedEmail = localStorage.getItem('pk_email');
-  if (storedEmail) {
-    var emailEl = document.getElementById('reg-email');
-    if (emailEl) emailEl.value = storedEmail;
-  }
+  pkUpdateRegisterPlan();
 });
 </script>
 </div>
@@ -2249,20 +2281,27 @@ function pkDoLogin() {
     if (data.error) {
       errEl.textContent = data.error;
       errEl.style.display = 'block';
-      btn.textContent = '\u{1F512} Log In to Dashboard';
+      btn.textContent = '\uD83D\uDD12 Log In to Dashboard';
       btn.disabled = false;
     } else {
       localStorage.setItem('pk_jwt', data.token);
       localStorage.setItem('pk_username', data.username);
-      localStorage.setItem('pk_email', data.email);
+      localStorage.setItem('pk_email', data.email || '');
       localStorage.setItem('userTier', data.tier);
-      if (typeof showPage === 'function') showPage('home');
+      if (data.expiresAt) localStorage.setItem('subscription_expiry', data.expiresAt);
+      if (data.subscriptionPlan) localStorage.setItem('subscription_plan', data.subscriptionPlan);
+      // Update nav label immediately
+      var navLabel = document.getElementById('nav-account-label');
+      if (navLabel) navLabel.textContent = data.username;
+      // Redirect to account dashboard
+      if (typeof showPage === 'function') showPage('account');
       if (typeof applyTierGating === 'function') applyTierGating();
+      if (typeof pkUpdateAccountPage === 'function') pkUpdateAccountPage();
     }
   }).catch(function() {
     errEl.textContent = 'Network error. Please try again.';
     errEl.style.display = 'block';
-    btn.textContent = '\u{1F512} Log In to Dashboard';
+    btn.textContent = '\uD83D\uDD12 Log In to Dashboard';
     btn.disabled = false;
   });
 }
@@ -2413,7 +2452,7 @@ function pkDoLogin() {
 })();
 
 function showPage(page) {
-  var pages = ['home', 'results', 'analytics', 'pricing', 'faq', 'account', 'chat'];
+  var pages = ['home', 'results', 'analytics', 'pricing', 'faq', 'account', 'chat', 'register', 'login'];
   pages.forEach(function(p) {
     var el = document.getElementById('page-' + p);
     if (el) el.style.display = (p === page) ? 'block' : 'none';
@@ -2435,14 +2474,26 @@ function showPage(page) {
   } else {
     history.replaceState(null, '', '/');
   }
+  // Refresh account page when navigating to it
+  if (page === 'account' && typeof pkUpdateAccountPage === 'function') pkUpdateAccountPage();
+  // Refresh register plan badge when navigating to it
+  if (page === 'register' && typeof pkUpdateRegisterPlan === 'function') pkUpdateRegisterPlan();
 }
-// Handle direct URL navigation to pages
+// Handle direct URL navigation to pages + PayPal return URL params
 (function() {
-  var path = window.location.pathname.replace('/', '');
-  var validPages = ['results', 'analytics', 'pricing', 'faq', 'account', 'chat'];
-  if (validPages.indexOf(path) !== -1) {
+  var path = window.location.pathname.replace(/^\//, '');
+  var params = new URLSearchParams(window.location.search);
+  var planParam = params.get('plan');   // e.g. ?plan=vip-monthly
+  var pageParam = params.get('page');   // e.g. ?page=register
+  var emailParam = params.get('email'); // e.g. ?email=user@example.com (from PayPal return)
+  // Store plan and email from URL params for the register form
+  if (planParam) localStorage.setItem('subscription_plan', planParam);
+  if (emailParam) localStorage.setItem('pk_email', emailParam);
+  var validPages = ['results', 'analytics', 'pricing', 'faq', 'account', 'chat', 'register', 'login'];
+  var targetPage = pageParam || path;
+  if (validPages.indexOf(targetPage) !== -1) {
     document.addEventListener('DOMContentLoaded', function() {
-      showPage(path);
+      showPage(targetPage);
     });
   }
 })();
@@ -2752,7 +2803,7 @@ function closeReviewModal(e) {
 <script>
 // Move page sections to body level on DOM ready to fix browser parser nesting
 document.addEventListener('DOMContentLoaded', function() {
-  var pages = ['results', 'analytics', 'pricing', 'faq', 'account', 'chat'];
+  var pages = ['results', 'analytics', 'pricing', 'faq', 'account', 'chat', 'register', 'login'];
   var body = document.body;
   pages.forEach(function(p) {
     var el = document.getElementById('page-' + p);
@@ -2760,9 +2811,9 @@ document.addEventListener('DOMContentLoaded', function() {
       body.appendChild(el);
     }
   });
-  // Handle direct URL navigation
+  // Handle direct URL navigation (already handled above, but keep as fallback)
   var path = window.location.pathname.replace(/^\//, '');
-  var validPages = ['results', 'analytics', 'pricing', 'faq', 'account', 'chat'];
+  var validPages = ['results', 'analytics', 'pricing', 'faq', 'account', 'chat', 'register', 'login'];
   if (validPages.indexOf(path) !== -1) {
     showPage(path);
   }
