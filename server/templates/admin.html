@@ -191,6 +191,113 @@
     .sc-toggle input:checked + .sc-slider { background: rgba(0,230,118,0.3); border-color: var(--green); }
     .sc-toggle input:checked + .sc-slider:before { transform: translateX(24px); background: var(--green); }
     textarea.login-input { resize: vertical; font-family: inherit; }
+
+    /* ===== MOBILE HAMBURGER BUTTON ===== */
+    .hamburger {
+      display: none;
+      position: fixed; top: 12px; left: 12px; z-index: 200;
+      background: var(--bg2); border: 1px solid var(--gold-border);
+      border-radius: 8px; padding: 8px 10px; cursor: pointer;
+      flex-direction: column; gap: 5px;
+    }
+    .hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: var(--gold); border-radius: 2px; transition: all .3s;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* Sidebar overlay for mobile */
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6); z-index: 99;
+    }
+    .sidebar-overlay.visible { display: block; }
+
+    /* ===== RESPONSIVE BREAKPOINTS ===== */
+    @media (max-width: 768px) {
+      /* Show hamburger, hide sidebar by default */
+      .hamburger { display: flex; }
+
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform .3s ease;
+        width: 260px;
+        z-index: 150;
+      }
+      .sidebar.open { transform: translateX(0); }
+
+      /* Top bar spans full width on mobile */
+      .top-bar {
+        left: 0;
+        padding: 0 14px 0 56px;
+        height: 48px;
+      }
+      .top-bar-left { font-size: 11px; gap: 8px; }
+      .top-bar-right { gap: 8px; }
+      .top-bar-right .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+      /* Main content takes full width */
+      .main {
+        margin-left: 0;
+        padding: 12px;
+        padding-top: 64px;
+      }
+
+      /* Grids collapse to single column */
+      .grid-2, .grid-3, .grid-4 {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Login box fits small screens */
+      .login-box {
+        width: 92vw;
+        padding: 36px 24px;
+      }
+      .login-title { font-size: 22px; letter-spacing: 3px; }
+
+      /* Page title smaller on mobile */
+      .page-title { font-size: 18px; }
+
+      /* Section cards full width */
+      .section-card { padding: 14px; }
+
+      /* Tables scroll horizontally */
+      .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { min-width: 480px; }
+
+      /* Inputs larger touch targets */
+      .login-input, .input-field {
+        padding: 14px 16px;
+        font-size: 16px; /* prevents iOS zoom */
+      }
+
+      /* Buttons full width in forms */
+      .btn-gold.full-mobile { width: 100%; }
+
+      /* Card values smaller */
+      .card-value { font-size: 24px; }
+      .stat-value { font-size: 22px; }
+
+      /* Notification top-right stays visible */
+      #notification { top: 56px; right: 10px; left: 10px; }
+      .notif { font-size: 12px; padding: 10px 14px; }
+
+      /* Toggle row wraps on very small screens */
+      .toggle-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .top-bar-left span:nth-child(3),
+      .top-bar-left span:nth-child(4) { display: none; } /* hide date on tiny screens */
+      .page-title { font-size: 16px; }
+      .sidebar { width: 85vw; }
+    }
   </style>
 </head>
 <body>
@@ -218,8 +325,14 @@
 
 <!-- Main App -->
 <div id="app">
+  <!-- Mobile Hamburger -->
+  <button class="hamburger" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
   <!-- Sidebar -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <h1>🏆 PARLAY KING</h1>
       <p>Gold Standard V3 Titan XII</p>
@@ -392,7 +505,7 @@
             <button class="btn btn-outline btn-sm" onclick="loadPicks()">↻ Refresh</button>
           </div>
         </div>
-        <div id="picks-table">Loading...</div>
+        <div id="picks-table" class="table-scroll">Loading...</div>
       </div>
     </div>
 
@@ -450,7 +563,7 @@
       </div>
       <div class="section-card">
         <div class="section-title">👥 Member List</div>
-        <div id="members-table">Loading...</div>
+        <div id="members-table" class="table-scroll">Loading...</div>
       </div>
     </div>
 
@@ -474,7 +587,7 @@
           <div class="section-title" style="margin:0">📁 FTP Files</div>
           <button class="btn btn-outline btn-sm" onclick="loadFTPFiles()">↻ Refresh</button>
         </div>
-        <div id="ftp-files">Loading...</div>
+        <div id="ftp-files" class="table-scroll">Loading...</div>
       </div>
     </div>
 
@@ -512,7 +625,7 @@
           <div class="section-title" style="margin:0">🔔 Active Alerts</div>
           <button class="btn btn-outline btn-sm" onclick="loadAlerts()">↻ Refresh</button>
         </div>
-        <div id="alerts-list">Loading...</div>
+        <div id="alerts-list" class="table-scroll">Loading...</div>
       </div>
     </div>
 
@@ -577,7 +690,7 @@
       <div id="v3-tab-settled" style="display:none">
         <div class="section-card">
           <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:16px">✅ Historical Audit — V3 Prediction vs Actual Result</div>
-          <div id="v3-settled-table"><div style="color:var(--text-dim);text-align:center;padding:40px">Loading settled picks audit...</div></div>
+          <div id="v3-settled-table" class="table-scroll"><div style="color:var(--text-dim);text-align:center;padding:40px">Loading settled picks audit...</div></div>
         </div>
       </div>
 
@@ -1182,9 +1295,29 @@ function showPage(name) {
     'api-budget':      loadApiBudget,
   };
   loaders[name]?.();
+  closeSidebar(); // auto-close sidebar on mobile after nav
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Mobile Sidebar Toggle ─────────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const btn     = document.getElementById('hamburger-btn');
+  const isOpen  = sidebar.classList.contains('open');
+  sidebar.classList.toggle('open', !isOpen);
+  overlay.classList.toggle('visible', !isOpen);
+  btn.classList.toggle('open', !isOpen);
+}
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const btn     = document.getElementById('hamburger-btn');
+  sidebar.classList.remove('open');
+  overlay.classList.remove('visible');
+  btn.classList.remove('open');
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────────────
 function initApp() {
   document.getElementById('top-date').textContent = new Date().toLocaleDateString('en-US', {weekday:'short',month:'short',day:'numeric',year:'numeric'});
   loadDashboard();
