@@ -2136,6 +2136,19 @@ document.getElementById('account-vip-form').addEventListener('submit', function(
 // Mobile hamburger menu toggle
 
 // ── Page Navigation ───────────────────────────────────────────────
+// Relocate page sections to body level if they are nested inside page-home
+(function relocatePageSections() {
+  var pages = ['results', 'analytics', 'pricing', 'faq', 'account', 'chat'];
+  var body = document.body;
+  pages.forEach(function(p) {
+    var el = document.getElementById('page-' + p);
+    if (el && el.parentElement && el.parentElement.id === 'page-home') {
+      body.appendChild(el);
+      console.log('[Parlay King] Relocated page-' + p + ' to body level');
+    }
+  });
+})();
+
 function showPage(page) {
   var pages = ['home', 'results', 'analytics', 'pricing', 'faq', 'account', 'chat'];
   pages.forEach(function(p) {
@@ -2472,5 +2485,23 @@ function closeReviewModal(e) {
 </script>
 
 <script src="/member-tracker.js"></script>
+
+// Move page sections to body level on DOM ready to fix browser parser nesting
+document.addEventListener('DOMContentLoaded', function() {
+  var pages = ['results', 'analytics', 'pricing', 'faq', 'account', 'chat'];
+  var body = document.body;
+  pages.forEach(function(p) {
+    var el = document.getElementById('page-' + p);
+    if (el && el.parentElement && el.parentElement.id !== 'BODY' && el.parentElement !== body) {
+      body.appendChild(el);
+    }
+  });
+  // Handle direct URL navigation
+  var path = window.location.pathname.replace(/^\//, '');
+  var validPages = ['results', 'analytics', 'pricing', 'faq', 'account', 'chat'];
+  if (validPages.indexOf(path) !== -1) {
+    showPage(path);
+  }
+});
 </body>
 </html>
