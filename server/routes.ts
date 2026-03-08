@@ -185,17 +185,13 @@ export async function generateDailyPicks(date: string): Promise<{
     nbaLegs = [...nbaLegs, ...mockLegs].slice(0, 3);
   }
   if (mlsLegs.length < 3) {
-    // MLS: only add mock if there are no real MLS games at all
-    if (mlsFixtures.length === 0) {
-      console.log(`[Engine] No real MLS games today — using mock MLS data`);
-      const mockMLS = runBatchPredictions(getMockMLSFixtures(date));
-      mlsLegs = selectBestLegs(mockMLS, 3, CONFIDENCE_THRESHOLDS.PRO_MIN);
-    } else {
-      console.log(`[Engine] MLS legs short (${mlsLegs.length}/3) — blending mock data`);
-      const mockMLS = runBatchPredictions(getMockMLSFixtures(date));
-      const mockLegs = selectBestLegs(mockMLS, 3 - mlsLegs.length, CONFIDENCE_THRESHOLDS.PRO_MIN);
-      mlsLegs = [...mlsLegs, ...mockLegs].slice(0, 3);
-    }
+    // MLS: always blend mock data when real MLS legs are short
+    // (real MLS games may exist but score below 68% threshold)
+    const reason = mlsFixtures.length === 0 ? 'no real MLS games today' : `only ${mlsLegs.length}/3 real MLS legs scored 68%+`;
+    console.log(`[Engine] MLS fallback: ${reason} — using mock MLS data`);
+    const mockMLS = runBatchPredictions(getMockMLSFixtures(date));
+    const mockLegs = selectBestLegs(mockMLS, 3 - mlsLegs.length, CONFIDENCE_THRESHOLDS.PRO_MIN);
+    mlsLegs = [...mlsLegs, ...mockLegs].slice(0, 3);
   }
 
    // ── Select 1 Power Pick (highest confidence across ALL sports ≥70%) ─────
