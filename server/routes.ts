@@ -52,10 +52,26 @@ function selectBestLegs(
   minConfidence = CONFIDENCE_THRESHOLDS.PRO_MIN,
   maxConfidence = 100
 ): PredictionResult[] {
-  // Filter: must pass threshold, must not be a draw pick (draws are low-value)
+  // GUARDRAIL: Minimum data quality gate
+  // A pick must have at least 2 of 5 real data fields populated (odds, form, win rate, rank, injury)
+  // This prevents picks where the engine only had neutral defaults and no real data.
+  function hasMinDataQuality(p: PredictionResult): boolean {
+    const f = p.factors;
+    if (!f) return false;
+    const hasOdds    = f.f01_marketConsensus_home !== 0.44 && f.f01_marketConsensus_home !== 0.30; // non-default
+    const hasMomentum = f.f02_momentum_home !== 0.50 || f.f02_momentum_away !== 0.50;
+    const hasQuality  = f.f03_quality_home !== 0.50 || f.f03_quality_away !== 0.50;
+    const hasStanding = f.f11_standing_home !== 0.50 || f.f11_standing_away !== 0.50;
+    const hasInjury   = f.f07_injuries_home !== 0.90 || f.f07_injuries_away !== 0.90;
+    const dataPoints  = [hasOdds, hasMomentum, hasQuality, hasStanding, hasInjury].filter(Boolean).length;
+    return dataPoints >= 2; // At least 2 of 5 data fields must be real (non-default)
+  }
+
+  // Filter: must pass threshold, must not be a draw pick (draws are low-value), must have real data
   const qualified = predictions
     .filter(p => p.topConfidence >= minConfidence && p.topConfidence <= maxConfidence)
     .filter(p => !p.topPick.toLowerCase().includes('draw'))
+    .filter(p => hasMinDataQuality(p))
     .sort((a, b) => {
       // Primary sort: confidence descending
       // Secondary sort: value score (confidence × implied odds value)
@@ -253,41 +269,59 @@ export async function generateDailyPicks(date: string): Promise<{
   console.log(`[Waterfall] After Step 2: Soccer=${soccerLegs.length}/3, NBA=${nbaLegs.length}/3, MLS=${mlsLegs.length}/3`);
 
   // STEP 3: FALLBACK (No-Dark Policy) — lower to 65% hard floor + High Volatility label
+  // All fallback picks MUST still pass the 12-factor engine (they already did — they scored 65-67%)
+  // If sport-specific pool is exhausted, draw from the global allPreds pool (any sport)
+
   if (soccerLegs.length < 3) {
     const needed = 3 - soccerLegs.length;
     const alreadySelected = new Set(soccerLegs.map(p => `${p.homeTeam}|${p.awayTeam}`));
-    const fallbackLegs = selectBestLegs(
-      soccerPreds.filter(p => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`)),
-      needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS.PRO_MIN - 0.01
-    );
+    // First try sport-specific pool at 65-67%
+    let fallbackPool = soccerPreds.filter(p => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
+    // If sport pool is empty, use global allPreds (any sport) at 65-67%
+    if (fallbackPool.length === 0) {
+      fallbackPool = allPreds.filter(p => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
+      console.log(`[Waterfall] Soccer fallback: using global allPreds pool (${fallbackPool.length} candidates)`);
+    }
+    const fallbackLegs = selectBestLegs(fallbackPool, needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS.PRO_MIN - 0.01);
     for (const leg of fallbackLegs) {
       markHighVolatility(leg);
       soccerLegs.push(leg);
       console.log(`[Waterfall] ⚠️  Soccer FALLBACK (High Volatility): ${leg.homeTeam} vs ${leg.awayTeam} @ ${leg.topConfidence.toFixed(1)}%`);
+    }
+    if (soccerLegs.length < 3) {
+      console.error(`[Waterfall] CRITICAL: Only ${soccerLegs.length}/3 soccer legs available even at 65% floor. No picks below 65% are permitted.`);
     }
   }
 
   if (nbaLegs.length < 3) {
     const needed = 3 - nbaLegs.length;
     const alreadySelected = new Set(nbaLegs.map(p => `${p.homeTeam}|${p.awayTeam}`));
-    const fallbackLegs = selectBestLegs(
-      nbaPreds.filter(p => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`)),
-      needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS.PRO_MIN - 0.01
-    );
+    // First try sport-specific pool at 65-67%
+    let fallbackPool = nbaPreds.filter(p => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
+    // If sport pool is empty, use global allPreds (any sport) at 65-67%
+    if (fallbackPool.length === 0) {
+      fallbackPool = allPreds.filter(p => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
+      console.log(`[Waterfall] NBA fallback: using global allPreds pool (${fallbackPool.length} candidates)`);
+    }
+    const fallbackLegs = selectBestLegs(fallbackPool, needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS.PRO_MIN - 0.01);
     for (const leg of fallbackLegs) {
       markHighVolatility(leg);
       nbaLegs.push(leg);
       console.log(`[Waterfall] ⚠️  NBA FALLBACK (High Volatility): ${leg.homeTeam} vs ${leg.awayTeam} @ ${leg.topConfidence.toFixed(1)}%`);
+    }
+    if (nbaLegs.length < 3) {
+      console.error(`[Waterfall] CRITICAL: Only ${nbaLegs.length}/3 NBA legs available even at 65% floor. No picks below 65% are permitted.`);
     }
   }
 
   if (mlsLegs.length < 2) {
     const needed = 2 - mlsLegs.length;
     const alreadySelected = new Set(mlsLegs.map(p => `${p.homeTeam}|${p.awayTeam}`));
-    const fallbackLegs = selectBestLegs(
-      mlsPreds.filter(p => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`)),
-      needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS.PRO_MIN - 0.01
-    );
+    let fallbackPool = mlsPreds.filter(p => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
+    if (fallbackPool.length === 0) {
+      fallbackPool = allPreds.filter(p => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
+    }
+    const fallbackLegs = selectBestLegs(fallbackPool, needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS.PRO_MIN - 0.01);
     for (const leg of fallbackLegs) {
       markHighVolatility(leg);
       mlsLegs.push(leg);
@@ -297,13 +331,20 @@ export async function generateDailyPicks(date: string): Promise<{
 
   console.log(`[Waterfall] Final: Soccer=${soccerLegs.length}/3, NBA=${nbaLegs.length}/3, MLS=${mlsLegs.length}/2, HighVol=${highVolatilityLegs.size}`);
 
-  // ── Select 1 Power Pick (highest confidence across ALL sports ≥70%) ─────
-  // GUARDRAIL 1: Power Pick uses LIVE API data only. No mock fallback.
-  const powerCandidates = allPreds
-    .filter(p => p.topConfidence >= CONFIDENCE_THRESHOLDS.LIFETIME_MIN)
+  // ── Select 1 Power Pick (highest confidence across ALL sports ≥68%) ─────
+  // Power Pick rule: Must be 68%+ (primary). Falls back to highest available if nothing at 68%+.
+  // HARD RULE: Power Pick must pass 12-factor validation (it already did — it scored ≥68%).
+  // No draws, no picks below 65%.
+  const powerCandidates = [...soccerLegs, ...nbaLegs, ...mlsLegs]
+    .filter(p => p.topConfidence >= CONFIDENCE_THRESHOLDS.PRO_MIN)  // 68%+
     .filter(p => !p.topPick.toLowerCase().includes('draw'))
     .sort((a, b) => b.topConfidence - a.topConfidence);
-  const powerPick = powerCandidates[0] || null;  // NULL if no real 70%+ picks
+  // If nothing at 68%+, use the highest confidence leg from all selected legs (min 65%)
+  const powerPickFallback = [...soccerLegs, ...nbaLegs, ...mlsLegs]
+    .filter(p => p.topConfidence >= HARD_FLOOR)
+    .filter(p => !p.topPick.toLowerCase().includes('draw'))
+    .sort((a, b) => b.topConfidence - a.topConfidence)[0] || null;
+  const powerPick = powerCandidates[0] || powerPickFallback;  // Always pick the best available ≥65%
 
   console.log(`[Engine] Tiered picks: ${freePicks.length} Free (64-67%), ${proPicks.length} Pro (68%+), ${lifetimePicks.length} Lifetime (70%+)`);
   console.log(`[Engine] Sport parlays: ${soccerLegs.length} soccer, ${mlsLegs.length} MLS, ${nbaLegs.length} NBA`);
