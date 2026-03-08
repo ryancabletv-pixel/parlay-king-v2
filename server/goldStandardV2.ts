@@ -488,14 +488,16 @@ export function runTitanXII(
   const awayOrDrawFinal = sport === 'soccer' ? Math.min(95, awayConf + drawConf * 0.70) : undefined;
 
   // --- Determine top pick ---
+  const homeLabel = `${fixture.homeTeam} Win`;
+  const awayLabel = `${fixture.awayTeam} Win`;
   const outcomes: Array<[string, number]> = [
-    ['Home Win', homeConf],
-    ['Away Win', awayConf],
+    [homeLabel, homeConf],
+    [awayLabel, awayConf],
   ];
   if (sport === 'soccer') {
     outcomes.push(['Draw', drawConf]);
-    if (homeOrDrawFinal !== undefined) outcomes.push(['Home or Draw', homeOrDrawFinal]);
-    if (awayOrDrawFinal !== undefined) outcomes.push(['Away or Draw', awayOrDrawFinal]);
+    if (homeOrDrawFinal !== undefined) outcomes.push([`${fixture.homeTeam} Win or Draw`, homeOrDrawFinal]);
+    if (awayOrDrawFinal !== undefined) outcomes.push([`${fixture.awayTeam} Win or Draw`, awayOrDrawFinal]);
     if (over25 !== undefined) outcomes.push(['Over 2.5 Goals', over25]);
     if (btts !== undefined) outcomes.push(['Both Teams to Score', btts]);
   }
