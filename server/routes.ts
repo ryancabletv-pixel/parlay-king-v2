@@ -2674,6 +2674,23 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // ─── OWNER TEST BYPASS ─────────────────────────────────────────────────────
+  // GET /test-payment?plan=pro-monthly&key=ParlayKingOwner2026
+  // Simulates a completed PayPal payment and redirects to /register with plan pre-filled.
+  // OWNER USE ONLY — protected by secret key. Remove after testing.
+  app.get('/test-payment', (req: Request, res: Response) => {
+    const key = req.query.key as string;
+    const plan = (req.query.plan as string) || 'pro-monthly';
+    const OWNER_KEY = 'ParlayKingOwner2026';
+    if (key !== OWNER_KEY) {
+      return res.status(403).send('Forbidden');
+    }
+    const validPlans = ['pro-monthly', 'vip-monthly', 'lifetime'];
+    const safePlan = validPlans.includes(plan) ? plan : 'pro-monthly';
+    // Redirect exactly as PayPal would after a real payment
+    return res.redirect(`/register?plan=${safePlan}&payment=success&test=1`);
+  });
+
   // GET /api/admin/members-full — full member list with tier, expiry, lock, and subscription info
   app.get('/api/admin/members-full', requireAuth, async (req: Request, res: Response) => {
     try {

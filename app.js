@@ -50753,6 +50753,17 @@ async function registerRoutes(app) {
       return res.status(500).json({ error: err.message });
     }
   });
+  app.get("/test-payment", (req, res) => {
+    const key = req.query.key;
+    const plan = req.query.plan || "pro-monthly";
+    const OWNER_KEY = "ParlayKingOwner2026";
+    if (key !== OWNER_KEY) {
+      return res.status(403).send("Forbidden");
+    }
+    const validPlans = ["pro-monthly", "vip-monthly", "lifetime"];
+    const safePlan = validPlans.includes(plan) ? plan : "pro-monthly";
+    return res.redirect(`/register?plan=${safePlan}&payment=success&test=1`);
+  });
   app.get("/api/admin/members-full", requireAuth, async (req, res) => {
     try {
       const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
