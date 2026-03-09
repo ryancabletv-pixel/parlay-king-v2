@@ -2007,42 +2007,127 @@ Today's Full Slate — March 6, 2026:
 
 <!-- ===== ACCOUNT PAGE ===== -->
 <div id="page-account" class="page-section" style="display:none;">
-<div class="container" style="padding:30px 20px; max-width:600px; margin:0 auto;">
-  <h1 style="color:#d4af37;font-size:2rem;margin-bottom:8px;text-align:center;">&#128100; Your Account</h1>
-  <p id="account-subtitle" style="color:#888;text-align:center;margin-bottom:30px;">Manage your Gold Standard membership</p>
-  <!-- Username / login status banner -->
-  <div id="account-user-banner" style="display:none;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.25);border-radius:10px;padding:14px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-    <div>
-      <span style="color:#888;font-size:0.8rem;">Logged in as</span><br>
-      <span id="account-username-display" style="color:#d4af37;font-weight:700;font-size:1.1rem;"></span>
+<div class="container" style="padding:30px 20px; max-width:800px; margin:0 auto;">
+
+  <!-- ===== GUEST BANNER (not logged in) ===== -->
+  <div id="account-guest-banner" style="background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.2);border-radius:10px;padding:24px;margin-bottom:20px;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:12px;">&#128274;</div>
+    <h2 style="color:#d4af37;margin-bottom:8px;">Member Dashboard</h2>
+    <p style="color:#aaa;margin-bottom:20px;font-size:0.95rem;">Log in to access your picks, parlay builder, and full tier dashboard.</p>
+    <button onclick="showPage('login')" style="padding:12px 28px;background:#d4af37;border:none;color:#0f1419;border-radius:8px;font-weight:700;cursor:pointer;font-size:1rem;margin-right:10px;">&#128274; Log In</button>
+    <button onclick="showPage('register')" style="padding:12px 28px;background:transparent;border:1px solid #d4af37;color:#d4af37;border-radius:8px;font-weight:700;cursor:pointer;font-size:1rem;">&#9989; Create Account</button>
+  </div>
+
+  <!-- ===== LOGGED-IN DASHBOARD ===== -->
+  <div id="account-user-banner" style="display:none;">
+
+    <!-- Top bar: username + logout -->
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.25);border-radius:10px;padding:14px 20px;margin-bottom:20px;">
+      <div>
+        <span style="color:#888;font-size:0.8rem;">Logged in as</span><br>
+        <span id="account-username-display" style="color:#d4af37;font-weight:700;font-size:1.1rem;"></span>
+      </div>
+      <button onclick="pkLogout()" style="padding:8px 18px;background:transparent;border:1px solid #ff4444;color:#ff4444;border-radius:6px;font-size:0.85rem;font-weight:600;cursor:pointer;">&#128682; Log Out</button>
     </div>
-    <button onclick="pkLogout()" style="padding:8px 18px;background:transparent;border:1px solid #ff4444;color:#ff4444;border-radius:6px;font-size:0.85rem;font-weight:600;cursor:pointer;">&#128682; Log Out</button>
-  </div>
-  <!-- Not logged in banner -->
-  <div id="account-guest-banner" style="background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.2);border-radius:10px;padding:14px 20px;margin-bottom:20px;text-align:center;">
-    <p style="color:#aaa;margin-bottom:10px;font-size:0.9rem;">You are browsing as a guest. Log in to access your tier.</p>
-    <button onclick="showPage('login')" style="padding:10px 24px;background:#d4af37;border:none;color:#0f1419;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.9rem;">&#128274; Log In</button>
-    <span style="color:#555;margin:0 10px;">or</span>
-    <button onclick="showPage('register')" style="padding:10px 24px;background:transparent;border:1px solid #d4af37;color:#d4af37;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.9rem;">&#9989; Create Account</button>
-  </div>
-  <!-- Dynamic tier display -->
-  <div id="account-tier-card" style="background:#1a1f2e;border:1px solid rgba(212,175,55,0.3);border-radius:12px;padding:28px;text-align:center;margin-bottom:20px;">
-    <div style="font-size:3rem;margin-bottom:12px;">&#127942;</div>
-    <h2 id="account-tier-name" style="color:#d4af37;margin-bottom:8px;">Free Tier Member</h2>
-    <p id="account-tier-desc" style="color:#888;margin-bottom:8px;">You have access to the daily Soccer 3-Leg Parlay</p>
-    <p id="account-tier-expiry" style="color:#aaa;font-size:0.85rem;margin-bottom:20px;"></p>
-    <div id="account-upgrade-btn">
-      <button onclick="showPage('pricing')" style="padding:12px 28px;background:#d4af37;border:none;color:#0f1419;border-radius:8px;font-weight:700;cursor:pointer;font-size:1rem;">&#128081; Upgrade Membership</button>
+
+    <!-- Tier status card -->
+    <div id="account-tier-card" style="background:#1a1f2e;border:2px solid rgba(212,175,55,0.4);border-radius:12px;padding:22px;text-align:center;margin-bottom:20px;">
+      <div id="account-tier-icon" style="font-size:2.5rem;margin-bottom:8px;">&#127942;</div>
+      <h2 id="account-tier-name" style="color:#d4af37;margin:0 0 6px;">Loading...</h2>
+      <p id="account-tier-desc" style="color:#888;margin:0 0 6px;font-size:0.9rem;"></p>
+      <p id="account-tier-expiry" style="color:#aaa;font-size:0.82rem;margin:0 0 16px;"></p>
+      <div id="account-upgrade-btn" style="display:none;">
+        <button onclick="showPage('pricing')" style="padding:10px 24px;background:#d4af37;border:none;color:#0f1419;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.95rem;">&#128081; Upgrade Membership</button>
+      </div>
+      <div id="account-manage-btn" style="display:none;">
+        <button onclick="if(confirm('Cancel subscription and return to Free tier?')) { pkLogout(); }" style="padding:8px 20px;background:transparent;border:1px solid #ff4444;color:#ff4444;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.85rem;">Cancel Subscription</button>
+      </div>
     </div>
-    <div id="account-manage-btn" style="display:none;">
-      <button onclick="if(confirm('Cancel subscription and return to Free tier?')) { pkLogout(); }" style="padding:10px 24px;background:transparent;border:1px solid #ff4444;color:#ff4444;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.9rem;">Cancel Subscription</button>
+
+    <!-- ===== TODAY'S PICKS ACCESS ===== -->
+    <div id="dashboard-picks-section" style="margin-bottom:20px;">
+      <h3 style="color:#d4af37;font-size:1.1rem;margin:0 0 14px;border-bottom:1px solid rgba(212,175,55,0.2);padding-bottom:8px;">&#127919; Today's Picks</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+
+        <!-- Soccer 3-Leg (all tiers) -->
+        <button onclick="showPage('home'); setTimeout(function(){ switchTab('conservative'); var t=document.querySelector('.tabs'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); },100);" style="padding:16px 12px;background:#1a1f2e;border:1px solid rgba(212,175,55,0.3);color:#d4af37;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;text-align:center;">
+          <div style="font-size:1.8rem;margin-bottom:6px;">&#9917;</div>
+          <div>3-Leg Soccer</div>
+          <div style="font-size:0.75rem;color:#888;margin-top:4px;">All Tiers</div>
+        </button>
+
+        <!-- NBA 3-Leg (pro/lifetime) -->
+        <button id="dash-nba-btn" onclick="showPage('home'); setTimeout(function(){ switchTab('nba'); var t=document.querySelector('.tabs'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); },100);" style="padding:16px 12px;background:#1a1f2e;border:1px solid rgba(212,175,55,0.3);color:#d4af37;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;text-align:center;">
+          <div style="font-size:1.8rem;margin-bottom:6px;">&#127936;</div>
+          <div>3-Leg NBA</div>
+          <div id="dash-nba-tier" style="font-size:0.75rem;color:#888;margin-top:4px;">Pro+</div>
+        </button>
+
+        <!-- MLS 3-Leg (pro/lifetime) -->
+        <button id="dash-mls-btn" onclick="showPage('home'); setTimeout(function(){ switchTab('mls'); var t=document.querySelector('.tabs'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); },100);" style="padding:16px 12px;background:#1a1f2e;border:1px solid rgba(212,175,55,0.3);color:#d4af37;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;text-align:center;">
+          <div style="font-size:1.8rem;margin-bottom:6px;">&#127482;&#127480;</div>
+          <div>3-Leg MLS</div>
+          <div id="dash-mls-tier" style="font-size:0.75rem;color:#888;margin-top:4px;">Pro+</div>
+        </button>
+
+        <!-- Power Pick (pro/lifetime) -->
+        <button id="dash-pp-btn" onclick="showPage('home'); setTimeout(function(){ switchTab('powerpick'); var t=document.querySelector('.tabs'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); },100);" style="padding:16px 12px;background:#1a1f2e;border:1px solid rgba(212,175,55,0.3);color:#d4af37;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;text-align:center;">
+          <div style="font-size:1.8rem;margin-bottom:6px;">&#9889;</div>
+          <div>Power Pick</div>
+          <div id="dash-pp-tier" style="font-size:0.75rem;color:#888;margin-top:4px;">Pro+</div>
+        </button>
+
+      </div>
     </div>
-  </div>
-  <div style="background:#1a1f2e;border:1px solid rgba(212,175,55,0.2);border-radius:12px;padding:24px;">
-    <h3 style="color:#d4af37;margin-bottom:16px;">Contact &amp; Support</h3>
-    <p style="color:#ccc;margin-bottom:16px;font-size:0.9rem;">Questions about your membership? Reach us at:</p>
-    <a href="mailto:soccernbaparlayking@gmail.com" style="display:block;padding:12px;background:#1a5f3f;color:#d4af37;border:1px solid #d4af37;border-radius:6px;font-weight:700;text-align:center;text-decoration:none;">&#128140; soccernbaparlayking@gmail.com</a>
-  </div>
+
+    <!-- ===== PARLAY BUILDER ===== -->
+    <div id="dashboard-parlay-section" style="margin-bottom:20px;">
+      <h3 style="color:#d4af37;font-size:1.1rem;margin:0 0 14px;border-bottom:1px solid rgba(212,175,55,0.2);padding-bottom:8px;">&#128279; Parlay Builder</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+
+        <button onclick="showPage('home'); setTimeout(function(){ switchTab('conservative'); var t=document.querySelector('.tabs'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); },100);" style="padding:16px 12px;background:#1a2a1a;border:1px solid rgba(0,204,102,0.3);color:#00cc66;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;text-align:center;">
+          <div style="font-size:1.8rem;margin-bottom:6px;">&#9917;</div>
+          <div>Soccer Parlay</div>
+          <div style="font-size:0.75rem;color:#888;margin-top:4px;">3-Leg Builder</div>
+        </button>
+
+        <button id="dash-nba-parlay-btn" onclick="showPage('home'); setTimeout(function(){ switchTab('nba'); var t=document.querySelector('.tabs'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); },100);" style="padding:16px 12px;background:#1a2a1a;border:1px solid rgba(0,204,102,0.3);color:#00cc66;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;text-align:center;">
+          <div style="font-size:1.8rem;margin-bottom:6px;">&#127936;</div>
+          <div>NBA Parlay</div>
+          <div style="font-size:0.75rem;color:#888;margin-top:4px;">3-Leg Builder</div>
+        </button>
+
+        <button id="dash-mls-parlay-btn" onclick="showPage('home'); setTimeout(function(){ switchTab('mls'); var t=document.querySelector('.tabs'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); },100);" style="padding:16px 12px;background:#1a2a1a;border:1px solid rgba(0,204,102,0.3);color:#00cc66;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;text-align:center;">
+          <div style="font-size:1.8rem;margin-bottom:6px;">&#127482;&#127480;</div>
+          <div>MLS Parlay</div>
+          <div style="font-size:0.75rem;color:#888;margin-top:4px;">3-Leg Builder</div>
+        </button>
+
+        <button onclick="showPage('results')" style="padding:16px 12px;background:#1a1a2e;border:1px solid rgba(100,100,255,0.3);color:#8888ff;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;text-align:center;">
+          <div style="font-size:1.8rem;margin-bottom:6px;">&#128202;</div>
+          <div>W/L Results</div>
+          <div style="font-size:0.75rem;color:#888;margin-top:4px;">Track Record</div>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- ===== QUICK LINKS ===== -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px;">
+      <button onclick="showPage('results')" style="padding:12px;background:#1a1f2e;border:1px solid rgba(212,175,55,0.2);color:#ccc;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.85rem;">&#128202; Results</button>
+      <button onclick="showPage('analytics')" style="padding:12px;background:#1a1f2e;border:1px solid rgba(212,175,55,0.2);color:#ccc;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.85rem;">&#128200; Analytics</button>
+      <button onclick="showPage('faq')" style="padding:12px;background:#1a1f2e;border:1px solid rgba(212,175,55,0.2);color:#ccc;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.85rem;">&#10067; FAQ</button>
+      <button onclick="showPage('pricing')" style="padding:12px;background:#1a1f2e;border:1px solid rgba(212,175,55,0.2);color:#ccc;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.85rem;">&#128081; Plans</button>
+    </div>
+
+    <!-- ===== SUPPORT ===== -->
+    <div style="background:#1a1f2e;border:1px solid rgba(212,175,55,0.15);border-radius:10px;padding:18px;">
+      <h3 style="color:#d4af37;margin:0 0 10px;font-size:0.95rem;">&#128140; Support</h3>
+      <p style="color:#888;margin:0 0 10px;font-size:0.85rem;">Questions about your membership or picks? We respond within 24 hours.</p>
+      <a href="mailto:soccernbaparlayking@gmail.com" style="display:block;padding:10px;background:#1a5f3f;color:#d4af37;border:1px solid #d4af37;border-radius:6px;font-weight:700;text-align:center;text-decoration:none;font-size:0.9rem;">&#128140; soccernbaparlayking@gmail.com</a>
+    </div>
+
+  </div><!-- /account-user-banner -->
 </div>
 <script>
 function pkUpdateAccountPage() {
@@ -2054,44 +2139,99 @@ function pkUpdateAccountPage() {
   var guestBanner = document.getElementById('account-guest-banner');
   var usernameDisplay = document.getElementById('account-username-display');
   var nameEl = document.getElementById('account-tier-name');
+  var iconEl = document.getElementById('account-tier-icon');
   var descEl = document.getElementById('account-tier-desc');
   var expiryEl = document.getElementById('account-tier-expiry');
   var upgradeBtn = document.getElementById('account-upgrade-btn');
   var manageBtn = document.getElementById('account-manage-btn');
   var card = document.getElementById('account-tier-card');
+
+  // Show/hide logged-in vs guest view
   if (jwt && username) {
-    if (userBanner) { userBanner.style.display = 'flex'; }
+    if (userBanner) userBanner.style.display = 'block';
     if (guestBanner) guestBanner.style.display = 'none';
     if (usernameDisplay) usernameDisplay.textContent = username;
   } else {
     if (userBanner) userBanner.style.display = 'none';
     if (guestBanner) guestBanner.style.display = 'block';
+    return;
   }
-  if (tier === 'vip' || tier === 'pro') {
-    if (nameEl) nameEl.textContent = 'VIP Elite Member';
-    if (descEl) descEl.textContent = 'Full access: Soccer, NBA, MLS & Power Pick';
+
+  var isPro = (tier === 'vip' || tier === 'pro' || tier === 'lifetime');
+
+  // Tier card
+  if (tier === 'pro') {
+    if (iconEl) iconEl.textContent = '\uD83C\uDFC6';
+    if (nameEl) nameEl.textContent = 'Pro Monthly Member';
+    if (descEl) descEl.textContent = 'Full access: Soccer, NBA, MLS, Power Pick & Parlay Builder';
+    if (card) { card.style.borderColor = '#d4af37'; }
     if (expiry && expiryEl) {
       var expDate = new Date(expiry);
       var now = new Date();
       var daysLeft = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
-      expiryEl.textContent = 'Renews: ' + expDate.toLocaleDateString() + (daysLeft > 0 ? ' (' + daysLeft + ' days left)' : ' (expired)');
+      expiryEl.textContent = 'Renews: ' + expDate.toLocaleDateString('en-CA') + (daysLeft > 0 ? ' (' + daysLeft + ' days left)' : ' (expired)');
     } else if (expiryEl) { expiryEl.textContent = ''; }
-    if (card) card.style.borderColor = '#d4af37';
+    if (upgradeBtn) upgradeBtn.style.display = 'none';
+    if (manageBtn) manageBtn.style.display = 'block';
+  } else if (tier === 'vip') {
+    if (iconEl) iconEl.textContent = '\uD83D\uDC51';
+    if (nameEl) nameEl.textContent = 'VIP Elite Member';
+    if (descEl) descEl.textContent = 'Full access: Soccer, NBA, MLS, Power Pick & Parlay Builder';
+    if (card) { card.style.borderColor = '#d4af37'; }
+    if (expiry && expiryEl) {
+      var expDate2 = new Date(expiry);
+      var now2 = new Date();
+      var daysLeft2 = Math.ceil((expDate2 - now2) / (1000 * 60 * 60 * 24));
+      expiryEl.textContent = 'Renews: ' + expDate2.toLocaleDateString('en-CA') + (daysLeft2 > 0 ? ' (' + daysLeft2 + ' days left)' : ' (expired)');
+    } else if (expiryEl) { expiryEl.textContent = ''; }
     if (upgradeBtn) upgradeBtn.style.display = 'none';
     if (manageBtn) manageBtn.style.display = 'block';
   } else if (tier === 'lifetime') {
+    if (iconEl) iconEl.textContent = '\uD83D\uDC51\uD83D\uDC51';
     if (nameEl) nameEl.textContent = 'Lifetime Royalty Member';
-    if (descEl) descEl.textContent = 'Lifetime access — all features, forever';
-    if (expiryEl) expiryEl.textContent = 'Never expires — you are set for life';
-    if (card) card.style.borderColor = '#00cc66';
+    if (descEl) descEl.textContent = 'Unlimited lifetime access — all picks and features, forever';
+    if (expiryEl) expiryEl.textContent = 'Never expires — you are set for life \u267E\uFE0F';
+    if (card) { card.style.borderColor = '#00cc66'; }
     if (upgradeBtn) upgradeBtn.style.display = 'none';
     if (manageBtn) manageBtn.style.display = 'none';
   } else {
+    // Free tier
+    if (iconEl) iconEl.textContent = '\uD83C\uDFC6';
     if (nameEl) nameEl.textContent = 'Free Tier Member';
     if (descEl) descEl.textContent = 'You have access to the daily Soccer 3-Leg Parlay';
-    if (expiryEl) expiryEl.textContent = '';
+    if (expiryEl) expiryEl.textContent = 'Upgrade to unlock NBA, MLS, Power Pick & Parlay Builder';
+    if (card) { card.style.borderColor = 'rgba(212,175,55,0.3)'; }
     if (upgradeBtn) upgradeBtn.style.display = 'block';
     if (manageBtn) manageBtn.style.display = 'none';
+  }
+
+  // Update dashboard pick buttons — lock non-soccer for free tier
+  var lockStyle = 'padding:16px 12px;background:#111;border:1px solid rgba(255,255,255,0.1);color:#555;border-radius:10px;font-weight:700;cursor:not-allowed;font-size:0.9rem;text-align:center;';
+  var unlockStyle = 'padding:16px 12px;background:#1a1f2e;border:1px solid rgba(212,175,55,0.3);color:#d4af37;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;text-align:center;';
+  var greenStyle = 'padding:16px 12px;background:#1a2a1a;border:1px solid rgba(0,204,102,0.3);color:#00cc66;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;text-align:center;';
+  var greenLockStyle = 'padding:16px 12px;background:#111;border:1px solid rgba(255,255,255,0.1);color:#555;border-radius:10px;font-weight:700;cursor:not-allowed;font-size:0.9rem;text-align:center;';
+
+  ['dash-nba-btn','dash-mls-btn','dash-pp-btn'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.cssText = isPro ? unlockStyle : lockStyle;
+  });
+  ['dash-nba-parlay-btn','dash-mls-parlay-btn'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.cssText = isPro ? greenStyle : greenLockStyle;
+  });
+
+  // Update tier labels on pick buttons
+  var nbaT = document.getElementById('dash-nba-tier');
+  var mlsT = document.getElementById('dash-mls-tier');
+  var ppT = document.getElementById('dash-pp-tier');
+  if (isPro) {
+    if (nbaT) { nbaT.textContent = '\u2713 Unlocked'; nbaT.style.color = '#00cc66'; }
+    if (mlsT) { mlsT.textContent = '\u2713 Unlocked'; mlsT.style.color = '#00cc66'; }
+    if (ppT) { ppT.textContent = '\u2713 Unlocked'; ppT.style.color = '#00cc66'; }
+  } else {
+    if (nbaT) { nbaT.textContent = '\uD83D\uDD12 Pro+'; nbaT.style.color = '#888'; }
+    if (mlsT) { mlsT.textContent = '\uD83D\uDD12 Pro+'; mlsT.style.color = '#888'; }
+    if (ppT) { ppT.textContent = '\uD83D\uDD12 Pro+'; ppT.style.color = '#888'; }
   }
 }
 function pkLogout() {
