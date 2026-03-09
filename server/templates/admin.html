@@ -385,6 +385,7 @@
       <div class="nav-item" onclick="showPage('pro-tier')" style="color:#00b0ff"><span class="nav-icon">🏆</span>Pro Tier Games</div>
       <div class="nav-item" onclick="showPage('lifetime-tier')" style="color:#ffd700"><span class="nav-icon">♾️</span>Lifetime Tier Games</div>
       <div class="nav-item" onclick="showPage('paypal-compliance')" style="color:#00e676"><span class="nav-icon">⚖️</span>PayPal Compliance</div>
+      <div class="nav-item" onclick="showPage('test-payment-flow')" style="color:#ff9800"><span class="nav-icon">🧪</span>Test Payment Flow</div>
     </div>
   </div>
 
@@ -1362,6 +1363,111 @@
       </div>
     </div><!-- /page-paypal-compliance -->
 
+    <!-- TEST PAYMENT FLOW PAGE -->
+    <div class="page" id="page-test-payment-flow">
+      <div class="page-header">
+        <div class="page-title">🧪 Test Payment Flow</div>
+        <div class="page-sub">Simulate the full customer payment journey for both tier plans — owner use only</div>
+      </div>
+
+      <div style="background:#1a1a0a;border:2px solid #ff9800;border-radius:10px;padding:16px;margin-bottom:24px">
+        <div style="color:#ff9800;font-weight:800;font-size:1rem;margin-bottom:6px">⚠️ Owner Test Mode</div>
+        <div style="color:#b0b8c1;font-size:.875rem">These links simulate a completed PayPal payment and take you through the full account creation and login flow — no real payment is made. Use these to verify the customer experience before going live.</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:28px">
+
+        <!-- PRO MONTHLY TEST -->
+        <div class="card" style="border:2px solid #d4af37">
+          <div style="text-align:center;margin-bottom:16px">
+            <div style="font-size:2.5rem;margin-bottom:8px">🏆</div>
+            <h2 style="color:#d4af37;margin:0 0 4px">Pro Monthly</h2>
+            <div style="color:#888;font-size:.875rem">$29.00 / month</div>
+          </div>
+          <div style="background:#0f1419;border-radius:8px;padding:12px;margin-bottom:16px">
+            <div style="color:#b0b8c1;font-size:.8rem;margin-bottom:8px"><strong style="color:#d4af37">What this test covers:</strong></div>
+            <div style="color:#b0b8c1;font-size:.8rem;line-height:1.8">
+              ✓ PayPal return redirect to /register<br>
+              ✓ Plan badge shows "Pro Monthly" pre-filled<br>
+              ✓ Create username + password<br>
+              ✓ Account dashboard shows tier=pro<br>
+              ✓ Log out &rarr; log back in &rarr; tier restored<br>
+              ✓ No re-payment required on return
+            </div>
+          </div>
+          <a href="https://soccernbaparlayking.vip/test-payment?plan=pro-monthly&key=ParlayKingOwner2026"
+             target="_blank"
+             style="display:block;width:100%;padding:14px;background:#d4af37;border:none;color:#0f1419;border-radius:8px;font-weight:800;cursor:pointer;font-size:1rem;text-align:center;text-decoration:none;box-sizing:border-box">
+            🧪 Simulate Pro Payment &rarr; Register
+          </a>
+          <div style="font-size:.75rem;color:#555;margin-top:8px;text-align:center">Opens in new tab — no real charge</div>
+        </div>
+
+        <!-- LIFETIME TEST -->
+        <div class="card" style="border:2px solid #00cc66">
+          <div style="text-align:center;margin-bottom:16px">
+            <div style="font-size:2.5rem;margin-bottom:8px">👑👑</div>
+            <h2 style="color:#00cc66;margin:0 0 4px">Lifetime Royalty</h2>
+            <div style="color:#888;font-size:.875rem">$499.00 one-time &bull; Opens March 20, 2026</div>
+          </div>
+          <div style="background:#0f1419;border-radius:8px;padding:12px;margin-bottom:16px">
+            <div style="color:#b0b8c1;font-size:.8rem;margin-bottom:8px"><strong style="color:#00cc66">What this test covers:</strong></div>
+            <div style="color:#b0b8c1;font-size:.8rem;line-height:1.8">
+              ✓ PayPal return redirect to /register<br>
+              ✓ Plan badge shows "Lifetime Royalty" pre-filled<br>
+              ✓ Create username + password<br>
+              ✓ Account dashboard shows tier=lifetime<br>
+              ✓ No expiry date shown (never expires)<br>
+              ✓ Log out &rarr; log back in &rarr; lifetime tier restored
+            </div>
+          </div>
+          <a href="https://soccernbaparlayking.vip/test-payment?plan=lifetime&key=ParlayKingOwner2026"
+             target="_blank"
+             style="display:block;width:100%;padding:14px;background:#00cc66;border:none;color:#0f1419;border-radius:8px;font-weight:800;cursor:pointer;font-size:1rem;text-align:center;text-decoration:none;box-sizing:border-box">
+            🧪 Simulate Lifetime Payment &rarr; Register
+          </a>
+          <div style="font-size:.75rem;color:#555;margin-top:8px;text-align:center">Opens in new tab — no real charge</div>
+        </div>
+
+      </div>
+
+      <!-- STEP BY STEP GUIDE -->
+      <div class="card">
+        <h3 style="color:#ff9800;margin:0 0 16px">📍 How to Test the Full Flow</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
+          <div style="background:#0f1419;border-radius:8px;padding:14px;border-left:3px solid #d4af37">
+            <div style="color:#d4af37;font-weight:800;margin-bottom:6px">Step 1 — Click Test Link</div>
+            <div style="color:#b0b8c1;font-size:.8rem">Click either test button above. You will be redirected to the Register page exactly as PayPal would redirect a real paying customer.</div>
+          </div>
+          <div style="background:#0f1419;border-radius:8px;padding:14px;border-left:3px solid #d4af37">
+            <div style="color:#d4af37;font-weight:800;margin-bottom:6px">Step 2 — Create Account</div>
+            <div style="color:#b0b8c1;font-size:.8rem">Enter your email, choose a username and password. The plan is pre-filled. Click "Create My Account" to complete registration.</div>
+          </div>
+          <div style="background:#0f1419;border-radius:8px;padding:14px;border-left:3px solid #d4af37">
+            <div style="color:#d4af37;font-weight:800;margin-bottom:6px">Step 3 — Check Dashboard</div>
+            <div style="color:#b0b8c1;font-size:.8rem">You will be taken to your Account Dashboard. Verify your tier (Pro or Lifetime), expiry date, and that your picks are accessible.</div>
+          </div>
+          <div style="background:#0f1419;border-radius:8px;padding:14px;border-left:3px solid #d4af37">
+            <div style="color:#d4af37;font-weight:800;margin-bottom:6px">Step 4 — Test Return Login</div>
+            <div style="color:#b0b8c1;font-size:.8rem">Log out, then go to the Login page and sign back in with your username and password. Verify your tier is restored without being asked to pay again.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIRECT LINKS -->
+      <div class="card" style="margin-top:16px">
+        <h3 style="color:#888;margin:0 0 12px;font-size:.9rem">🔗 Direct Test URLs (copy &amp; share)</h3>
+        <div style="background:#0a0a0a;border-radius:6px;padding:10px;margin-bottom:8px;font-family:monospace;font-size:.8rem;color:#d4af37;word-break:break-all">
+          https://soccernbaparlayking.vip/test-payment?plan=pro-monthly&amp;key=ParlayKingOwner2026
+        </div>
+        <div style="background:#0a0a0a;border-radius:6px;padding:10px;font-family:monospace;font-size:.8rem;color:#00cc66;word-break:break-all">
+          https://soccernbaparlayking.vip/test-payment?plan=lifetime&amp;key=ParlayKingOwner2026
+        </div>
+        <div style="color:#555;font-size:.75rem;margin-top:8px">⚠️ Keep these URLs private — anyone with the key can create a free account.</div>
+      </div>
+
+    </div><!-- /page-test-payment-flow -->
+
   </div><!-- /main -->
 </div><!-- /app -->
 
@@ -1457,6 +1563,7 @@ function showPage(name) {
     'pro-tier':        loadProTier,
     'lifetime-tier':   loadLifetimeTier,
     'paypal-compliance': loadPaypalCompliance,
+    'test-payment-flow': function() {}, // static page — no data loader needed
   };
   loaders[name]?.();
   closeSidebar(); // auto-close sidebar on mobile after nav
