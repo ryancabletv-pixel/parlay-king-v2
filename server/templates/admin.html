@@ -729,7 +729,7 @@
 
       <!-- FUTURE TAB -->
       <div id="v3-tab-future" style="display:none">
-        <div id="v3-future-list"><div style="color:var(--text-dim);text-align:center;padding:60px;font-size:14px">Click “Load Games” to fetch upcoming fixtures for the next 7 days</div></div>
+        <div id="v3-future-list"><div style="color:var(--text-dim);text-align:center;padding:60px;font-size:14px">Click "Load Games" to fetch tomorrow's fixtures</div></div>
       </div>
 
       <!-- SETTLED TAB -->
@@ -2085,10 +2085,9 @@ function v3FilterGames() {
   const leagueFilter = document.getElementById('v3-league-filter')?.value || 'all';
   const highProbOnly = document.getElementById('v3-high-prob-toggle')?.checked || false;
   const today = new Date().toLocaleDateString('en-CA');
-  const in7Days = new Date(Date.now() + 7*24*60*60*1000).toLocaleDateString('en-CA');
-
+  const tomorrow = new Date(Date.now() + 24*60*60*1000).toLocaleDateString('en-CA');
   let todayGames = v3AllGames.filter(g => g.date === today);
-  let futureGames = v3AllGames.filter(g => g.date > today && g.date <= in7Days);
+  let futureGames = v3AllGames.filter(g => g.date === tomorrow);;
 
   if (leagueFilter !== 'all') {
     todayGames = todayGames.filter(g => g.sportKey === leagueFilter);
@@ -2106,7 +2105,7 @@ function v3FilterGames() {
   } else if (v3CurrentTab === 'future') {
     document.getElementById('v3-future-list').innerHTML =
       futureGames.length ? futureGames.map(v3RenderGameCard).join('') :
-      '<div style="color:var(--text-dim);text-align:center;padding:40px">No upcoming games match the current filter</div>';
+        `<div style="color:var(--text-dim);text-align:center;padding:40px">No games found for tomorrow (${tomorrow}). Sportsbooks may not have released lines yet — check back later tonight.</div>`;
   }
 }
 
