@@ -1589,19 +1589,23 @@ export async function registerRoutes(app: Express) {
         tier = 'pro';
       }
 
-      // PAID TIERS DISABLED UNTIL 2026-03-20 — grant free tier only
-      const paidTiersDisabledUntil = new Date('2026-03-20');
+      // LIFETIME TIER DISABLED UNTIL 2026-03-20 (New Brunswick ADT)
+      // PRO TIER IS FULLY ENABLED — no restrictions
+      const lifetimeDisabledUntil = new Date('2026-03-20T04:00:00Z'); // 2026-03-20 midnight New Brunswick ADT (UTC-4)
       const now = new Date();
-      if (now < paidTiersDisabledUntil) {
-        tier = 'free';
-        console.log(`[PayPal IPN] Paid tiers disabled until 2026-03-20 — granting free tier to ${payerEmail}`);
+      if (tier === 'lifetime' && now < lifetimeDisabledUntil) {
+        // Lifetime not yet available — downgrade to Pro so customer still gets value
+        tier = 'pro';
+        console.log(`[PayPal IPN] Lifetime tier not yet available — granting pro tier to ${payerEmail} until 2026-03-20`);
       }
+
+      // Grant the resolved tier
       if (payerEmail && tier !== 'free') {
         await storage.createOrUpdateMember(payerEmail, tier);
-        console.log(`[PayPal IPN] Tier ${tier} granted to ${payerEmail}`);
+        console.log(`[PayPal IPN] Tier '${tier}' granted to ${payerEmail}`);
       } else if (payerEmail) {
         await storage.createOrUpdateMember(payerEmail, 'free');
-        console.log(`[PayPal IPN] Free tier granted to ${payerEmail} (paid tiers disabled)`);
+        console.log(`[PayPal IPN] Free tier recorded for ${payerEmail}`);
       }
     } catch (err) {
       console.error('[PayPal IPN] Error processing IPN:', err);

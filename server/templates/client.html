@@ -1926,10 +1926,31 @@ Today's Full Slate — March 6, 2026:
         <li>&#10003; Priority Analysis</li>
         <li style="color:#555;">&#10007; Lifetime Access</li>
       </ul>
-      <div style="margin-top:16px;background:rgba(212,175,55,0.08);border:2px solid #d4af37;border-radius:8px;padding:14px;text-align:center;">
-        <div style="font-size:1.1rem;font-weight:800;color:#d4af37;margin-bottom:4px;">&#128274; Enrollment Closed</div>
-        <div style="font-size:0.9rem;color:#b0b8c1;">Pro tier re-opens <strong style="color:#fff;">March 20, 2026</strong></div>
-        <div style="font-size:0.8rem;color:#888;margin-top:6px;">Free tier is available now &mdash; no signup required</div>
+      <!-- PayPal Pro Monthly Subscription — compliant with PayPal Acceptable Use Policy -->
+      <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank" style="width:100%;margin-top:16px;" onsubmit="localStorage.setItem('selected_plan','pro-monthly')">
+        <input type="hidden" name="cmd" value="_xclick-subscriptions">
+        <input type="hidden" name="business" value="Glenoring@gmail.com">
+        <input type="hidden" name="item_name" value="Pro Monthly Membership - Soccer NBA Parlay King">
+        <input type="hidden" name="item_number" value="pro-monthly">
+        <input type="hidden" name="a3" value="29.00">
+        <input type="hidden" name="p3" value="1">
+        <input type="hidden" name="t3" value="M">
+        <input type="hidden" name="src" value="1">
+        <input type="hidden" name="sra" value="1">
+        <input type="hidden" name="no_note" value="1">
+        <input type="hidden" name="rm" value="2">
+        <input type="hidden" name="return" value="https://soccernbaparlayking.vip/register?plan=pro-monthly&payment=success">
+        <input type="hidden" name="cancel_return" value="https://soccernbaparlayking.vip/pricing?payment=cancelled">
+        <input type="hidden" name="notify_url" value="https://soccernbaparlayking.vip/api/paypal/ipn">
+        <input type="hidden" name="currency_code" value="USD">
+        <input type="hidden" name="lc" value="US">
+        <input type="hidden" name="bn" value="PP-SubscriptionsBF">
+        <button type="submit" style="width:100%;padding:14px;background:#d4af37;border:none;color:#0f1419;border-radius:8px;font-weight:800;cursor:pointer;font-size:1rem;">&#128179; Subscribe with PayPal &mdash; $29/mo</button>
+      </form>
+      <div style="font-size:0.75rem;color:#666;margin-top:10px;line-height:1.5;">
+        Recurring monthly charge of $29.00 USD. Cancel anytime from your PayPal account.
+        By subscribing you agree to our <a href="/terms" style="color:#d4af37;">Terms of Service</a> and
+        <a href="/refund" style="color:#d4af37;">Refund Policy</a>.
       </div>
     </div>
     <div style="background:#1a1f2e;border:2px solid #00cc66;border-radius:12px;padding:28px;text-align:center;">

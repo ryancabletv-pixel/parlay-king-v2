@@ -49708,18 +49708,18 @@ async function registerRoutes(app) {
       } else if (itemName.toLowerCase().includes("pro") || itemName.toLowerCase().includes("streamz")) {
         tier = "pro";
       }
-      const paidTiersDisabledUntil = /* @__PURE__ */ new Date("2026-03-20");
+      const lifetimeDisabledUntil = /* @__PURE__ */ new Date("2026-03-20T04:00:00Z");
       const now = /* @__PURE__ */ new Date();
-      if (now < paidTiersDisabledUntil) {
-        tier = "free";
-        console.log(`[PayPal IPN] Paid tiers disabled until 2026-03-20 \u2014 granting free tier to ${payerEmail}`);
+      if (tier === "lifetime" && now < lifetimeDisabledUntil) {
+        tier = "pro";
+        console.log(`[PayPal IPN] Lifetime tier not yet available \u2014 granting pro tier to ${payerEmail} until 2026-03-20`);
       }
       if (payerEmail && tier !== "free") {
         await createOrUpdateMember(payerEmail, tier);
-        console.log(`[PayPal IPN] Tier ${tier} granted to ${payerEmail}`);
+        console.log(`[PayPal IPN] Tier '${tier}' granted to ${payerEmail}`);
       } else if (payerEmail) {
         await createOrUpdateMember(payerEmail, "free");
-        console.log(`[PayPal IPN] Free tier granted to ${payerEmail} (paid tiers disabled)`);
+        console.log(`[PayPal IPN] Free tier recorded for ${payerEmail}`);
       }
     } catch (err) {
       console.error("[PayPal IPN] Error processing IPN:", err);
