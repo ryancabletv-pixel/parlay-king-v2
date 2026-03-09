@@ -912,6 +912,12 @@ export async function registerRoutes(app: Express) {
         prediction: cfg['fg_pick'],
         confidence: parseFloat(cfg['fg_confidence'] || '0'),
         odds:       cfg['fg_home_odds'],
+        homeOdds:   cfg['fg_home_odds'],
+        awayOdds:   cfg['fg_away_odds'],
+        drawOdds:   cfg['fg_draw_odds'],
+        dateLabel:  cfg['fg_date_label'] || '',
+        imageUrl:   cfg['fg_image_url']  || '',
+        liveOnSite: true,
         isFeatured:  true,
         isPowerPick: false,
         tier:        'pro',
@@ -1007,22 +1013,30 @@ export async function registerRoutes(app: Express) {
         } : null,
         featured_pick: featuredMegaPick ? {
           game: `${featuredMegaPick.homeTeam} vs ${featuredMegaPick.awayTeam}`,
+          homeTeam: featuredMegaPick.homeTeam || '',
+          awayTeam: featuredMegaPick.awayTeam || '',
           league: featuredMegaPick.league || 'Unknown',
-          pick: featuredMegaPick.prediction || featuredMegaPick.pick,
-          pick_type: featuredMegaPick.prediction || featuredMegaPick.pick,
+          sport: featuredMegaPick.sport || 'nba',
+          pick: featuredMegaPick.prediction || (featuredMegaPick as any).pick,
+          pick_type: featuredMegaPick.prediction || (featuredMegaPick as any).pick,
           confidence: Math.round(featuredMegaPick.confidence ?? 0),
           probability: parseFloat(((featuredMegaPick.confidence ?? 0) / 100).toFixed(2)),
           confidence_pct: `${Math.round(featuredMegaPick.confidence ?? 0)}%`,
           odds: featuredMegaPick.odds || '-110',
+          homeOdds: (featuredMegaPick as any).homeOdds || featuredMegaPick.odds || '',
+          awayOdds: (featuredMegaPick as any).awayOdds || '',
+          drawOdds: (featuredMegaPick as any).drawOdds || '',
+          dateLabel: (featuredMegaPick as any).dateLabel || '',
+          imageUrl:  (featuredMegaPick as any).imageUrl  || '',
+          liveOnSite: !!(featuredMegaPick as any).liveOnSite,
           time_display: date,
-          label: featuredMegaPick.isFeatured ? 'SUNDAY MEGA-PICK' : 'POWER PICK',
-          pick_label: featuredMegaPick.prediction || featuredMegaPick.pick,
+          label: featuredMegaPick.isFeatured ? 'FEATURED GAME' : 'POWER PICK',
+          pick_label: featuredMegaPick.prediction || (featuredMegaPick as any).pick,
           reasoning: (featuredMegaPick.metadata as any)?.recommendation || `Gold Standard V3 Titan XII — Top pick at ${Math.round(featuredMegaPick.confidence ?? 0)}%.`,
           game_time: (featuredMegaPick.metadata as any)?.gameTime || '',
-          hero_title: featuredMegaPick.isFeatured ? `SUNDAY MEGA-PICK: ${featuredMegaPick.awayTeam?.toUpperCase()} vs ${featuredMegaPick.homeTeam?.toUpperCase()} — ${Math.round(featuredMegaPick.confidence ?? 0)}% CONFIDENCE` : '',
-          seo_title: featuredMegaPick.isFeatured ? `March 8 NBA Expert Picks: Knicks vs Lakers Prediction & 12-Factor Analysis` : '',
+          hero_title: featuredMegaPick.isFeatured ? `FEATURED: ${featuredMegaPick.awayTeam?.toUpperCase()} vs ${featuredMegaPick.homeTeam?.toUpperCase()} — ${Math.round(featuredMegaPick.confidence ?? 0)}% CONFIDENCE` : '',
           auto_generated: true,
-          tag: featuredMegaPick.isFeatured ? 'MEGA-PICK' : 'POWER PICK',
+          tag: featuredMegaPick.isFeatured ? 'FEATURED' : 'POWER PICK',
           disclaimer: 'For entertainment purposes only.',
         } : null,
         featured_soccer: parlayLegs[0] ? {
@@ -1992,39 +2006,43 @@ export async function registerRoutes(app: Express) {
     try {
       const cfg = await storage.getEngineConfig();
       res.json({
-        homeTeam:   cfg['fg_home']    || '',
-        awayTeam:   cfg['fg_away']    || '',
-        league:     cfg['fg_league']  || '',
-        sport:      cfg['fg_sport']   || 'soccer',
-        homeOdds:   cfg['fg_home_odds'] || '',
-        awayOdds:   cfg['fg_away_odds'] || '',
-        drawOdds:   cfg['fg_draw_odds'] || '',
+        homeTeam:   cfg['fg_home']       || '',
+        awayTeam:   cfg['fg_away']       || '',
+        league:     cfg['fg_league']     || '',
+        sport:      cfg['fg_sport']      || 'soccer',
+        homeOdds:   cfg['fg_home_odds']  || '',
+        awayOdds:   cfg['fg_away_odds']  || '',
+        drawOdds:   cfg['fg_draw_odds']  || '',
         confidence: cfg['fg_confidence'] || '',
-        pick:       cfg['fg_pick']    || '',
-        liveOnSite: cfg['fg_live']    === 'true',
+        pick:       cfg['fg_pick']       || '',
+        dateLabel:  cfg['fg_date_label'] || '',
+        imageUrl:   cfg['fg_image_url']  || '',
+        liveOnSite: cfg['fg_live']       === 'true',
       });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
 
   app.post('/api/admin/featured-game', requireAuth, async (req, res) => {
     try {
-      const { homeTeam, awayTeam, league, sport, homeOdds, awayOdds, drawOdds, confidence, pick, liveOnSite } = req.body;
+      const { homeTeam, awayTeam, league, sport, homeOdds, awayOdds, drawOdds, confidence, pick, dateLabel, imageUrl, liveOnSite } = req.body;
       const conf = parseFloat(confidence) || 0;
       // Auto-generate odds from confidence if not manually provided
       const autoHomeOdds = homeOdds  || confidenceToAmericanOdds(conf);
       const autoAwayOdds = awayOdds  || confidenceToAmericanOdds(Math.max(conf - 10, 45));
       const autoDrawOdds = drawOdds  || (sport === 'soccer' ? '+280' : '');
       await Promise.all([
-        storage.setEngineConfig('fg_home',       homeTeam   || ''),
-        storage.setEngineConfig('fg_away',       awayTeam   || ''),
-        storage.setEngineConfig('fg_league',     league     || ''),
-        storage.setEngineConfig('fg_sport',      sport      || 'soccer'),
-        storage.setEngineConfig('fg_home_odds',  autoHomeOdds),
-        storage.setEngineConfig('fg_away_odds',  autoAwayOdds),
-        storage.setEngineConfig('fg_draw_odds',  autoDrawOdds),
-        storage.setEngineConfig('fg_confidence', String(conf || '')),
-        storage.setEngineConfig('fg_pick',       pick       || ''),
-        storage.setEngineConfig('fg_live',       liveOnSite ? 'true' : 'false'),
+        storage.setEngineConfig('fg_home',        homeTeam   || ''),
+        storage.setEngineConfig('fg_away',        awayTeam   || ''),
+        storage.setEngineConfig('fg_league',      league     || ''),
+        storage.setEngineConfig('fg_sport',       sport      || 'soccer'),
+        storage.setEngineConfig('fg_home_odds',   autoHomeOdds),
+        storage.setEngineConfig('fg_away_odds',   autoAwayOdds),
+        storage.setEngineConfig('fg_draw_odds',   autoDrawOdds),
+        storage.setEngineConfig('fg_confidence',  String(conf || '')),
+        storage.setEngineConfig('fg_pick',        pick       || ''),
+        storage.setEngineConfig('fg_date_label',  dateLabel  || ''),
+        storage.setEngineConfig('fg_image_url',   imageUrl   || ''),
+        storage.setEngineConfig('fg_live',        liveOnSite ? 'true' : 'false'),
       ]);
       clearPicksCache();
       res.json({ success: true, message: liveOnSite ? 'Featured game is LIVE on site' : 'Featured game saved (not live)' });

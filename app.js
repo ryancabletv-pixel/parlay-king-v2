@@ -49140,6 +49140,12 @@ async function registerRoutes(app) {
         prediction: cfg["fg_pick"],
         confidence: parseFloat(cfg["fg_confidence"] || "0"),
         odds: cfg["fg_home_odds"],
+        homeOdds: cfg["fg_home_odds"],
+        awayOdds: cfg["fg_away_odds"],
+        drawOdds: cfg["fg_draw_odds"],
+        dateLabel: cfg["fg_date_label"] || "",
+        imageUrl: cfg["fg_image_url"] || "",
+        liveOnSite: true,
         isFeatured: true,
         isPowerPick: false,
         tier: "pro",
@@ -49196,22 +49202,30 @@ async function registerRoutes(app) {
         } : null,
         featured_pick: featuredMegaPick ? {
           game: `${featuredMegaPick.homeTeam} vs ${featuredMegaPick.awayTeam}`,
+          homeTeam: featuredMegaPick.homeTeam || "",
+          awayTeam: featuredMegaPick.awayTeam || "",
           league: featuredMegaPick.league || "Unknown",
+          sport: featuredMegaPick.sport || "nba",
           pick: featuredMegaPick.prediction || featuredMegaPick.pick,
           pick_type: featuredMegaPick.prediction || featuredMegaPick.pick,
           confidence: Math.round(featuredMegaPick.confidence ?? 0),
           probability: parseFloat(((featuredMegaPick.confidence ?? 0) / 100).toFixed(2)),
           confidence_pct: `${Math.round(featuredMegaPick.confidence ?? 0)}%`,
           odds: featuredMegaPick.odds || "-110",
+          homeOdds: featuredMegaPick.homeOdds || featuredMegaPick.odds || "",
+          awayOdds: featuredMegaPick.awayOdds || "",
+          drawOdds: featuredMegaPick.drawOdds || "",
+          dateLabel: featuredMegaPick.dateLabel || "",
+          imageUrl: featuredMegaPick.imageUrl || "",
+          liveOnSite: !!featuredMegaPick.liveOnSite,
           time_display: date2,
-          label: featuredMegaPick.isFeatured ? "SUNDAY MEGA-PICK" : "POWER PICK",
+          label: featuredMegaPick.isFeatured ? "FEATURED GAME" : "POWER PICK",
           pick_label: featuredMegaPick.prediction || featuredMegaPick.pick,
           reasoning: featuredMegaPick.metadata?.recommendation || `Gold Standard V3 Titan XII \u2014 Top pick at ${Math.round(featuredMegaPick.confidence ?? 0)}%.`,
           game_time: featuredMegaPick.metadata?.gameTime || "",
-          hero_title: featuredMegaPick.isFeatured ? `SUNDAY MEGA-PICK: ${featuredMegaPick.awayTeam?.toUpperCase()} vs ${featuredMegaPick.homeTeam?.toUpperCase()} \u2014 ${Math.round(featuredMegaPick.confidence ?? 0)}% CONFIDENCE` : "",
-          seo_title: featuredMegaPick.isFeatured ? `March 8 NBA Expert Picks: Knicks vs Lakers Prediction & 12-Factor Analysis` : "",
+          hero_title: featuredMegaPick.isFeatured ? `FEATURED: ${featuredMegaPick.awayTeam?.toUpperCase()} vs ${featuredMegaPick.homeTeam?.toUpperCase()} \u2014 ${Math.round(featuredMegaPick.confidence ?? 0)}% CONFIDENCE` : "",
           auto_generated: true,
-          tag: featuredMegaPick.isFeatured ? "MEGA-PICK" : "POWER PICK",
+          tag: featuredMegaPick.isFeatured ? "FEATURED" : "POWER PICK",
           disclaimer: "For entertainment purposes only."
         } : null,
         featured_soccer: parlayLegs[0] ? {
@@ -50083,6 +50097,8 @@ async function registerRoutes(app) {
         drawOdds: cfg["fg_draw_odds"] || "",
         confidence: cfg["fg_confidence"] || "",
         pick: cfg["fg_pick"] || "",
+        dateLabel: cfg["fg_date_label"] || "",
+        imageUrl: cfg["fg_image_url"] || "",
         liveOnSite: cfg["fg_live"] === "true"
       });
     } catch (err) {
@@ -50091,7 +50107,7 @@ async function registerRoutes(app) {
   });
   app.post("/api/admin/featured-game", requireAuth, async (req, res) => {
     try {
-      const { homeTeam, awayTeam, league, sport, homeOdds, awayOdds, drawOdds, confidence, pick, liveOnSite } = req.body;
+      const { homeTeam, awayTeam, league, sport, homeOdds, awayOdds, drawOdds, confidence, pick, dateLabel, imageUrl, liveOnSite } = req.body;
       const conf = parseFloat(confidence) || 0;
       const autoHomeOdds = homeOdds || confidenceToAmericanOdds(conf);
       const autoAwayOdds = awayOdds || confidenceToAmericanOdds(Math.max(conf - 10, 45));
@@ -50106,6 +50122,8 @@ async function registerRoutes(app) {
         setEngineConfig("fg_draw_odds", autoDrawOdds),
         setEngineConfig("fg_confidence", String(conf || "")),
         setEngineConfig("fg_pick", pick || ""),
+        setEngineConfig("fg_date_label", dateLabel || ""),
+        setEngineConfig("fg_image_url", imageUrl || ""),
         setEngineConfig("fg_live", liveOnSite ? "true" : "false")
       ]);
       clearPicksCache();

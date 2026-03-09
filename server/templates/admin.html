@@ -795,7 +795,7 @@
             <input class="login-input" id="fg-away-odds" placeholder="e.g. 4.20">
           </div>
         </div>
-        <div class="grid-2" style="gap:14px;margin-bottom:20px">
+        <div class="grid-2" style="gap:14px;margin-bottom:14px">
           <div>
             <label class="login-label">BEST PICK (e.g. Toronto Raptors Win)</label>
             <input class="login-input" id="fg-pick" placeholder="e.g. Toronto Raptors Win">
@@ -804,6 +804,19 @@
             <label class="login-label">V3 CONFIDENCE %</label>
             <input class="login-input" id="fg-confidence" type="number" min="60" max="100" placeholder="e.g. 72.4">
           </div>
+        </div>
+        <div class="grid-2" style="gap:14px;margin-bottom:14px">
+          <div>
+            <label class="login-label">GAME DATE / TIME LABEL</label>
+            <input class="login-input" id="fg-date-label" placeholder="e.g. Tonight 8:30 PM ET">
+          </div>
+          <div>
+            <label class="login-label">BANNER IMAGE URL (optional — paste image link)</label>
+            <input class="login-input" id="fg-image-url" placeholder="e.g. https://soccernbaparlayking.vip/images/knicks-lakers.jpg" oninput="fgPreviewImage(this.value)">
+          </div>
+        </div>
+        <div id="fg-image-preview" style="margin-bottom:14px;display:none;">
+          <img id="fg-image-thumb" src="" alt="Banner Preview" style="max-width:100%;max-height:160px;border-radius:8px;border:1px solid rgba(212,175,55,0.3);object-fit:cover;">
         </div>
         <button class="btn btn-gold" onclick="saveFeaturedGame()">&#128190; Save Featured Game</button>
         <div id="fg-msg" style="margin-top:12px;font-size:13px"></div>
@@ -2336,6 +2349,9 @@ async function loadFeaturedGame() {
     document.getElementById('fg-away-odds').value  = d.awayOdds   || '';
     document.getElementById('fg-pick').value       = d.pick       || '';
     document.getElementById('fg-confidence').value = d.confidence || '';
+    document.getElementById('fg-date-label').value = d.dateLabel  || '';
+    document.getElementById('fg-image-url').value  = d.imageUrl   || '';
+    fgPreviewImage(d.imageUrl || '');
     const tog = document.getElementById('fg-live-toggle');
     tog.checked = !!d.liveOnSite;
     document.getElementById('fg-live-status').textContent = d.liveOnSite
@@ -2343,6 +2359,18 @@ async function loadFeaturedGame() {
       : '⚫ OFF — Site shows default top-rated V3 game';
     document.getElementById('fg-live-status').style.color = d.liveOnSite ? 'var(--green)' : 'var(--text-dim)';
   } catch(e) { notify('Error loading featured game: ' + e.message, 'error'); }
+}
+
+function fgPreviewImage(url) {
+  const preview = document.getElementById('fg-image-preview');
+  const thumb = document.getElementById('fg-image-thumb');
+  if (url && url.startsWith('http')) {
+    thumb.src = url;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+    thumb.src = '';
+  }
 }
 
 function fgToggleLive(checked) {
@@ -2355,6 +2383,7 @@ function fgToggleLive(checked) {
 async function saveFeaturedGame() {
   const msg = document.getElementById('fg-msg');
   msg.textContent = 'Saving...';
+  const isLive = document.getElementById('fg-live-toggle').checked;
   try {
     const d = await api('/api/admin/featured-game', {
       method: 'POST',
@@ -2368,12 +2397,21 @@ async function saveFeaturedGame() {
         awayOdds:   document.getElementById('fg-away-odds').value,
         pick:       document.getElementById('fg-pick').value,
         confidence: document.getElementById('fg-confidence').value,
-        liveOnSite: document.getElementById('fg-live-toggle').checked,
+        dateLabel:  document.getElementById('fg-date-label').value,
+        imageUrl:   document.getElementById('fg-image-url').value,
+        liveOnSite: isLive,
       })
     });
     msg.textContent = '✅ ' + d.message;
     msg.style.color = 'var(--green)';
     notify(d.message);
+    // Auto-ping Google & Bing when banner goes live
+    if (isLive) {
+      try {
+        await api('/api/admin/seo-ping', { method: 'POST' });
+        msg.textContent += ' 📡 Google & Bing pinged!';
+      } catch(_) {}
+    }
   } catch(e) {
     msg.textContent = '❌ ' + e.message;
     msg.style.color = 'var(--red)';

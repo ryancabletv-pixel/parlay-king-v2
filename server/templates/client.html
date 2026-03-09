@@ -997,6 +997,83 @@
   <p class="subtitle">Elite Sports Intelligence &bull; 12-Factor Analysis &bull; 68%+ Confidence Threshold</p>
   <p class="date" id="current-date"></p>
 </div>
+
+<!-- ===== FEATURED GAME BANNER ===== -->
+<!-- Shown only when admin sets liveOnSite=true in Featured Game tab -->
+<div id="fg-banner-section" style="display:none;">
+  <div id="fg-banner" style="position:relative;overflow:hidden;background:linear-gradient(135deg,#0a0a14 0%,#1a1a2e 100%);border-top:2px solid #d4af37;border-bottom:2px solid #d4af37;">
+    <!-- Background image overlay -->
+    <div id="fg-banner-bg" style="position:absolute;inset:0;background-size:cover;background-position:center;opacity:0.22;pointer-events:none;"></div>
+    <div style="position:relative;z-index:1;max-width:860px;margin:0 auto;padding:28px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:20px;">
+      <!-- Left: badge + matchup -->
+      <div style="flex:1;min-width:220px;">
+        <div style="display:inline-block;background:linear-gradient(135deg,#d4af37,#b8860b);color:#0a0a14;font-size:10px;font-weight:900;padding:3px 14px;border-radius:20px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">&#11088; FEATURED GAME</div>
+        <div id="fg-banner-league" style="font-size:11px;color:#d4af37;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;"></div>
+        <div id="fg-banner-matchup" style="font-size:1.55rem;font-weight:900;color:#fff;letter-spacing:0.03em;line-height:1.2;margin-bottom:6px;"></div>
+        <div id="fg-banner-date" style="font-size:12px;color:#b0b8c1;margin-bottom:12px;"></div>
+        <div id="fg-banner-pick" style="display:inline-block;background:rgba(0,204,102,0.15);border:1px solid rgba(0,204,102,0.4);color:#00cc66;font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;"></div>
+      </div>
+      <!-- Right: confidence + odds -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;min-width:120px;">
+        <div style="text-align:center;">
+          <div id="fg-banner-conf" style="font-size:2.4rem;font-weight:900;color:#d4af37;line-height:1;"></div>
+          <div style="font-size:10px;color:#888;letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Confidence</div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <div style="text-align:center;">
+            <div id="fg-banner-home-odds" style="font-size:1rem;font-weight:700;color:#fff;"></div>
+            <div id="fg-banner-home-label" style="font-size:9px;color:#888;"></div>
+          </div>
+          <div id="fg-banner-draw-wrap" style="text-align:center;display:none;">
+            <div id="fg-banner-draw-odds" style="font-size:1rem;font-weight:700;color:#fff;"></div>
+            <div style="font-size:9px;color:#888;">Draw</div>
+          </div>
+          <div style="text-align:center;">
+            <div id="fg-banner-away-odds" style="font-size:1rem;font-weight:700;color:#fff;"></div>
+            <div id="fg-banner-away-label" style="font-size:9px;color:#888;"></div>
+          </div>
+        </div>
+        <a href="#" onclick="showPage('pricing');return false;" style="background:linear-gradient(135deg,#d4af37,#b8860b);color:#0a0a14;font-size:11px;font-weight:900;padding:8px 18px;border-radius:20px;text-decoration:none;letter-spacing:1px;text-transform:uppercase;">&#128081; Get Full Pick</a>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+  fetch('/picks.json?t=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var fp = data.featured_pick;
+      if (!fp || !fp.game || !fp.liveOnSite) return;
+      var section = document.getElementById('fg-banner-section');
+      if (!section) return;
+      section.style.display = 'block';
+      var home = fp.homeTeam || fp.game.split(' vs ')[0] || '';
+      var away = fp.awayTeam || fp.game.split(' vs ')[1] || '';
+      var el = function(id) { return document.getElementById(id); };
+      if (el('fg-banner-league'))     el('fg-banner-league').textContent     = fp.league || '';
+      if (el('fg-banner-matchup'))    el('fg-banner-matchup').textContent    = home + ' vs ' + away;
+      if (el('fg-banner-date'))       el('fg-banner-date').textContent       = fp.dateLabel || fp.time_display || '';
+      if (el('fg-banner-pick'))       el('fg-banner-pick').textContent       = '\u2192 ' + (fp.pick || fp.pick_label || '');
+      if (el('fg-banner-conf'))       el('fg-banner-conf').textContent       = (fp.confidence || 0) + '%';
+      if (el('fg-banner-home-odds'))  el('fg-banner-home-odds').textContent  = fp.homeOdds || fp.odds || '';
+      if (el('fg-banner-home-label')) el('fg-banner-home-label').textContent = home;
+      if (el('fg-banner-away-odds'))  el('fg-banner-away-odds').textContent  = fp.awayOdds || '';
+      if (el('fg-banner-away-label')) el('fg-banner-away-label').textContent = away;
+      if (fp.drawOdds && fp.sport === 'soccer') {
+        if (el('fg-banner-draw-wrap'))  el('fg-banner-draw-wrap').style.display = 'block';
+        if (el('fg-banner-draw-odds'))  el('fg-banner-draw-odds').textContent   = fp.drawOdds;
+      }
+      if (fp.imageUrl && fp.imageUrl.startsWith('http')) {
+        var bg = document.getElementById('fg-banner-bg');
+        if (bg) bg.style.backgroundImage = 'url(' + fp.imageUrl + ')';
+      }
+    })
+    .catch(function() {});
+})();
+</script>
+<!-- ===== END FEATURED GAME BANNER ===== -->
+
 <!-- Promotional Video Section -->
 <div style="background: linear-gradient(135deg, rgba(26, 95, 63, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%); padding: 2rem; text-align: center; border-top: 2px solid #d4af37; border-bottom: 2px solid #d4af37;">
 <h2 style="color: #d4af37; margin-bottom: 1rem; font-size: 1.8rem;">Why Choose Parlay King?</h2>
