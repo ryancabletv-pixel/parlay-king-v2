@@ -991,15 +991,11 @@
 <!-- HOME PAGE -->
 <div id="page-home" class="page-section">
 <!-- Hero Section -->
-<div class="hero" id="hero-section" style="position:relative;overflow:hidden;">
-  <div style="position:absolute;inset:0;background-image:url('/images/knicks-lakers-hero.jpg');background-size:cover;background-position:center top;opacity:0.15;z-index:0;"></div>
-  <div style="position:relative;z-index:1;">
-    <div style="display:inline-block;background:linear-gradient(135deg,#d4af37,#b8860b);color:#0A0A0F;font-size:11px;font-weight:800;padding:4px 16px;border-radius:20px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">&#9889; SUNDAY MEGA-PICK</div>
-    <h1 style="font-size:clamp(1.3rem,4vw,2.4rem);line-height:1.2;margin-bottom:8px;">KNICKS vs LAKERS &mdash; 72.6% CONFIDENCE</h1>
-    <p style="color:#d4af37;font-weight:600;font-size:1.05rem;margin-bottom:4px;">New York Knicks Moneyline &bull; 3:30 PM ET &bull; NBA</p>
-    <p style="color:#b0b8c1;font-size:0.88rem;margin-bottom:4px;">Gold Standard V3 Titan XII &bull; 12-Factor Analysis</p>
-    <p class="date" id="current-date"></p>
-  </div>
+<div class="hero" id="hero-section">
+  <div style="display:inline-block;background:linear-gradient(135deg,#d4af37,#b8860b);color:#0A0A0F;font-size:11px;font-weight:800;padding:4px 16px;border-radius:20px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">&#9889; GOLD STANDARD V3 TITAN XII</div>
+  <h1>&#127942; PARLAY KING</h1>
+  <p class="subtitle">Elite Sports Intelligence &bull; 12-Factor Analysis &bull; 68%+ Confidence Threshold</p>
+  <p class="date" id="current-date"></p>
 </div>
 <!-- Promotional Video Section -->
 <div style="background: linear-gradient(135deg, rgba(26, 95, 63, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%); padding: 2rem; text-align: center; border-top: 2px solid #d4af37; border-bottom: 2px solid #d4af37;">
@@ -1082,70 +1078,7 @@
 <!-- Home Section -->
 <div class="section active" id="home-section">
 
-<!-- Featured Pick — Dynamic (loaded from /picks.json) -->
-<div id="featured-pick-section" class="public-interest-card" style="margin-bottom:20px;">
-<div style="background:linear-gradient(135deg,#0d1a0f,#13131A);border:2px solid #d4af37;border-radius:12px;padding:20px;position:relative;overflow:hidden;">
-<div style="position:absolute;top:0;right:0;background:#d4af37;color:#0A0A0F;font-size:11px;font-weight:700;padding:4px 14px;border-radius:0 10px 0 10px;text-transform:uppercase;letter-spacing:1px;">Featured</div>
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-<span style="font-size:18px;">&#127942;</span>
-<span id="featured-pick-label" style="color:#d4af37;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">GOLD PICK &#8212; TODAY'S TOP PICK</span>
-</div>
-<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-<div>
-<div id="featured-pick-game" style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;">Loading...</div>
-<div id="featured-pick-meta" style="font-size:13px;color:#888;">Gold Standard V3 Titan XII</div>
-</div>
-<div style="text-align:right;">
-<div style="background:linear-gradient(135deg,#1a5f3f,#0d2818);border:1px solid #00C896;border-radius:20px;padding:6px 16px;display:inline-block;">
-<span id="featured-pick-conf-badge" style="color:#00C896;font-size:14px;font-weight:700;">&#8212;</span>
-</div>
-<div style="font-size:11px;color:#888;margin-top:4px;">Gold Standard V3 Titan XII</div>
-</div>
-</div>
-<div style="margin-top:14px;background:rgba(0,0,0,0.3);border-radius:8px;padding:14px;">
-<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-<span style="color:#00C896;font-size:16px;">&#9989;</span>
-<span id="featured-pick-pick" style="color:#fff;font-size:17px;font-weight:700;">&#8212;</span>
-</div>
-<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
-<div><span style="color:#888;font-size:12px;">Confidence</span><div id="featured-pick-conf" style="color:#d4af37;font-size:16px;font-weight:700;">&#8212;</div></div>
-<div><span style="color:#888;font-size:12px;">League</span><div id="featured-pick-league" style="color:#fff;font-size:16px;font-weight:700;">&#8212;</div></div>
-</div>
-<div id="featured-pick-analysis" style="font-size:14px;color:#ccc;line-height:1.6;"></div>
-<div style="margin-top:10px;padding:8px 12px;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.25);border-radius:6px;">
-<span style="font-size:11px;color:#999;font-style:italic;">Trending Analysis: This is an editorial feature for informational purposes only. All picks are for entertainment purposes only. Past performance does not guarantee future results.</span>
-</div>
-</div>
-</div>
-<script>
-(function() {
-  fetch('/picks.json?t=' + Date.now())
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      var fp = data.featured_pick || data.power_pick;
-      if (!fp || !fp.game) return;
-      var sport = (fp.sport || 'soccer').toUpperCase();
-      var conf = fp.confidence || Math.round((fp.probability || 0) * 100);
-      var labelEl = document.getElementById('featured-pick-label');
-      var gameEl = document.getElementById('featured-pick-game');
-      var metaEl = document.getElementById('featured-pick-meta');
-      var confBadgeEl = document.getElementById('featured-pick-conf-badge');
-      var pickEl = document.getElementById('featured-pick-pick');
-      var confEl = document.getElementById('featured-pick-conf');
-      var leagueEl = document.getElementById('featured-pick-league');
-      var analysisEl = document.getElementById('featured-pick-analysis');
-      if (labelEl) labelEl.textContent = 'GOLD PICK — ' + sport;
-      if (gameEl) gameEl.textContent = fp.game;
-      if (metaEl) metaEl.textContent = (fp.league || sport) + ' • ' + (data.last_updated_display || 'Today');
-      if (confBadgeEl) confBadgeEl.textContent = conf + '% Confidence';
-      if (pickEl) pickEl.textContent = fp.pick || fp.pick_label || '';
-      if (confEl) confEl.textContent = conf + '%';
-      if (leagueEl) leagueEl.textContent = fp.league || sport;
-      if (analysisEl) analysisEl.innerHTML = '<strong style="color:#d4af37;">Analysis:</strong> ' + (fp.reasoning || fp.analysis || 'Gold Standard V3 Titan XII — Top confidence pick of the day.');
-    })
-    .catch(function() {});
-})();
-</script>
+
 
 
 
