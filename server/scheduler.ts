@@ -4,6 +4,7 @@ import { generateDailyPicks } from './routes.js';
 import { pingGoogleAfterUpdate } from './seo.js';
 import { autoSettleResults } from './resultsSettler.js';
 import { getBudgetStatus } from './apis/oddsApi.js';
+import { syncTomorrowGames } from './services/tomorrowSync.js';
 
 // ─── Timezone ─────────────────────────────────────────────────────────────────
 // America/Moncton = AST (UTC-4) / ADT (UTC-3 during DST) — New Brunswick, Canada
@@ -194,11 +195,26 @@ export function startScheduler() {
     }
   }, { timezone: TZ });
 
-  // ── 2:00 AM — Retry 2 ─────────────────────────────────────────────────────
+  // ── 2:00 AM — Retry 2 + Tomorrow V3-15 Pre-Audit Sync ───────────────────────
+  // If daily picks already completed: run Tomorrow sync instead.
+  // If daily picks NOT yet done: run Retry 2 first, then Tomorrow sync.
   cron.schedule('0 0 2 * * *', async () => {
     if (!dailyRunCompleted) {
       console.log('[Scheduler] 2:00 AM AST — Retry 2');
       await runDailyGeneration('scheduler-retry2');
+    }
+    // Always run Tomorrow sync at 2 AM regardless of daily pick status
+    console.log('[Scheduler] 2:00 AM AST — Tomorrow V3-15 Pre-Audit Sync starting');
+    try {
+      const syncResult = await syncTomorrowGames('scheduler-2am');
+      const msg = `Tomorrow sync: ${syncResult.gamesFound} games found, ${syncResult.gamesSaved} saved for ${syncResult.date} (${syncResult.budgetUsed} API calls)`;
+      console.log(`[Scheduler] ${msg}`);
+      if (syncResult.errors.length > 0) {
+        await createAlert('warning', `Tomorrow sync had ${syncResult.errors.length} error(s): ${syncResult.errors.slice(0, 2).join('; ')}`);
+      }
+    } catch (err: any) {
+      console.error('[Scheduler] Tomorrow sync failed:', err.message);
+      await createAlert('critical', `Tomorrow V3-15 sync failed at 2 AM: ${err.message}`);
     }
   }, { timezone: TZ });
 

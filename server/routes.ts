@@ -2766,6 +2766,73 @@ export async function registerRoutes(app: Express) {
     return res.redirect(`/register?plan=${safePlan}&payment=success&test=1`);
   });
 
+  // ─── PENDING VALIDATOR ENDPOINTS ────────────────────────────────────────────
+  // GET /api/admin/pending-validator — fetch all rows for a given date
+  app.get('/api/admin/pending-validator', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { Pool: PVPool } = await import('pg');
+      const pvPool = new PVPool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const TZ_AST = 'America/Moncton';
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + 1);
+      const date = (req.query.date as string) || defaultDate.toLocaleDateString('en-CA', { timeZone: TZ_AST });
+      const sport = (req.query.sport as string) || 'all';
+      const minConf = parseFloat((req.query.min_confidence as string) || '0');
+      let query = `SELECT * FROM pending_validator WHERE date = $1`;
+      const params: any[] = [date];
+      if (sport !== 'all') { query += ` AND sport = $${params.length + 1}`; params.push(sport); }
+      if (minConf > 0) { query += ` AND confidence >= $${params.length + 1}`; params.push(minConf); }
+      query += ` ORDER BY confidence DESC`;
+      const result = await pvPool.query(query, params);
+      await pvPool.end();
+      return res.json({ success: true, date, total: result.rows.length, games: result.rows });
+    } catch (err: any) {
+      if (err.message?.includes('does not exist')) {
+        return res.json({ success: true, date: req.query.date || '', total: 0, games: [], note: 'pending_validator table not yet created — runs at 2 AM' });
+      }
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/admin/pending-validator/sync — manually trigger Tomorrow sync
+  app.post('/api/admin/pending-validator/sync', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { syncTomorrowGames } = await import('./services/tomorrowSync.js');
+      const result = await syncTomorrowGames('admin-manual');
+      return res.json({ success: true, ...result });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/admin/pending-validator/approve — approve a game and push to live picks
+  app.post('/api/admin/pending-validator/approve', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { id, tier = 'pro' } = req.body;
+      if (!id) return res.status(400).json({ error: 'id required' });
+      const { Pool: ApprovePool } = await import('pg');
+      const aPool = new ApprovePool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const pvRow = await aPool.query(`SELECT * FROM pending_validator WHERE id = $1`, [id]);
+      if (!pvRow.rows.length) { await aPool.end(); return res.status(404).json({ error: 'Row not found' }); }
+      const g = pvRow.rows[0];
+      const pickResult = await aPool.query(`
+        INSERT INTO picks (date, sport, league, home_team, away_team, prediction, confidence, tier, status, is_power_pick, metadata, created_at, updated_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending',$9,$10,NOW(),NOW())
+        ON CONFLICT DO NOTHING RETURNING id
+      `, [
+        g.date, g.sport, g.league, g.home_team, g.away_team,
+        g.best_pick, g.confidence, tier,
+        g.confidence >= 72,
+        JSON.stringify({ source: 'pending_validator', game_id: g.game_id, factors: g.factors, reasoning: g.reasoning }),
+      ]);
+      await aPool.query(`UPDATE pending_validator SET approved = true, pushed_to_live = true, updated_at = NOW() WHERE id = $1`, [id]);
+      await aPool.end();
+      return res.json({ success: true, pickId: pickResult.rows[0]?.id, message: `Approved and pushed to ${tier} tier` });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   // GET /api/admin/members-full — full member list with tier, expiry, lock, and subscription info
   app.get('/api/admin/members-full', requireAuth, async (req: Request, res: Response) => {
     try {
