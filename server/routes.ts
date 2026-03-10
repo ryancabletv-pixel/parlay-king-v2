@@ -2557,7 +2557,9 @@ export async function registerRoutes(app: Express) {
       const V3_LIFETIME_QUOTA = 10;
       // Fetch today's picks for this tier
       const today = new Date().toISOString().split('T')[0];
-      const tierFilter = activeTier === 'lifetime' ? ['pro', 'vip', 'free'] :
+      // Tier filter: lifetime members see lifetime+pro+vip+free picks.
+      // Pro members see pro+vip+free picks. Lifetime picks are exclusive to lifetime tier.
+      const tierFilter = activeTier === 'lifetime' ? ['lifetime', 'pro', 'vip', 'free'] :
                          activeTier === 'pro'      ? ['pro', 'vip', 'free'] :
                          activeTier === 'vip'      ? ['vip', 'free'] : ['free'];
       const pool2 = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
@@ -2622,7 +2624,8 @@ export async function registerRoutes(app: Express) {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       const memberTier = decoded.tier || 'free';
       const today = new Date().toISOString().split('T')[0];
-      const tierFilter = memberTier === 'lifetime' ? ['pro', 'vip', 'free'] :
+      // Tier filter: lifetime members see lifetime+pro+vip+free picks.
+      const tierFilter = memberTier === 'lifetime' ? ['lifetime', 'pro', 'vip', 'free'] :
                          memberTier === 'pro'      ? ['pro', 'vip', 'free'] :
                          memberTier === 'vip'      ? ['vip', 'free'] : ['free'];
       // ── V3-15 Tiered Distribution Logic (Parlay Builder) ────────────────────
