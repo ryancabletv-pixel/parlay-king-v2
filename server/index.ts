@@ -121,7 +121,7 @@ async function initializeExpress() {
       // Fallback: register sitemap inline if seo.ts fails
       app.get('/sitemap.xml', (_req: any, res: any) => {
         const today = new Date().toISOString().split('T')[0];
-        const pages = ['/', '/picks', '/soccer-picks', '/nba-picks', '/parlays', '/results', '/vip', '/pro'];
+        const pages = ['/', '/picks', '/soccer-picks', '/nba-picks', '/parlays', '/results', '/vip', '/pro', '/match/atalanta-vs-bayern-munich'];
         const urls = pages.map(p => `<url><loc>https://soccernbaparlayking.vip${p}</loc><lastmod>${today}</lastmod><priority>0.9</priority></url>`).join('');
         res.setHeader('Content-Type', 'application/xml');
         res.send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`);
@@ -239,6 +239,17 @@ async function initializeExpress() {
 
       return res.sendFile(clientHtmlPath);
     });
+
+    // ── Match Preview Pages — SEO-optimized dedicated pages ──────────────────────────────
+    const matchHtmlPath = path.join(process.cwd(), 'server/templates/match-atalanta-vs-bayern.html');
+    app.get('/match/atalanta-vs-bayern-munich', (_req: any, res: any) => {
+      if (fs.existsSync(matchHtmlPath)) return res.sendFile(matchHtmlPath);
+      res.redirect('/');
+    });
+    // Alias for common search query variants
+    app.get('/match/atalanta-vs-bayern', (_req: any, res: any) => res.redirect(301, '/match/atalanta-vs-bayern-munich'));
+    app.get('/match/atalanta-bayern-munich', (_req: any, res: any) => res.redirect(301, '/match/atalanta-vs-bayern-munich'));
+    console.log('[SEO] Match preview route registered: /match/atalanta-vs-bayern-munich');
 
     // Public pages — all serve the client SPA
     const publicPages = [

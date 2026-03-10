@@ -51,6 +51,8 @@ const SITE_PAGES = [
   { url: '/privacy',       priority: '0.4', changefreq: 'monthly' },
   { url: '/refund',        priority: '0.4', changefreq: 'monthly' },
   { url: '/disclaimer',    priority: '0.4', changefreq: 'monthly' },
+  // Match preview pages — high priority for daily SEO indexing
+  { url: '/match/atalanta-vs-bayern-munich', priority: '1.0', changefreq: 'daily' },
 ];
 
 // ─── Sitemap XML Generator ────────────────────────────────────────────────────
