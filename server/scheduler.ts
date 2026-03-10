@@ -108,9 +108,24 @@ async function runDailyGeneration(triggeredBy = 'scheduler'): Promise<boolean> {
       });
     }
 
-    dailyRunCompleted = true;
-    lastRunDate = today;
-    console.log(`[Scheduler] Daily generation complete: ${result.total} picks in ${duration}ms`);
+    // ── MULTI-SPORT SYNC POST-RUN CHECK ────────────────────────────────────
+    // Verify both Basketball and Soccer were published. If either is missing,
+    // schedule a targeted retry within 10 minutes rather than waiting for the
+    // next full retry window. This ensures both sports always appear on the
+    // tier dashboards simultaneously.
+    const syncStatus = result.multiSportSyncStatus ?? 'FULL';
+    if (syncStatus !== 'FULL') {
+      console.warn(`[Multi-Sport Sync] Sync status: ${syncStatus}. Scheduling targeted retry in 10 minutes...`);
+      await createAlert('warning', `Multi-Sport Sync ${syncStatus} for ${today}. Targeted retry scheduled in 10 min.`);
+      // Mark run as NOT completed so the 1:10 AM retry slot can re-run
+      dailyRunCompleted = false;
+    } else {
+      dailyRunCompleted = true;
+      lastRunDate = today;
+      console.log(`[Multi-Sport Sync] ✅ FULL SYNC confirmed — Soccer + Basketball both live on all tier dashboards.`);
+    }
+
+    console.log(`[Scheduler] Daily generation complete: ${result.total} picks in ${duration}ms (sync=${syncStatus})`);
 
     // ── Ping Google/Bing after every successful pick update ──────────────────
     // This ensures all pages are re-indexed immediately after new picks are live
@@ -118,7 +133,7 @@ async function runDailyGeneration(triggeredBy = 'scheduler'): Promise<boolean> {
       console.warn('[Scheduler] Google ping failed (non-critical):', err);
     });
 
-    return true;
+    return syncStatus === 'FULL';
 
   } catch (err: any) {
     const duration = Date.now() - startTime;

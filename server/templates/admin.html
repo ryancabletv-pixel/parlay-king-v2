@@ -1448,36 +1448,74 @@
     <!-- ===== PRO TIER GAMES ===== -->
     <div class="page" id="page-pro-tier">
       <h2 style="color:#00b0ff">🏆 Pro Tier Games</h2>
-      <p style="color:var(--text-muted)">All games assigned to the Pro tier today (70%+ confidence). These are visible to Pro subscribers only.</p>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px" id="pro-tier-stats">
-        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#00b0ff" id="pro-total-count">--</div><div style="font-size:.75rem;color:var(--text-muted)">TOTAL PRO GAMES</div></div>
-        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#00e676" id="pro-avg-conf">--</div><div style="font-size:.75rem;color:var(--text-muted)">AVG CONFIDENCE</div></div>
+      <p style="color:var(--text-muted)">All games assigned to the Pro tier today (68%+ confidence). Basketball and Soccer displayed simultaneously — no toggling required.</p>
+      <!-- Multi-Sport Sync Status Banner -->
+      <div id="pro-sync-banner" style="display:none;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:.85rem;font-weight:600"></div>
+      <!-- Stats Row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px" id="pro-tier-stats">
+        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#00b0ff" id="pro-total-count">--</div><div style="font-size:.75rem;color:var(--text-muted)">TOTAL PRO PICKS</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#ff6b35" id="pro-basketball-count">--</div><div style="font-size:.75rem;color:var(--text-muted)">🏀 BASKETBALL</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#00e676" id="pro-soccer-count">--</div><div style="font-size:.75rem;color:var(--text-muted)">⚽ SOCCER</div></div>
         <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#ffd700" id="pro-top-conf">--</div><div style="font-size:.75rem;color:var(--text-muted)">TOP CONFIDENCE</div></div>
       </div>
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <h3 style="color:#00b0ff;margin:0">🏆 Today's Pro Picks</h3>
-          <button class="btn btn-gold btn-sm" onclick="loadProTier()">🔄 Refresh</button>
+      <!-- Side-by-Side Sport Columns -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <!-- Basketball Column -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <h3 style="color:#ff6b35;margin:0">🏀 Basketball Picks</h3>
+            <span id="pro-bball-sync-dot" style="width:8px;height:8px;border-radius:50%;background:#555;display:inline-block" title="Sync status"></span>
+          </div>
+          <div id="pro-basketball-table"><div style="color:var(--text-muted);font-size:.85rem">Loading...</div></div>
         </div>
-        <div id="pro-tier-table">Loading...</div>
+        <!-- Soccer Column -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <h3 style="color:#00e676;margin:0">⚽ Soccer Picks</h3>
+            <span id="pro-soccer-sync-dot" style="width:8px;height:8px;border-radius:50%;background:#555;display:inline-block" title="Sync status"></span>
+          </div>
+          <div id="pro-soccer-table"><div style="color:var(--text-muted);font-size:.85rem">Loading...</div></div>
+        </div>
+      </div>
+      <div style="margin-top:12px;text-align:right">
+        <button class="btn btn-gold btn-sm" onclick="loadProTier()">🔄 Refresh Both Sports</button>
       </div>
     </div><!-- /page-pro-tier -->
 
     <!-- ===== LIFETIME TIER GAMES ===== -->
     <div class="page" id="page-lifetime-tier">
       <h2 style="color:#ffd700">♾️ Lifetime Tier Games</h2>
-      <p style="color:var(--text-muted)">All games assigned to the Lifetime tier today (68%+ confidence, full access). These are visible to Lifetime subscribers only.</p>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px" id="lifetime-tier-stats">
-        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#ffd700" id="lifetime-total-count">--</div><div style="font-size:.75rem;color:var(--text-muted)">TOTAL LIFETIME GAMES</div></div>
-        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#00e676" id="lifetime-avg-conf">--</div><div style="font-size:.75rem;color:var(--text-muted)">AVG CONFIDENCE</div></div>
+      <p style="color:var(--text-muted)">All games assigned to the Lifetime tier today (68%+ confidence, full access). Basketball and Soccer displayed simultaneously — no toggling required.</p>
+      <!-- Multi-Sport Sync Status Banner -->
+      <div id="lifetime-sync-banner" style="display:none;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:.85rem;font-weight:600"></div>
+      <!-- Stats Row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px" id="lifetime-tier-stats">
+        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#ffd700" id="lifetime-total-count">--</div><div style="font-size:.75rem;color:var(--text-muted)">TOTAL LIFETIME PICKS</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#ff6b35" id="lifetime-basketball-count">--</div><div style="font-size:.75rem;color:var(--text-muted)">🏀 BASKETBALL</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#00e676" id="lifetime-soccer-count">--</div><div style="font-size:.75rem;color:var(--text-muted)">⚽ SOCCER</div></div>
         <div class="card" style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#ff6b35" id="lifetime-top-conf">--</div><div style="font-size:.75rem;color:var(--text-muted)">TOP CONFIDENCE</div></div>
       </div>
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <h3 style="color:#ffd700;margin:0">♾️ Today's Lifetime Picks</h3>
-          <button class="btn btn-gold btn-sm" onclick="loadLifetimeTier()">🔄 Refresh</button>
+      <!-- Side-by-Side Sport Columns -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <!-- Basketball Column -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <h3 style="color:#ff6b35;margin:0">🏀 Basketball Picks</h3>
+            <span id="lifetime-bball-sync-dot" style="width:8px;height:8px;border-radius:50%;background:#555;display:inline-block" title="Sync status"></span>
+          </div>
+          <div id="lifetime-basketball-table"><div style="color:var(--text-muted);font-size:.85rem">Loading...</div></div>
         </div>
-        <div id="lifetime-tier-table">Loading...</div>
+        <!-- Soccer Column -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <h3 style="color:#00e676;margin:0">⚽ Soccer Picks</h3>
+            <span id="lifetime-soccer-sync-dot" style="width:8px;height:8px;border-radius:50%;background:#555;display:inline-block" title="Sync status"></span>
+          </div>
+          <div id="lifetime-soccer-table"><div style="color:var(--text-muted);font-size:.85rem">Loading...</div></div>
+        </div>
+      </div>
+      <div style="margin-top:12px;text-align:right">
+        <button class="btn btn-gold btn-sm" onclick="loadLifetimeTier()">🔄 Refresh Both Sports</button>
       </div>
     </div><!-- /page-lifetime-tier -->
 
@@ -3474,105 +3512,82 @@ async function mgmtSetTier(memberId) {
   }
 }
 
-// ── Pro Tier Games ──────────────────────────────────────────────────────────
-async function loadProTier() {
-  const el = document.getElementById('pro-tier-table');
-  el.innerHTML = '<div style="color:var(--text-muted)">Loading Pro tier games...</div>';
+// ── MULTI-SPORT SYNC: Shared renderer for Pro & Lifetime tier dashboards ──────
+// Fetches ALL picks for today, splits by sport, renders Basketball + Soccer
+// side-by-side simultaneously. No toggling required.
+function buildPickTable(picks, accentColor) {
+  if (!picks.length) return '<div style="color:var(--text-muted);padding:16px;text-align:center;font-size:.85rem">No picks yet — check back after the 1 AM generation run.</div>';
+  return `<table style="width:100%;border-collapse:collapse;font-size:.82rem">
+    <thead><tr style="border-bottom:1px solid var(--border)">
+      <th style="text-align:left;padding:6px 8px;color:var(--text-muted)">MATCHUP</th>
+      <th style="text-align:left;padding:6px 8px;color:var(--text-muted)">PICK</th>
+      <th style="text-align:center;padding:6px 8px;color:${accentColor}">CONF</th>
+      <th style="text-align:center;padding:6px 8px;color:var(--text-muted)">ODDS</th>
+    </tr></thead>
+    <tbody>${picks.sort((a,b)=>parseFloat(b.confidence)-parseFloat(a.confidence)).map(p=>{
+      const conf=parseFloat(p.confidence);
+      const col=conf>=80?'#00e676':conf>=75?'#ffd700':accentColor;
+      return `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+        <td style="padding:8px;font-weight:600;font-size:.8rem">${p.home_team||p.homeTeam||''} vs ${p.away_team||p.awayTeam||''}</td>
+        <td style="padding:8px;color:var(--gold);font-size:.8rem">${p.best_pick||p.bestPick||''}</td>
+        <td style="padding:8px;text-align:center">
+          <div style="font-weight:700;color:${col}">${conf.toFixed(1)}%</div>
+          <div style="background:rgba(255,255,255,.1);border-radius:3px;height:3px;margin-top:3px"><div style="width:${Math.min(100,conf)}%;height:100%;background:${col};border-radius:3px"></div></div>
+        </td>
+        <td style="padding:8px;text-align:center;color:var(--text-muted)">${p.odds||'--'}</td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+async function renderTierPage(tier) {
+  const bballEl = document.getElementById(`${tier}-basketball-table`);
+  const soccerEl = document.getElementById(`${tier}-soccer-table`);
+  const banner = document.getElementById(`${tier}-sync-banner`);
+  const bballDot = document.getElementById(`${tier}-bball-sync-dot`);
+  const soccerDot = document.getElementById(`${tier}-soccer-sync-dot`);
+  bballEl.innerHTML = '<div style="color:var(--text-muted);font-size:.82rem">Loading...</div>';
+  soccerEl.innerHTML = '<div style="color:var(--text-muted);font-size:.82rem">Loading...</div>';
+  banner.style.display = 'none';
   try {
     const today = new Date().toLocaleDateString('en-CA');
     const picks = await api(`/api/admin/picks?date=${today}`);
-    const pro = picks.filter(p => parseFloat(p.confidence) >= 70);
-    document.getElementById('pro-total-count').textContent = pro.length;
-    if (pro.length === 0) {
-      document.getElementById('pro-avg-conf').textContent = '--';
-      document.getElementById('pro-top-conf').textContent = '--';
-      el.innerHTML = '<div style="color:var(--text-muted);padding:20px;text-align:center">No Pro tier games today (70%+ confidence). Check back after the 1 AM generation run.</div>';
-      return;
+    const eligible = picks.filter(p => parseFloat(p.confidence) >= 68);
+    const bball = eligible.filter(p => {
+      const s = (p.sport||p.league||'').toLowerCase();
+      return s.includes('nba')||s.includes('basketball')||s.includes('nbl');
+    });
+    const soccer = eligible.filter(p => {
+      const s = (p.sport||p.league||'').toLowerCase();
+      return s.includes('soccer')||s.includes('football')||s.includes('mls')||s.includes('ucl')||s.includes('liga')||s.includes('serie')||s.includes('premier')||s.includes('bundesliga')||s.includes('ligue');
+    });
+    document.getElementById(`${tier}-total-count`).textContent = eligible.length;
+    document.getElementById(`${tier}-basketball-count`).textContent = bball.length;
+    document.getElementById(`${tier}-soccer-count`).textContent = soccer.length;
+    const allConfs = eligible.map(p=>parseFloat(p.confidence));
+    document.getElementById(`${tier}-top-conf`).textContent = allConfs.length ? Math.max(...allConfs).toFixed(1)+'%' : '--';
+    bballDot.style.background = bball.length > 0 ? '#00e676' : '#ff5252';
+    bballDot.title = bball.length > 0 ? `${bball.length} Basketball picks synced` : 'No Basketball picks yet';
+    soccerDot.style.background = soccer.length > 0 ? '#00e676' : '#ff5252';
+    soccerDot.title = soccer.length > 0 ? `${soccer.length} Soccer picks synced` : 'No Soccer picks yet';
+    if (bball.length === 0 || soccer.length === 0) {
+      const missing = bball.length === 0 && soccer.length === 0 ? 'Basketball and Soccer' : bball.length === 0 ? 'Basketball' : 'Soccer';
+      banner.style.cssText = 'display:block;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:.85rem;font-weight:600;background:rgba(255,82,82,.15);border:1px solid #ff5252;color:#ff5252';
+      banner.innerHTML = `⚠️ Multi-Sport Sync INCOMPLETE — ${missing} picks missing. The 1 AM engine will retry automatically.`;
+    } else {
+      banner.style.cssText = 'display:block;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:.85rem;font-weight:600;background:rgba(0,230,118,.1);border:1px solid #00e676;color:#00e676';
+      banner.innerHTML = `✅ Multi-Sport Sync ACTIVE — Basketball (${bball.length}) + Soccer (${soccer.length}) both live on ${tier.charAt(0).toUpperCase()+tier.slice(1)} dashboard.`;
     }
-    const confs = pro.map(p => parseFloat(p.confidence));
-    const avg = (confs.reduce((a,b)=>a+b,0)/confs.length).toFixed(1);
-    const top = Math.max(...confs).toFixed(1);
-    document.getElementById('pro-avg-conf').textContent = avg + '%';
-    document.getElementById('pro-top-conf').textContent = top + '%';
-    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:.85rem">
-      <thead><tr style="border-bottom:1px solid var(--border)">
-        <th style="text-align:left;padding:8px;color:var(--text-muted)">MATCHUP</th>
-        <th style="text-align:left;padding:8px;color:var(--text-muted)">LEAGUE</th>
-        <th style="text-align:left;padding:8px;color:var(--text-muted)">BEST PICK</th>
-        <th style="text-align:center;padding:8px;color:#00b0ff">CONFIDENCE</th>
-        <th style="text-align:center;padding:8px;color:var(--text-muted)">ODDS</th>
-        <th style="text-align:center;padding:8px;color:var(--text-muted)">TIME</th>
-      </tr></thead>
-      <tbody>${pro.sort((a,b)=>parseFloat(b.confidence)-parseFloat(a.confidence)).map(p => {
-        const conf = parseFloat(p.confidence);
-        const bar = Math.min(100, conf);
-        const col = conf >= 80 ? '#00e676' : conf >= 75 ? '#ffd700' : '#00b0ff';
-        return `<tr style="border-bottom:1px solid rgba(255,255,255,.05)">
-          <td style="padding:10px 8px;font-weight:600">${p.home_team || p.homeTeam || ''} vs ${p.away_team || p.awayTeam || ''}</td>
-          <td style="padding:10px 8px;color:var(--text-muted);font-size:.8rem">${p.league || p.sport || ''}</td>
-          <td style="padding:10px 8px;color:var(--gold)">${p.best_pick || p.bestPick || ''}</td>
-          <td style="padding:10px 8px;text-align:center">
-            <div style="font-weight:700;color:${col};font-size:1rem">${conf.toFixed(1)}%</div>
-            <div style="background:rgba(255,255,255,.1);border-radius:4px;height:4px;margin-top:4px"><div style="width:${bar}%;height:100%;background:${col};border-radius:4px"></div></div>
-          </td>
-          <td style="padding:10px 8px;text-align:center;color:var(--text-muted)">${p.odds || '--'}</td>
-          <td style="padding:10px 8px;text-align:center;color:var(--text-muted);font-size:.8rem">${p.game_time ? new Date(p.game_time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '--'}</td>
-        </tr>`;
-      }).join('')}</tbody></table>`;
+    bballEl.innerHTML = buildPickTable(bball, '#ff6b35');
+    soccerEl.innerHTML = buildPickTable(soccer, '#00e676');
   } catch(e) {
-    el.innerHTML = `<div class="error-box">Error: ${e.message}</div>`;
+    bballEl.innerHTML = `<div class="error-box">Error: ${e.message}</div>`;
+    soccerEl.innerHTML = `<div class="error-box">Error: ${e.message}</div>`;
   }
 }
 
-// ── Lifetime Tier Games ───────────────────────────────────────────────────────
-async function loadLifetimeTier() {
-  const el = document.getElementById('lifetime-tier-table');
-  el.innerHTML = '<div style="color:var(--text-muted)">Loading Lifetime tier games...</div>';
-  try {
-    const today = new Date().toLocaleDateString('en-CA');
-    const picks = await api(`/api/admin/picks?date=${today}`);
-    const lifetime = picks.filter(p => parseFloat(p.confidence) >= 68);
-    document.getElementById('lifetime-total-count').textContent = lifetime.length;
-    if (lifetime.length === 0) {
-      document.getElementById('lifetime-avg-conf').textContent = '--';
-      document.getElementById('lifetime-top-conf').textContent = '--';
-      el.innerHTML = '<div style="color:var(--text-muted);padding:20px;text-align:center">No Lifetime tier games today (68%+ confidence). Check back after the 1 AM generation run.</div>';
-      return;
-    }
-    const confs = lifetime.map(p => parseFloat(p.confidence));
-    const avg = (confs.reduce((a,b)=>a+b,0)/confs.length).toFixed(1);
-    const top = Math.max(...confs).toFixed(1);
-    document.getElementById('lifetime-avg-conf').textContent = avg + '%';
-    document.getElementById('lifetime-top-conf').textContent = top + '%';
-    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:.85rem">
-      <thead><tr style="border-bottom:1px solid var(--border)">
-        <th style="text-align:left;padding:8px;color:var(--text-muted)">MATCHUP</th>
-        <th style="text-align:left;padding:8px;color:var(--text-muted)">LEAGUE</th>
-        <th style="text-align:left;padding:8px;color:var(--text-muted)">BEST PICK</th>
-        <th style="text-align:center;padding:8px;color:#ffd700">CONFIDENCE</th>
-        <th style="text-align:center;padding:8px;color:var(--text-muted)">ODDS</th>
-        <th style="text-align:center;padding:8px;color:var(--text-muted)">TIME</th>
-      </tr></thead>
-      <tbody>${lifetime.sort((a,b)=>parseFloat(b.confidence)-parseFloat(a.confidence)).map(p => {
-        const conf = parseFloat(p.confidence);
-        const bar = Math.min(100, conf);
-        const col = conf >= 80 ? '#00e676' : conf >= 75 ? '#ffd700' : '#ff6b35';
-        return `<tr style="border-bottom:1px solid rgba(255,255,255,.05)">
-          <td style="padding:10px 8px;font-weight:600">${p.home_team || p.homeTeam || ''} vs ${p.away_team || p.awayTeam || ''}</td>
-          <td style="padding:10px 8px;color:var(--text-muted);font-size:.8rem">${p.league || p.sport || ''}</td>
-          <td style="padding:10px 8px;color:var(--gold)">${p.best_pick || p.bestPick || ''}</td>
-          <td style="padding:10px 8px;text-align:center">
-            <div style="font-weight:700;color:${col};font-size:1rem">${conf.toFixed(1)}%</div>
-            <div style="background:rgba(255,255,255,.1);border-radius:4px;height:4px;margin-top:4px"><div style="width:${bar}%;height:100%;background:${col};border-radius:4px"></div></div>
-          </td>
-          <td style="padding:10px 8px;text-align:center;color:var(--text-muted)">${p.odds || '--'}</td>
-          <td style="padding:10px 8px;text-align:center;color:var(--text-muted);font-size:.8rem">${p.game_time ? new Date(p.game_time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '--'}</td>
-        </tr>`;
-      }).join('')}</tbody></table>`;
-  } catch(e) {
-    el.innerHTML = `<div class="error-box">Error: ${e.message}</div>`;
-  }
-}
+async function loadProTier() { await renderTierPage('pro'); }
+async function loadLifetimeTier() { await renderTierPage('lifetime'); }
+
 
 // ── PayPal Compliance ─────────────────────────────────────────────────────────
 function loadPaypalCompliance() {
