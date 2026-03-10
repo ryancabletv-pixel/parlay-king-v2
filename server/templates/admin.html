@@ -1757,7 +1757,6 @@ async function aiCommanderExecute() {
   try {
     const res = await api('/api/admin/command', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt }),
     });
 
