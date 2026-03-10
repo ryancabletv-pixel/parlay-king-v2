@@ -2833,6 +2833,204 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // ══════════════════════════════════════════════════════════════════════════════
+  // AI COMMANDER CONSOLE — POST /api/admin/command
+  // Gemini 2.0 Flash function-calling: natural-language control of picks/parlays
+  // Secured by requireAuth (x-admin-token header required)
+  // ══════════════════════════════════════════════════════════════════════════════
+  app.post('/api/admin/command', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { prompt } = req.body as { prompt: string };
+      if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+        return res.status(400).json({ error: 'prompt is required', success: false });
+      }
+
+      const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+      if (!GEMINI_API_KEY) {
+        return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server', success: false });
+      }
+
+      // ── Special command: DB connection test (no Gemini call needed, saves quota) ──
+      const lowerPrompt = prompt.toLowerCase().trim();
+      if (lowerPrompt.includes('test') && (lowerPrompt.includes('database') || lowerPrompt.includes('db') || lowerPrompt.includes('connection'))) {
+        const { Pool: TestPool } = await import('pg');
+        const testPool = new TestPool({
+          connectionString: process.env.DATABASE_URL,
+          ssl: process.env.DATABASE_URL?.includes('neon.tech') ? { rejectUnauthorized: false } : false,
+          max: 1, connectionTimeoutMillis: 5000,
+        });
+        const testClient = await testPool.connect();
+        const testResult = await testClient.query(
+          'SELECT 1 AS connection_ok, NOW() AS server_time, current_database() AS db_name'
+        );
+        testClient.release();
+        await testPool.end();
+        const row = testResult.rows[0];
+        return res.json({
+          message: `✅ Database connection OK — Connected to "${row.db_name}" at ${new Date(row.server_time).toUTCString()}. SELECT 1 returned ${row.connection_ok}.`,
+          action: 'db_test',
+          success: true,
+        });
+      }
+
+      // ── Gemini 2.0 Flash with Function Calling ──
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+
+      const controlTools: any = {
+        functionDeclarations: [
+          {
+            name: 'update_pick_status',
+            description: 'Updates a pick status (win/loss/pending) in the picks table by pick ID.',
+            parameters: {
+              type: 'OBJECT',
+              properties: {
+                pick_id: { type: 'NUMBER', description: 'The numeric ID of the pick to update' },
+                status:  { type: 'STRING', enum: ['win', 'loss', 'pending'], description: 'New status for the pick' },
+              },
+              required: ['pick_id', 'status'],
+            },
+          },
+          {
+            name: 'publish_parlay',
+            description: 'Publishes a 3-leg parlay to a specific member tier (pro or lifetime) in the parlays table.',
+            parameters: {
+              type: 'OBJECT',
+              properties: {
+                tier:  { type: 'STRING', enum: ['pro', 'lifetime'], description: 'Target tier for the parlay' },
+                games: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Array of exactly 3 pick IDs or game identifiers' },
+                date:  { type: 'STRING', description: 'Date for the parlay in YYYY-MM-DD format' },
+              },
+              required: ['tier', 'games'],
+            },
+          },
+          {
+            name: 'get_picks_summary',
+            description: 'Returns a summary of picks for a given date (count, wins, losses, pending).',
+            parameters: {
+              type: 'OBJECT',
+              properties: {
+                date: { type: 'STRING', description: 'Date in YYYY-MM-DD format. Use today if not specified.' },
+              },
+              required: [],
+            },
+          },
+          {
+            name: 'disable_pick',
+            description: 'Disables (hides) a pick from the live dashboard by setting is_disabled = true.',
+            parameters: {
+              type: 'OBJECT',
+              properties: {
+                pick_id: { type: 'NUMBER', description: 'The numeric ID of the pick to disable' },
+              },
+              required: ['pick_id'],
+            },
+          },
+        ],
+      };
+
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.0-flash',
+        tools: [controlTools],
+      });
+
+      const chat = model.startChat();
+      const result = await chat.sendMessage(
+        `You are the AI Commander for the Parlay King admin dashboard. ` +
+        `The user says: "${prompt}" ` +
+        `Use the available functions to execute the request. ` +
+        `If no function applies, respond with a helpful plain-text answer.`
+      );
+
+      const calls = result.response.functionCalls();
+      if (!calls || calls.length === 0) {
+        return res.json({ message: result.response.text(), action: 'text_response', success: true });
+      }
+
+      const call = calls[0];
+      const args = call.args as any;
+
+      // ── Execute the function Gemini chose ──
+      const { Pool: CmdPool } = await import('pg');
+      const cmdPool = new CmdPool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.DATABASE_URL?.includes('neon.tech') ? { rejectUnauthorized: false } : false,
+        max: 2, connectionTimeoutMillis: 5000,
+      });
+      const cmdClient = await cmdPool.connect();
+
+      try {
+        let responseMessage = '';
+
+        if (call.name === 'update_pick_status') {
+          const { pick_id, status } = args;
+          const upd = await cmdClient.query(
+            'UPDATE picks SET status = $1 WHERE id = $2 RETURNING id, status, home_team, away_team',
+            [status, pick_id]
+          );
+          if (upd.rowCount === 0) {
+            responseMessage = `⚠️ No pick found with ID ${pick_id}. No changes made.`;
+          } else {
+            const r = upd.rows[0];
+            responseMessage = `✅ Pick #${pick_id} (${r.home_team} vs ${r.away_team}) updated to **${status.toUpperCase()}**.`;
+          }
+
+        } else if (call.name === 'publish_parlay') {
+          const { tier, games, date: parlayDate } = args;
+          const pDate = parlayDate || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+          if (!games || games.length !== 3) {
+            responseMessage = `⚠️ A parlay requires exactly 3 games. Received ${games?.length || 0}.`;
+          } else {
+            await cmdClient.query(
+              'INSERT INTO parlays (tier, game_ids, date, created_at) VALUES ($1, $2, $3, NOW()) ON CONFLICT DO NOTHING',
+              [tier, JSON.stringify(games), pDate]
+            );
+            responseMessage = `✅ 3-Leg **${tier.toUpperCase()}** parlay published for ${pDate} with games: ${games.join(', ')}.`;
+          }
+
+        } else if (call.name === 'get_picks_summary') {
+          const summaryDate = args.date || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+          const s = await cmdClient.query(
+            `SELECT COUNT(*) FILTER (WHERE status='win') AS wins,
+                    COUNT(*) FILTER (WHERE status='loss') AS losses,
+                    COUNT(*) FILTER (WHERE status='pending') AS pending,
+                    COUNT(*) AS total
+             FROM picks WHERE date = $1`,
+            [summaryDate]
+          );
+          const row = s.rows[0];
+          responseMessage = `📊 Picks for **${summaryDate}**: ${row.total} total — ${row.wins} wins, ${row.losses} losses, ${row.pending} pending.`;
+
+        } else if (call.name === 'disable_pick') {
+          const { pick_id } = args;
+          const dis = await cmdClient.query(
+            'UPDATE picks SET is_disabled = true WHERE id = $1 RETURNING id, home_team, away_team',
+            [pick_id]
+          );
+          if (dis.rowCount === 0) {
+            responseMessage = `⚠️ No pick found with ID ${pick_id}.`;
+          } else {
+            const r = dis.rows[0];
+            responseMessage = `🚫 Pick #${pick_id} (${r.home_team} vs ${r.away_team}) disabled and hidden from the live dashboard.`;
+          }
+
+        } else {
+          responseMessage = `⚠️ Unknown function: ${call.name}`;
+        }
+
+        return res.json({ message: responseMessage, action: call.name, args, success: true });
+
+      } finally {
+        cmdClient.release();
+        await cmdPool.end();
+      }
+
+    } catch (err: any) {
+      console.error('[AI Commander] Error:', err.message);
+      return res.status(500).json({ error: `AI Commander error: ${err.message}`, success: false });
+    }
+  });
+
   // GET /api/admin/members-full — full member list with tier, expiry, lock, and subscription info
   app.get('/api/admin/members-full', requireAuth, async (req: Request, res: Response) => {
     try {

@@ -365,6 +365,7 @@
       <div class="nav-label" style="color:var(--gold)">V3 Tools</div>
       <div class="nav-item" onclick="showPage('v3validator')" style="color:var(--gold)"><span class="nav-icon">🔬</span>V3 Validator</div>
       <div class="nav-item" onclick="showPage('tomorrow-validator')" style="color:var(--gold)"><span class="nav-icon">📅</span>Tomorrow Validator</div>
+      <div class="nav-item" onclick="showPage('ai-commander')" style="color:var(--gold)"><span class="nav-icon">🤖</span>AI Commander</div>
     </div>
     <div class="nav-section">
       <div class="nav-label" style="color:#00e676">Site Control</div>
@@ -812,6 +813,68 @@
         </div>
       </div>
     </div><!-- /page-tomorrow-validator -->
+
+    <!-- ===== V3 TOOLS: AI COMMANDER CONSOLE ===== -->
+    <div class="page" id="page-ai-commander">
+      <div class="page-header">
+        <div class="page-title">🤖 AI Commander Console</div>
+        <div class="page-sub">Gemini 2.0 Flash — Natural language control of picks, parlays, and database. Secured by admin session.</div>
+      </div>
+
+      <!-- Status bar -->
+      <div class="section-card" style="margin-bottom:16px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;font-size:13px;">
+          <span class="status-dot green"></span>
+          <span style="color:var(--text-dim)">Gemini 2.0 Flash</span>
+          <span style="color:var(--gold);font-weight:700;">ACTIVE</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);">Function Calling Enabled — update_pick_status · publish_parlay · get_picks_summary · disable_pick</div>
+      </div>
+
+      <!-- Command input -->
+      <div class="section-card">
+        <div class="section-title">💬 Command Input</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">
+          Type a natural language command. Examples: <em style="color:var(--gold);">&ldquo;Update pick 455 to WIN&rdquo;</em> · <em style="color:var(--gold);">&ldquo;Show picks summary for today&rdquo;</em> · <em style="color:var(--gold);">&ldquo;Test the database connection&rdquo;</em>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <input type="text" id="ai-cmd-input"
+            placeholder="e.g. Update pick 455 to WIN"
+            class="input-field" style="margin-bottom:0;flex:1;"
+            onkeydown="if(event.key==='Enter')aiCommanderExecute()"
+          />
+          <button class="btn btn-gold" onclick="aiCommanderExecute()" id="ai-cmd-btn" style="white-space:nowrap;">
+            ⚡ Execute
+          </button>
+        </div>
+      </div>
+
+      <!-- Output -->
+      <div class="section-card" id="ai-cmd-output-card" style="display:none;">
+        <div class="section-title">📊 Response</div>
+        <div id="ai-cmd-output" style="font-size:14px;line-height:1.7;color:var(--text);"></div>
+        <div id="ai-cmd-meta" style="font-size:11px;color:var(--text-dim);margin-top:10px;"></div>
+      </div>
+
+      <!-- Command history -->
+      <div class="section-card">
+        <div class="section-title">📜 Command History <span id="ai-cmd-count" style="font-size:11px;color:var(--text-dim);font-weight:400;"></span></div>
+        <div id="ai-cmd-history" style="font-size:12px;color:var(--text-dim);">
+          <em>No commands executed yet this session.</em>
+        </div>
+      </div>
+
+      <!-- Quick commands -->
+      <div class="section-card">
+        <div class="section-title">⚡ Quick Commands</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="aiCommanderQuick('Test the database connection')">Test DB Connection</button>
+          <button class="btn btn-outline btn-sm" onclick="aiCommanderQuick('Show picks summary for today')">Today&rsquo;s Picks Summary</button>
+          <button class="btn btn-outline btn-sm" onclick="aiCommanderQuick('Show picks summary for 2026-03-10')">Picks for 2026-03-10</button>
+          <button class="btn btn-outline btn-sm" onclick="aiCommanderQuick('How many functions do you support?')">List Functions</button>
+        </div>
+      </div>
+    </div><!-- /page-ai-commander -->
 
     <!-- ===== SITE CONTROL: FEATURED GAME ===== -->
     <div class="page" id="page-featured-game">
@@ -1650,9 +1713,99 @@ function showPage(name) {
     'test-payment-flow': function() {}, // static page — no data loader needed
     'v3validator':        initV3Validator,
     'tomorrow-validator': initTomorrowValidator,
+    'ai-commander':        initAiCommander,
   };
   loaders[name]?.();
   closeSidebar(); // auto-close sidebar on mobile after nav
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// AI COMMANDER CONSOLE — JavaScript functions
+// ──────────────────────────────────────────────────────────────────────────────
+let aiCmdHistory = [];
+
+function initAiCommander() {
+  // Reset output on page open
+  document.getElementById('ai-cmd-output-card').style.display = 'none';
+  document.getElementById('ai-cmd-input').value = '';
+  renderAiCmdHistory();
+}
+
+function aiCommanderQuick(cmd) {
+  document.getElementById('ai-cmd-input').value = cmd;
+  aiCommanderExecute();
+}
+
+async function aiCommanderExecute() {
+  const input = document.getElementById('ai-cmd-input');
+  const prompt = input.value.trim();
+  if (!prompt) return;
+
+  const btn = document.getElementById('ai-cmd-btn');
+  const outputCard = document.getElementById('ai-cmd-output-card');
+  const outputEl = document.getElementById('ai-cmd-output');
+  const metaEl = document.getElementById('ai-cmd-meta');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Processing...';
+  outputCard.style.display = 'block';
+  outputEl.innerHTML = '<span style="color:var(--text-dim)">Sending to Gemini 2.0 Flash...</span>';
+  metaEl.textContent = '';
+
+  const startTime = Date.now();
+
+  try {
+    const res = await api('/api/admin/command', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
+
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+
+    // Render the message (support **bold** markdown)
+    const formatted = (res.message || 'No response received.')
+      .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--gold)">$1</strong>')
+      .replace(/\n/g, '<br>');
+
+    outputEl.innerHTML = formatted;
+    metaEl.textContent = `Action: ${res.action || 'text_response'} · ${elapsed}s · ${new Date().toLocaleTimeString()}`;
+
+    // Add to history
+    aiCmdHistory.unshift({ prompt, response: res.message, action: res.action, time: new Date().toLocaleTimeString(), success: res.success });
+    if (aiCmdHistory.length > 20) aiCmdHistory.pop();
+    renderAiCmdHistory();
+
+    // Clear input on success
+    if (res.success) input.value = '';
+
+  } catch (err) {
+    outputEl.innerHTML = `<span style="color:var(--red)">❌ Error: ${err.message}</span>`;
+    metaEl.textContent = `Failed after ${((Date.now() - startTime) / 1000).toFixed(2)}s`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⚡ Execute';
+  }
+}
+
+function renderAiCmdHistory() {
+  const el = document.getElementById('ai-cmd-history');
+  const countEl = document.getElementById('ai-cmd-count');
+  if (!aiCmdHistory.length) {
+    el.innerHTML = '<em>No commands executed yet this session.</em>';
+    countEl.textContent = '';
+    return;
+  }
+  countEl.textContent = `(${aiCmdHistory.length} this session)`;
+  el.innerHTML = aiCmdHistory.map(h => `
+    <div style="padding:8px 0;border-bottom:1px solid rgba(255,215,0,0.05);">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+        <span style="color:var(--gold);font-weight:600;">› ${h.prompt}</span>
+        <span style="color:var(--text-dim);font-size:10px;">${h.time}</span>
+      </div>
+      <div style="color:${h.success ? 'var(--text)' : 'var(--red)'}">${(h.response || '').substring(0, 120)}${(h.response || '').length > 120 ? '…' : ''}</div>
+    </div>
+  `).join('');
 }
 
 // ── Mobile Sidebar Toggle ─────────────────────────────────────────────────────────
