@@ -3,6 +3,7 @@ import * as storage from './storage.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { runTitanXII, runBatchPredictions, FixtureData, PredictionResult } from './goldStandardV2.js';
+import { runBatchPredictionsV15, FixtureDataV15 } from './services/geminiV3Engine.js';
 import { runDailyGeneration } from './scheduler.js';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -374,6 +375,16 @@ export async function generateDailyPicks(date: string): Promise<{
   // Helper to save a pick
   async function savePick(pred: PredictionResult, overrideSport?: string, overrideTier?: string, isPower = false, highVolatility = false) {
     try {
+      // Auto-calculate American odds from confidence if not provided
+      const autoOdds = (() => {
+        const c = pred.topConfidence;
+        if (!c || c <= 0) return '';
+        const vig = 0.05;
+        const ip = Math.min(Math.max(c / 100, 0.01), 0.99);
+        const vp = ip * (1 + vig);
+        if (vp >= 0.5) return String(Math.round(-(vp / (1 - vp)) * 100));
+        return '+' + String(Math.round(((1 - vp) / vp) * 100));
+      })();
       await storage.createPick({
         date,
         sport:      overrideSport || pred.sport,
@@ -383,6 +394,7 @@ export async function generateDailyPicks(date: string): Promise<{
         league:     pred.league,
         prediction: pred.topPick,
         confidence: pred.topConfidence,
+        odds:       autoOdds,
         fixtureId:  String(pred.fixtureId),
         isPowerPick: isPower,
         metadata:   { ...pred as any, isHighVolatility: highVolatility, volatilityLabel: highVolatility ? 'High Volatility' : null } as any,
@@ -992,7 +1004,7 @@ export async function registerRoutes(app: Express) {
         parlay: { legs: parlayLegs, legs_count: parlayLegs.length, combined_probability: combinedProb(soccerPicks) },
         three_leg_conservative: { legs: parlayLegs, legs_count: parlayLegs.length, combined_probability: combinedProb(soccerPicks) },
         soccer_picks: parlayLegs,
-        mls_parlay: { legs: mlsLegs, legs_count: mlsLegs.length, combined_probability: combinedProb(mlsPicks) },
+        mls_parlay: { legs: mlsLegs, legs_count: mlsLegs.length, combined_probability: combinedProb(mlsPicks), enabled: mlsAdminEnabled },
         mls_no_slate: mlsNoSlate,
         mls_next_slate_date: mlsNoSlate ? 'Check back soon' : '',
         nba_parlay: { legs: nbaLegs, legs_count: nbaLegs.length, combined_probability: combinedProb(nbaPicks) },
@@ -1812,12 +1824,11 @@ export async function registerRoutes(app: Express) {
       const today = new Date().toLocaleDateString('en-CA');
       const in7Days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-CA');
 
-      const games = allGames
-        .filter(g => {
+      const filteredGames = allGames.filter(g => {
           const d = new Date(g.commence_time).toLocaleDateString('en-CA');
           return d >= today && d <= in7Days;
-        })
-        .map(g => {
+        });
+      const games = await Promise.all(filteredGames.map(async g => {
           const sport: 'nba' | 'mls' | 'soccer' = g.sport_key.startsWith('basketball') ? 'nba' :
             g.sport_key === 'soccer_usa_mls' ? 'mls' : 'soccer';
           const fixture: FixtureData = {
@@ -1833,7 +1844,7 @@ export async function registerRoutes(app: Express) {
             awayInjuries: 0,
             isNeutralVenue: false,
           } as FixtureData;
-          const preds = runBatchPredictions([fixture]);
+          const preds = await runBatchPredictionsV15([fixture as FixtureDataV15]);
           const pred = preds[0];
           const conf = pred ? pred.topConfidence : 0;
           const outcomes: { label: string; conf: number }[] = [];
@@ -1868,7 +1879,7 @@ export async function registerRoutes(app: Express) {
             outcomes: outcomes.sort((a, b) => b.conf - a.conf),
             validated: false,
           };
-        });
+        }));
 
       const ledger = getBudgetLedger();
       res.json({
@@ -1903,7 +1914,7 @@ export async function registerRoutes(app: Express) {
         homeOdds: g.home_odds ?? undefined, drawOdds: g.draw_odds ?? undefined, awayOdds: g.away_odds ?? undefined,
         homeInjuries: 0, awayInjuries: 0, isNeutralVenue: false,
       } as FixtureData;
-      const preds = runBatchPredictions([fixture]);
+      const preds = await runBatchPredictionsV15([fixture as FixtureDataV15]);
       const pred = preds[0];
       if (!pred) return res.status(422).json({ error: 'Engine returned no prediction for this fixture' });
       const conf = pred.topConfidence;
@@ -2536,17 +2547,40 @@ export async function registerRoutes(app: Express) {
           hoursRemaining = Math.floor((expiryMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         }
       }
+      // ── V3-15 Tiered Distribution Logic ────────────────────────────────────
+      // SPORTS FILTER : Only Soccer, NBA, and MLS picks are permitted.
+      // PRO QUOTA     : Top 6 picks by confidence.
+      // LIFETIME QUOTA: Top 10 picks by confidence (includes the Pro 6).
+      // OVERFLOW LOGIC: All eligible picks sorted DESC; slice by tier quota.
+      const V3_ALLOWED_SPORTS = ['soccer', 'nba', 'mls'];
+      const V3_PRO_QUOTA      = 6;
+      const V3_LIFETIME_QUOTA = 10;
       // Fetch today's picks for this tier
       const today = new Date().toISOString().split('T')[0];
       const tierFilter = activeTier === 'lifetime' ? ['pro', 'vip', 'free'] :
                          activeTier === 'pro'      ? ['pro', 'vip', 'free'] :
                          activeTier === 'vip'      ? ['vip', 'free'] : ['free'];
       const pool2 = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      // Fetch all eligible picks (sports-filtered) sorted by confidence DESC.
+      // DISTINCT ON deduplicates same matchup; we re-sort in JS after.
       const picksResult = await pool2.query(
-        `SELECT * FROM picks WHERE date = $1 AND tier = ANY($2) AND is_disabled = false ORDER BY confidence DESC LIMIT 20`,
-        [today, tierFilter]
+        `SELECT DISTINCT ON (home_team, away_team) * FROM picks
+         WHERE date = $1
+           AND tier = ANY($2)
+           AND is_disabled = false
+           AND sport = ANY($3)
+         ORDER BY home_team, away_team, confidence DESC`,
+        [today, tierFilter, V3_ALLOWED_SPORTS]
       );
       await pool2.end();
+      // Re-sort by confidence DESC (DISTINCT ON reorders rows) then apply tier quota
+      const allEligible = (picksResult.rows as any[]).sort(
+        (a, b) => (parseFloat(b.confidence) || 0) - (parseFloat(a.confidence) || 0)
+      );
+      const tierQuota = activeTier === 'lifetime' ? V3_LIFETIME_QUOTA
+                      : activeTier === 'pro'      ? V3_PRO_QUOTA
+                      : 20; // free/vip: no hard cap
+      const tieredPicks = allEligible.slice(0, tierQuota);
       return res.json({
         success: true,
         member: {
@@ -2562,8 +2596,15 @@ export async function registerRoutes(app: Express) {
           tierLockedUntil: member.tier_locked_until || null,
           canUpgrade: isExpired || activeTier === 'free',
         },
-        picks: picksResult.rows,
+        picks: tieredPicks,
         picksDate: today,
+        // Distribution metadata (informational)
+        distribution: {
+          allowedSports: V3_ALLOWED_SPORTS,
+          quota: tierQuota,
+          totalEligible: allEligible.length,
+          returned: tieredPicks.length,
+        },
       });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
@@ -2584,11 +2625,27 @@ export async function registerRoutes(app: Express) {
       const tierFilter = memberTier === 'lifetime' ? ['pro', 'vip', 'free'] :
                          memberTier === 'pro'      ? ['pro', 'vip', 'free'] :
                          memberTier === 'vip'      ? ['vip', 'free'] : ['free'];
+      // ── V3-15 Tiered Distribution Logic (Parlay Builder) ────────────────────
+      // SPORTS FILTER : Only Soccer, NBA, and MLS picks are permitted.
+      // PRO QUOTA     : 6 picks (top 6 by confidence).
+      // LIFETIME QUOTA: 10 picks (top 10 by confidence, includes the Pro 6).
+      const PB_ALLOWED_SPORTS = ['soccer', 'nba', 'mls'];
+      const PB_PRO_QUOTA      = 6;
+      const PB_LIFETIME_QUOTA = 10;
+      const parlayQuota = memberTier === 'lifetime' ? PB_LIFETIME_QUOTA
+                        : memberTier === 'pro'      ? PB_PRO_QUOTA
+                        : 10; // vip/free: up to 10
       const { Pool } = await import('pg');
       const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
       const picksResult = await pool.query(
-        `SELECT * FROM picks WHERE date = $1 AND tier = ANY($2) AND is_disabled = false ORDER BY confidence DESC LIMIT 10`,
-        [today, tierFilter]
+        `SELECT * FROM picks
+         WHERE date = $1
+           AND tier = ANY($2)
+           AND is_disabled = false
+           AND sport = ANY($3)
+         ORDER BY confidence DESC
+         LIMIT $4`,
+        [today, tierFilter, PB_ALLOWED_SPORTS, parlayQuota]
       );
       await pool.end();
       // Build parlay legs with sportsbook deep-links
