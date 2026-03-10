@@ -795,8 +795,10 @@
         </label>
         <!-- Load Button -->
         <button onclick="tvLoadGames()" id="tv-load-btn" style="padding:9px 18px;background:linear-gradient(135deg,var(--gold),#FFA500);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer">⚡ Load Tomorrow</button>
-        <!-- Manual Sync Button -->
-        <button onclick="tvManualSync()" id="tv-sync-btn" style="padding:9px 18px;background:rgba(0,230,118,0.15);border:1px solid rgba(0,230,118,0.3);color:#00e676;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer">🔄 Run V3-15 Sync Now</button>
+        <!-- Refresh Button (re-reads pending_validator for selected date without running sync) -->
+        <button onclick="tvRefresh()" id="tv-refresh-btn" style="padding:9px 18px;background:rgba(255,215,0,0.12);border:1px solid var(--gold-border);color:var(--gold);border-radius:8px;font-size:13px;font-weight:800;cursor:pointer">🔄 Refresh</button>
+        <!-- Manual Sync Button (runs syncTomorrowGames mid-day to re-fetch lines + re-audit) -->
+        <button onclick="tvManualSync()" id="tv-sync-btn" style="padding:9px 18px;background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3);color:#00e676;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer">🤖 Re-Run V3-15 Sync</button>
       </div>
 
       <!-- Stats Row -->
@@ -805,8 +807,8 @@
       <!-- Games List -->
       <div id="tv-games-list">
         <div style="color:var(--text-dim);text-align:center;padding:60px;font-size:14px">
-          Click “Load Tomorrow” to fetch pre-audited games from the pending_validator table.<br>
-          <span style="font-size:12px;opacity:0.6">Auto-syncs nightly at 2:00 AM AST via Railway cron.</span>
+          ⏳ Loading tomorrow’s pre-audited games…<br>
+          <span style="font-size:12px;opacity:0.6">Fetching from pending_validator — auto-syncs nightly at 2:00 AM AST.</span>
         </div>
       </div>
     </div><!-- /page-tomorrow-validator -->
@@ -2530,9 +2532,28 @@ async function tvApproveGame(id, tier) {
 }
 
 function initTomorrowValidator() {
-  // Set date input to tomorrow by default
+  // Set date input to tomorrow by default, then auto-fetch from pending_validator
   const dateEl = document.getElementById('tv-date-filter');
   if (dateEl) dateEl.value = tvGetDefaultDate();
+  // Auto-load immediately so the table is populated as soon as the tab opens
+  tvLoadGames();
+}
+
+// Refresh: re-reads pending_validator for the selected date (no sync, no API calls)
+async function tvRefresh() {
+  const btn = document.getElementById('tv-refresh-btn');
+  const prevText = btn.textContent;
+  btn.textContent = '⏳ Refreshing…';
+  btn.disabled = true;
+  try {
+    await tvLoadGames();
+    notify('✅ Tomorrow Validator refreshed from pending_validator');
+  } catch(e) {
+    notify('Refresh error: ' + e.message, 'error');
+  } finally {
+    btn.textContent = prevText;
+    btn.disabled = false;
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
