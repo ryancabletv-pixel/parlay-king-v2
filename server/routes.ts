@@ -964,6 +964,9 @@ export async function registerRoutes(app: Express) {
           sport: p.sport || 'soccer',
           isHighVolatility: (p.metadata as any)?.isHighVolatility ?? false,
           volatilityLabel: (p.metadata as any)?.volatilityLabel ?? null,
+          momentum: p.momentum ?? null,
+          quality: p.quality ?? null,
+          mq_composite: p.mqComposite ?? p.mq_composite ?? null,
         };
       }
 

@@ -50885,7 +50885,10 @@ async function registerRoutes(app) {
           tier: p.tier || "free",
           sport: p.sport || "soccer",
           isHighVolatility: p.metadata?.isHighVolatility ?? false,
-          volatilityLabel: p.metadata?.volatilityLabel ?? null
+          volatilityLabel: p.metadata?.volatilityLabel ?? null,
+          momentum: p.momentum ?? null,
+          quality: p.quality ?? null,
+          mq_composite: p.mqComposite ?? p.mq_composite ?? null
         };
       }, combinedProb2 = function(legs) {
         if (!legs.length) return "0%";
