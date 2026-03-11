@@ -1236,9 +1236,9 @@
       if (matchEl) matchEl.textContent = fg.match || '';
       if (pickEl) pickEl.textContent = '→ ' + (fg.pick || '');
       if (confEl) confEl.textContent = (fg.confidence || fg.confidence_display || '') + (typeof fg.confidence === 'number' ? '%' : '');
-      if (momEl) momEl.textContent = fg.momentum_score !== undefined ? (fg.momentum_score * 100).toFixed(0) + '%' : '—';
-      if (qualEl) qualEl.textContent = fg.quality_score !== undefined ? (fg.quality_score * 100).toFixed(0) + '%' : '—';
-      if (compEl) compEl.textContent = fg.mq_composite !== undefined ? fg.mq_composite.toFixed(3) : '—';
+      if (momEl) momEl.textContent = fg.momentum !== undefined && fg.momentum !== null ? fg.momentum : '—';
+      if (qualEl) qualEl.textContent = fg.quality !== undefined && fg.quality !== null ? fg.quality : '—';
+      if (compEl) compEl.textContent = fg.mq_composite !== undefined && fg.mq_composite !== null ? parseFloat(fg.mq_composite).toFixed(3) : '—';
       if (reasonEl) reasonEl.textContent = fg.reasoning || '';
       // Show V3-15 match preview cross-link for Atalanta vs Bayern Munich
       var previewLink = document.getElementById('featured-soccer-preview-link');
@@ -1400,9 +1400,9 @@
       if (matchEl) matchEl.textContent = fg.match || '';
       if (pickEl) pickEl.textContent = '→ ' + (fg.pick || '');
       if (confEl) confEl.textContent = (fg.confidence || fg.confidence_display || '') + (typeof fg.confidence === 'number' ? '%' : '');
-      if (momEl) momEl.textContent = fg.momentum_score !== undefined ? (fg.momentum_score * 100).toFixed(0) + '%' : '—';
-      if (qualEl) qualEl.textContent = fg.quality_score !== undefined ? (fg.quality_score * 100).toFixed(0) + '%' : '—';
-      if (compEl) compEl.textContent = fg.mq_composite !== undefined ? fg.mq_composite.toFixed(3) : '—';
+      if (momEl) momEl.textContent = fg.momentum !== undefined && fg.momentum !== null ? fg.momentum : '—';
+      if (qualEl) qualEl.textContent = fg.quality !== undefined && fg.quality !== null ? fg.quality : '—';
+      if (compEl) compEl.textContent = fg.mq_composite !== undefined && fg.mq_composite !== null ? parseFloat(fg.mq_composite).toFixed(3) : '—';
       if (reasonEl) reasonEl.textContent = fg.reasoning || '';
     })
     .catch(function() {});
@@ -1632,9 +1632,9 @@
       if (matchEl) matchEl.textContent = fg.match || '';
       if (pickEl) pickEl.textContent = '→ ' + (fg.pick || '');
       if (confEl) confEl.textContent = (fg.confidence || fg.confidence_display || '') + (typeof fg.confidence === 'number' ? '%' : '');
-      if (momEl) momEl.textContent = fg.momentum_score !== undefined ? (fg.momentum_score * 100).toFixed(0) + '%' : '—';
-      if (qualEl) qualEl.textContent = fg.quality_score !== undefined ? (fg.quality_score * 100).toFixed(0) + '%' : '—';
-      if (compEl) compEl.textContent = fg.mq_composite !== undefined ? fg.mq_composite.toFixed(3) : '—';
+      if (momEl) momEl.textContent = fg.momentum !== undefined && fg.momentum !== null ? fg.momentum : '—';
+      if (qualEl) qualEl.textContent = fg.quality !== undefined && fg.quality !== null ? fg.quality : '—';
+      if (compEl) compEl.textContent = fg.mq_composite !== undefined && fg.mq_composite !== null ? parseFloat(fg.mq_composite).toFixed(3) : '—';
       if (reasonEl) reasonEl.textContent = fg.reasoning || '';
     })
     .catch(function() {});
