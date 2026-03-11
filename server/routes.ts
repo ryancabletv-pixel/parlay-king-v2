@@ -113,6 +113,7 @@ export async function generateDailyPicks(date: string): Promise<{
   mls: number;
   powerPick: number;
   ftpUploaded: boolean;
+  multiSportSyncStatus: 'FULL' | 'PARTIAL_SOCCER_ONLY' | 'PARTIAL_NBA_ONLY' | 'EMPTY';
 }> {
   console.log(`\n[Engine] ═══════════════════════════════════════════════`);
   console.log(`[Engine] Gold Standard V3 Titan XII — Generating picks`);
@@ -513,11 +514,37 @@ export async function generateDailyPicks(date: string): Promise<{
     console.warn('[Engine] FTP upload failed (non-critical):', err);
   }
   const total = soccerCount + nbaCount + mlsCount + powerCount + freeCount;
+
+  // ── MULTI-SPORT SYNC VALIDATION ─────────────────────────────────────────────
+  // Both Basketball AND Soccer MUST be present in every daily generation run.
+  // If either sport is missing, log a critical alert so the scheduler retry
+  // cascade can catch and fix it. Never mark a Basketball-only or Soccer-only
+  // run as fully complete — the tier dashboards must always show both sports.
+  const MULTI_SPORT_SYNC_ACTIVE = true; // v3-15 Multi-Sport Sync — always on
+  let multiSportSyncStatus: 'FULL' | 'PARTIAL_SOCCER_ONLY' | 'PARTIAL_NBA_ONLY' | 'EMPTY' = 'FULL';
+
+  if (soccerCount === 0 && nbaCount === 0) {
+    multiSportSyncStatus = 'EMPTY';
+    console.error('[Multi-Sport Sync] ❌ CRITICAL: Both Soccer AND Basketball picks are missing. Run is incomplete.');
+    try { await createAlert('critical', `Multi-Sport Sync FAILED for ${date}: 0 soccer picks, 0 NBA picks saved.`); } catch (_) {}
+  } else if (soccerCount === 0) {
+    multiSportSyncStatus = 'PARTIAL_NBA_ONLY';
+    console.error(`[Multi-Sport Sync] ⚠️  PARTIAL: Basketball picks saved (${nbaCount}) but Soccer picks are MISSING (0/3). Dashboard will be incomplete.`);
+    try { await createAlert('warning', `Multi-Sport Sync PARTIAL for ${date}: ${nbaCount} NBA picks saved but 0 soccer picks. Retry needed.`); } catch (_) {}
+  } else if (nbaCount === 0) {
+    multiSportSyncStatus = 'PARTIAL_SOCCER_ONLY';
+    console.error(`[Multi-Sport Sync] ⚠️  PARTIAL: Soccer picks saved (${soccerCount}) but Basketball picks are MISSING (0/3). Dashboard will be incomplete.`);
+    try { await createAlert('warning', `Multi-Sport Sync PARTIAL for ${date}: ${soccerCount} soccer picks saved but 0 NBA picks. Retry needed.`); } catch (_) {}
+  } else {
+    console.log(`[Multi-Sport Sync] ✅ FULL SYNC: Soccer=${soccerCount}/3 + Basketball=${nbaCount}/3 — Both sports published to all tiers simultaneously.`);
+  }
+
   console.log(`[Engine] ═══════════════════════════════════════════════════`);
   console.log(`[Engine] COMPLETE: ${total} picks saved for ${date}`);
   console.log(`[Engine]   Soccer: ${soccerCount}/3 | NBA: ${nbaCount}/3 | MLS: ${mlsCount}/3 | Power: ${powerCount}/1 | Free: ${freeCount}/2`);
+  console.log(`[Engine]   Multi-Sport Sync: ${multiSportSyncStatus} (active=${MULTI_SPORT_SYNC_ACTIVE})`);
   console.log(`[Engine] ═══════════════════════════════════════════════════\n`);
-  return { total, soccer: soccerCount, nba: nbaCount, mls: mlsCount, powerPick: powerCount, ftpUploaded };
+  return { total, soccer: soccerCount, nba: nbaCount, mls: mlsCount, powerPick: powerCount, ftpUploaded, multiSportSyncStatus };
 }
 
 // ─── Mock Fixtures (fallback when API unavailable) ────────────────────────────
@@ -1192,6 +1219,29 @@ export async function registerRoutes(app: Express) {
       const today = new Date().toLocaleDateString('en-CA');
       const picks = await storage.getPicksByDate(today);
       res.json({ picks, date: today, total: picks.length });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/admin/personal-picks — Admin-only: returns picks where is_personal = true
+  // NEVER exposed to public frontend or member dashboards
+  app.get('/api/admin/personal-picks', requireAuth, async (req, res) => {
+    try {
+      const dateFilter = req.query.date as string | undefined;
+      const db = storage.getDb();
+      // Use raw SQL via drizzle's execute for the new is_personal column
+      let query: string;
+      let params: any[];
+      if (dateFilter) {
+        query = 'SELECT * FROM picks WHERE is_personal = TRUE AND date = $1 ORDER BY confidence DESC';
+        params = [dateFilter];
+      } else {
+        query = 'SELECT * FROM picks WHERE is_personal = TRUE ORDER BY date DESC, confidence DESC LIMIT 500';
+        params = [];
+      }
+      const result = await (db as any).$client.query(query, params);
+      res.json({ picks: result.rows, total: result.rows.length });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

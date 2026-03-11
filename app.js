@@ -25956,7 +25956,9 @@ var init_seo = __esm({
       { url: "/terms", priority: "0.4", changefreq: "monthly" },
       { url: "/privacy", priority: "0.4", changefreq: "monthly" },
       { url: "/refund", priority: "0.4", changefreq: "monthly" },
-      { url: "/disclaimer", priority: "0.4", changefreq: "monthly" }
+      { url: "/disclaimer", priority: "0.4", changefreq: "monthly" },
+      // Match preview pages — high priority for daily SEO indexing
+      { url: "/match/atalanta-vs-bayern-munich", priority: "1.0", changefreq: "daily" }
     ];
   }
 });
@@ -39162,7 +39164,7 @@ var init_schema2 = __esm({
 var storage_exports = {};
 __export(storage_exports, {
   checkDbConnection: () => checkDbConnection,
-  createAlert: () => createAlert,
+  createAlert: () => createAlert2,
   createAuditReport: () => createAuditReport,
   createOrUpdateMember: () => createOrUpdateMember,
   createPick: () => createPick,
@@ -39317,7 +39319,7 @@ async function getAlerts(limit = 50) {
   const db2 = getDb();
   return db2.select().from(systemAlerts).where(eq(systemAlerts.resolved, false)).orderBy(desc(systemAlerts.createdAt)).limit(limit);
 }
-async function createAlert(level, message) {
+async function createAlert2(level, message) {
   const db2 = getDb();
   const [alert] = await db2.insert(systemAlerts).values({ level, message }).returning();
   return alert;
@@ -45245,6 +45247,29 @@ var init_goldStandardV2 = __esm({
 });
 
 // node_modules/@google/generative-ai/dist/index.mjs
+var dist_exports = {};
+__export(dist_exports, {
+  BlockReason: () => BlockReason,
+  ChatSession: () => ChatSession,
+  DynamicRetrievalMode: () => DynamicRetrievalMode,
+  ExecutableCodeLanguage: () => ExecutableCodeLanguage,
+  FinishReason: () => FinishReason,
+  FunctionCallingMode: () => FunctionCallingMode,
+  GenerativeModel: () => GenerativeModel,
+  GoogleGenerativeAI: () => GoogleGenerativeAI,
+  GoogleGenerativeAIAbortError: () => GoogleGenerativeAIAbortError,
+  GoogleGenerativeAIError: () => GoogleGenerativeAIError,
+  GoogleGenerativeAIFetchError: () => GoogleGenerativeAIFetchError,
+  GoogleGenerativeAIRequestInputError: () => GoogleGenerativeAIRequestInputError,
+  GoogleGenerativeAIResponseError: () => GoogleGenerativeAIResponseError,
+  HarmBlockThreshold: () => HarmBlockThreshold,
+  HarmCategory: () => HarmCategory,
+  HarmProbability: () => HarmProbability,
+  Outcome: () => Outcome,
+  POSSIBLE_ROLES: () => POSSIBLE_ROLES,
+  SchemaType: () => SchemaType,
+  TaskType: () => TaskType
+});
 function getClientHeaders(requestOptions) {
   const clientHeaders = [];
   if (requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.apiClient) {
@@ -49860,6 +49885,391 @@ var init_upload = __esm({
   }
 });
 
+// server/services/tomorrowSync.ts
+var tomorrowSync_exports = {};
+__export(tomorrowSync_exports, {
+  syncTomorrowGames: () => syncTomorrowGames
+});
+function getPool() {
+  return new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+    max: 5,
+    idleTimeoutMillis: 1e4
+  });
+}
+async function ensureTable(pool2) {
+  await pool2.query(`
+    CREATE TABLE IF NOT EXISTS pending_validator (
+      id              SERIAL PRIMARY KEY,
+      game_id         TEXT NOT NULL UNIQUE,
+      date            TEXT NOT NULL,
+      sport           TEXT NOT NULL,
+      league          TEXT,
+      home_team       TEXT NOT NULL,
+      away_team       TEXT NOT NULL,
+      commence_time   TEXT,
+      home_odds       REAL,
+      away_odds       REAL,
+      draw_odds       REAL,
+      bookmaker       TEXT,
+      confidence      REAL NOT NULL DEFAULT 0,
+      best_pick       TEXT,
+      reasoning       TEXT,
+      factors         JSONB,
+      outcomes        JSONB,
+      status          TEXT NOT NULL DEFAULT 'pending',
+      approved        BOOLEAN NOT NULL DEFAULT false,
+      pushed_to_live  BOOLEAN NOT NULL DEFAULT false,
+      synced_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_pv_date   ON pending_validator (date);
+    CREATE INDEX IF NOT EXISTS idx_pv_sport  ON pending_validator (sport);
+    CREATE INDEX IF NOT EXISTS idx_pv_conf   ON pending_validator (confidence DESC);
+  `);
+}
+async function upsertValidatorRow(pool2, row) {
+  await pool2.query(`
+    INSERT INTO pending_validator
+      (game_id, date, sport, league, home_team, away_team, commence_time,
+       home_odds, away_odds, draw_odds, bookmaker,
+       confidence, best_pick, reasoning, factors, outcomes,
+       status, approved, pushed_to_live, synced_at, updated_at)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
+            'pending', false, false, NOW(), NOW())
+    ON CONFLICT (game_id) DO UPDATE SET
+      confidence     = EXCLUDED.confidence,
+      best_pick      = EXCLUDED.best_pick,
+      reasoning      = EXCLUDED.reasoning,
+      factors        = EXCLUDED.factors,
+      outcomes       = EXCLUDED.outcomes,
+      updated_at     = NOW()
+  `, [
+    row.game_id,
+    row.date,
+    row.sport,
+    row.league,
+    row.home_team,
+    row.away_team,
+    row.commence_time,
+    row.home_odds,
+    row.away_odds,
+    row.draw_odds,
+    row.bookmaker,
+    row.confidence,
+    row.best_pick,
+    row.reasoning,
+    JSON.stringify(row.factors),
+    JSON.stringify(row.outcomes)
+  ]);
+}
+async function fetchTomorrowOdds(sportKey, dateStr) {
+  const from = `${dateStr}T00:00:00Z`;
+  const to = `${dateStr}T23:59:59Z`;
+  const url = `${ODDS_API_BASE2}/sports/${sportKey}/odds/?apiKey=${ODDS_API_KEY2}&regions=us,eu&markets=h2h&dateFormat=iso&oddsFormat=decimal&commenceTimeFrom=${from}&commenceTimeTo=${to}`;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      console.warn(`[TomorrowSync] HTTP ${resp.status} for ${sportKey}`);
+      return [];
+    }
+    const raw = await resp.json();
+    return Array.isArray(raw) ? raw : [];
+  } catch (err) {
+    console.error(`[TomorrowSync] Fetch error for ${sportKey}:`, err.message);
+    return [];
+  }
+}
+function extractOdds(g) {
+  const preferred = ["draftkings", "fanduel", "betmgm", "betrivers", "unibet", "pinnacle", "bet365"];
+  const bk = g.bookmakers?.find((b) => preferred.includes(b.key)) || g.bookmakers?.[0];
+  if (!bk) return { homeOdds: null, awayOdds: null, drawOdds: null, bookmaker: "N/A" };
+  const h2h = bk.markets?.find((m) => m.key === "h2h");
+  let homeOdds = null, awayOdds = null, drawOdds = null;
+  for (const o of h2h?.outcomes || []) {
+    if (o.name === g.home_team) homeOdds = o.price;
+    else if (o.name === g.away_team) awayOdds = o.price;
+    else if (o.name === "Draw") drawOdds = o.price;
+  }
+  return { homeOdds, awayOdds, drawOdds, bookmaker: bk.title };
+}
+async function runGeminiAudit(games, sport, dateStr) {
+  if (!genAI2 || games.length === 0) {
+    return games.map((g) => {
+      const { homeOdds, awayOdds } = extractOdds(g);
+      const homeImpl = homeOdds ? 1 / homeOdds : 0.5;
+      const awayImpl = awayOdds ? 1 / awayOdds : 0.5;
+      const total = homeImpl + awayImpl;
+      const homeConf = homeImpl / total * 100;
+      const awayConf = awayImpl / total * 100;
+      const bestConf = Math.max(homeConf, awayConf);
+      const bestPick = homeConf >= awayConf ? `${g.home_team} Win` : `${g.away_team} Win`;
+      return {
+        game_id: g.id,
+        confidence_score: Math.round(bestConf * 10) / 10,
+        best_pick: bestPick,
+        v3_reasoning: `Deterministic fallback (no Gemini key) \u2014 implied odds: ${g.home_team} ${homeConf.toFixed(1)}% / ${g.away_team} ${awayConf.toFixed(1)}%`,
+        factors: {
+          f01_marketConsensus_home: Math.round(homeImpl / total * 100) / 100,
+          f01_marketConsensus_away: Math.round(awayImpl / total * 100) / 100,
+          gemini_model: 0
+        },
+        outcomes: [
+          { label: `${g.home_team} Win`, conf: Math.round(homeConf * 10) / 10 },
+          { label: `${g.away_team} Win`, conf: Math.round(awayConf * 10) / 10 }
+        ]
+      };
+    });
+  }
+  const model = genAI2.getGenerativeModel({ model: FLASH_MODEL2 });
+  const results2 = [];
+  const BATCH_SIZE = 10;
+  for (let i = 0; i < games.length; i += BATCH_SIZE) {
+    const batch = games.slice(i, i + BATCH_SIZE);
+    const gamesPayload = batch.map((g) => {
+      const { homeOdds, awayOdds, drawOdds } = extractOdds(g);
+      return {
+        id: g.id,
+        home_team: g.home_team,
+        away_team: g.away_team,
+        league: g.sport_title,
+        commence_time: g.commence_time,
+        home_odds: homeOdds,
+        away_odds: awayOdds,
+        draw_odds: drawOdds
+      };
+    });
+    const prompt = `You are the Gold Standard V3-15 Factor Audit Engine.
+Perform a V3-15 Factor Audit on these ${sport} games for ${dateStr}.
+Apply all 15 factors including:
+  F01 Market Consensus (from odds)
+  F02 Momentum
+  F03 Team Quality
+  F04 Head-to-Head History
+  F05 Market Steam
+  F06 Rest/Fatigue
+  F07 Injuries/Absences
+  F08 Travel Stress
+  F09 Referee Bias
+  F10 Environmental
+  F11 League Standing
+  F12 Venue Pressure
+  F13 Advanced Market Steam (multi-book)
+  F14 Altitude/Surface/Travel
+  F15 Referee Official Tendencies
+
+For each game return a confidence score (0-100) for the BEST pick only.
+Minimum threshold to be useful: 60%.
+
+Return ONLY a valid JSON array. No markdown, no explanation.
+Schema per item:
+{
+  "game_id": "<string>",
+  "confidence_score": <number 0-100>,
+  "best_pick": "<Home Team Win | Away Team Win | Draw | Over 2.5 | Under 2.5>",
+  "v3_reasoning": "<one sentence max>",
+  "f01_market": <0-1>,
+  "f02_momentum": <0-1>,
+  "f03_quality": <0-1>,
+  "f04_h2h": <0-1>,
+  "f05_steam": <0-1>,
+  "f06_rest": <0-1>,
+  "f07_injuries": <0-1>,
+  "f08_travel": <0-1>,
+  "f09_referee": <0-1>,
+  "f10_env": <0-1>,
+  "f11_standing": <0-1>,
+  "f12_venue": <0-1>,
+  "f13_adv_steam": <0-1>,
+  "f14_altitude": <0-1>,
+  "f15_official": <0-1>
+}
+
+Games: ${JSON.stringify(gamesPayload)}`;
+    try {
+      const result = await model.generateContent(prompt);
+      let text2 = result.response.text().trim();
+      text2 = text2.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
+      const parsed = JSON.parse(text2);
+      for (const item of parsed) {
+        const g = batch.find((x) => x.id === item.game_id);
+        if (!g) continue;
+        const { homeOdds, awayOdds, drawOdds } = extractOdds(g);
+        const outcomes = [];
+        const conf = item.confidence_score ?? 0;
+        outcomes.push({ label: item.best_pick || `${g.home_team} Win`, conf });
+        results2.push({
+          game_id: item.game_id,
+          confidence_score: Math.round(conf * 10) / 10,
+          best_pick: item.best_pick || `${g.home_team} Win`,
+          v3_reasoning: item.v3_reasoning || "",
+          factors: {
+            f01_marketConsensus: item.f01_market ?? 0.5,
+            f02_momentum: item.f02_momentum ?? 0.5,
+            f03_quality: item.f03_quality ?? 0.5,
+            f04_h2h: item.f04_h2h ?? 0.5,
+            f05_steam: item.f05_steam ?? 0.5,
+            f06_rest: item.f06_rest ?? 0.5,
+            f07_injuries: item.f07_injuries ?? 0.5,
+            f08_travel: item.f08_travel ?? 0.5,
+            f09_referee: item.f09_referee ?? 0.5,
+            f10_environmental: item.f10_env ?? 0.5,
+            f11_standing: item.f11_standing ?? 0.5,
+            f12_venue: item.f12_venue ?? 0.5,
+            f13_advSteam: item.f13_adv_steam ?? 0.5,
+            f14_altitude: item.f14_altitude ?? 0.5,
+            f15_official: item.f15_official ?? 0.5,
+            gemini_model: 1
+          },
+          outcomes
+        });
+      }
+    } catch (err) {
+      console.error(`[TomorrowSync] Gemini parse error for batch ${i}-${i + BATCH_SIZE}:`, err.message);
+      for (const g of batch) {
+        const { homeOdds, awayOdds } = extractOdds(g);
+        const homeImpl = homeOdds ? 1 / homeOdds : 0.5;
+        const awayImpl = awayOdds ? 1 / awayOdds : 0.5;
+        const total = homeImpl + awayImpl;
+        const homeConf = homeImpl / total * 100;
+        const awayConf = awayImpl / total * 100;
+        const bestConf = Math.max(homeConf, awayConf);
+        const bestPick = homeConf >= awayConf ? `${g.home_team} Win` : `${g.away_team} Win`;
+        results2.push({
+          game_id: g.id,
+          confidence_score: Math.round(bestConf * 10) / 10,
+          best_pick: bestPick,
+          v3_reasoning: `Fallback (Gemini parse error) \u2014 implied odds`,
+          factors: {
+            f01_marketConsensus: Math.round(homeImpl / total * 100) / 100,
+            gemini_model: 0
+          },
+          outcomes: [
+            { label: `${g.home_team} Win`, conf: Math.round(homeConf * 10) / 10 },
+            { label: `${g.away_team} Win`, conf: Math.round(awayConf * 10) / 10 }
+          ]
+        });
+      }
+    }
+  }
+  return results2;
+}
+async function syncTomorrowGames(triggeredBy = "scheduler") {
+  const tomorrowDate = /* @__PURE__ */ new Date();
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const dateStr = tomorrowDate.toLocaleDateString("en-CA", { timeZone: TZ });
+  console.log(`
+[TomorrowSync] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
+  console.log(`[TomorrowSync] V3-15 Nightly Pre-Audit \u2014 Target date: ${dateStr}`);
+  console.log(`[TomorrowSync] Triggered by: ${triggeredBy}`);
+  const result = {
+    date: dateStr,
+    sportsProcessed: 0,
+    gamesFound: 0,
+    gamesAudited: 0,
+    gamesSaved: 0,
+    errors: [],
+    budgetUsed: 0
+  };
+  const budgetBefore = getBudgetStatus();
+  if (budgetBefore.used_today >= 80) {
+    const msg = `[TomorrowSync] BUDGET GUARD: ${budgetBefore.used_today}/100 calls used \u2014 aborting sync to protect 1 AM daily run`;
+    console.warn(msg);
+    result.errors.push(msg);
+    return result;
+  }
+  const pool2 = getPool();
+  try {
+    await ensureTable(pool2);
+    console.log("[TomorrowSync] pending_validator table ready");
+    for (const { key, sport, label } of TOMORROW_SPORTS) {
+      const budget = getBudgetStatus();
+      if (budget.used_today >= 80) {
+        console.warn(`[TomorrowSync] Budget cap reached (${budget.used_today}/100) \u2014 stopping after ${result.sportsProcessed} sports`);
+        break;
+      }
+      console.log(`
+[TomorrowSync] Fetching ${label} (${key}) for ${dateStr}...`);
+      const rawGames = await fetchTomorrowOdds(key, dateStr);
+      result.sportsProcessed++;
+      if (rawGames.length === 0) {
+        console.log(`[TomorrowSync] No ${label} games found for ${dateStr} \u2014 skipping`);
+        continue;
+      }
+      console.log(`[TomorrowSync] Found ${rawGames.length} ${label} games \u2014 running V3-15 audit...`);
+      result.gamesFound += rawGames.length;
+      const auditResults = await runGeminiAudit(rawGames, sport, dateStr);
+      result.gamesAudited += auditResults.length;
+      for (const audit of auditResults) {
+        const g = rawGames.find((x) => x.id === audit.game_id);
+        if (!g) continue;
+        const { homeOdds, awayOdds, drawOdds, bookmaker } = extractOdds(g);
+        try {
+          await upsertValidatorRow(pool2, {
+            game_id: g.id,
+            date: dateStr,
+            sport,
+            league: g.sport_title,
+            home_team: g.home_team,
+            away_team: g.away_team,
+            commence_time: g.commence_time,
+            home_odds: homeOdds,
+            away_odds: awayOdds,
+            draw_odds: drawOdds,
+            bookmaker,
+            confidence: audit.confidence_score,
+            best_pick: audit.best_pick,
+            reasoning: audit.v3_reasoning,
+            factors: audit.factors,
+            outcomes: audit.outcomes
+          });
+          result.gamesSaved++;
+        } catch (err) {
+          result.errors.push(`Upsert error for ${g.home_team} vs ${g.away_team}: ${err.message}`);
+        }
+      }
+      console.log(`[TomorrowSync] ${label}: ${auditResults.length} audited, ${result.gamesSaved} saved`);
+    }
+    const budgetAfter = getBudgetStatus();
+    result.budgetUsed = budgetAfter.used_today - budgetBefore.used_today;
+    console.log(`
+[TomorrowSync] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
+    console.log(`[TomorrowSync] COMPLETE: ${result.gamesFound} found | ${result.gamesAudited} audited | ${result.gamesSaved} saved`);
+    console.log(`[TomorrowSync] API calls used: ${result.budgetUsed} | Total today: ${budgetAfter.used_today}/100`);
+    if (result.errors.length > 0) {
+      console.warn(`[TomorrowSync] ${result.errors.length} errors:`, result.errors);
+    }
+  } finally {
+    await pool2.end();
+  }
+  return result;
+}
+var TZ, ODDS_API_KEY2, ODDS_API_BASE2, GEMINI_API_KEY2, genAI2, FLASH_MODEL2, TOMORROW_SPORTS;
+var init_tomorrowSync = __esm({
+  "server/services/tomorrowSync.ts"() {
+    init_esm();
+    init_dist();
+    init_oddsApi();
+    TZ = "America/Moncton";
+    ODDS_API_KEY2 = process.env.ODDS_API_KEY || "e780bee8f11d6859d3d5a99ca8549fff";
+    ODDS_API_BASE2 = "https://api.the-odds-api.com/v4";
+    GEMINI_API_KEY2 = process.env.GEMINI_API_KEY || "";
+    genAI2 = GEMINI_API_KEY2 ? new GoogleGenerativeAI(GEMINI_API_KEY2) : null;
+    FLASH_MODEL2 = "gemini-2.0-flash";
+    TOMORROW_SPORTS = [
+      { key: "basketball_nba", sport: "nba", label: "NBA" },
+      { key: "soccer_usa_mls", sport: "mls", label: "MLS" },
+      { key: "soccer_uefa_champs_league", sport: "soccer", label: "UEFA Champions League" },
+      { key: "soccer_epl", sport: "soccer", label: "Premier League" },
+      { key: "soccer_spain_la_liga", sport: "soccer", label: "La Liga" },
+      { key: "soccer_italy_serie_a", sport: "soccer", label: "Serie A" },
+      { key: "soccer_germany_bundesliga", sport: "soccer", label: "Bundesliga" },
+      { key: "soccer_france_ligue_one", sport: "soccer", label: "Ligue 1" }
+    ];
+  }
+});
+
 // server/routes.ts
 var routes_exports = {};
 __export(routes_exports, {
@@ -50250,12 +50660,39 @@ async function generateDailyPicks(date2) {
     console.warn("[Engine] FTP upload failed (non-critical):", err);
   }
   const total = soccerCount + nbaCount + mlsCount + powerCount + freeCount;
+  const MULTI_SPORT_SYNC_ACTIVE = true;
+  let multiSportSyncStatus = "FULL";
+  if (soccerCount === 0 && nbaCount === 0) {
+    multiSportSyncStatus = "EMPTY";
+    console.error("[Multi-Sport Sync] \u274C CRITICAL: Both Soccer AND Basketball picks are missing. Run is incomplete.");
+    try {
+      await createAlert("critical", `Multi-Sport Sync FAILED for ${date2}: 0 soccer picks, 0 NBA picks saved.`);
+    } catch (_) {
+    }
+  } else if (soccerCount === 0) {
+    multiSportSyncStatus = "PARTIAL_NBA_ONLY";
+    console.error(`[Multi-Sport Sync] \u26A0\uFE0F  PARTIAL: Basketball picks saved (${nbaCount}) but Soccer picks are MISSING (0/3). Dashboard will be incomplete.`);
+    try {
+      await createAlert("warning", `Multi-Sport Sync PARTIAL for ${date2}: ${nbaCount} NBA picks saved but 0 soccer picks. Retry needed.`);
+    } catch (_) {
+    }
+  } else if (nbaCount === 0) {
+    multiSportSyncStatus = "PARTIAL_SOCCER_ONLY";
+    console.error(`[Multi-Sport Sync] \u26A0\uFE0F  PARTIAL: Soccer picks saved (${soccerCount}) but Basketball picks are MISSING (0/3). Dashboard will be incomplete.`);
+    try {
+      await createAlert("warning", `Multi-Sport Sync PARTIAL for ${date2}: ${soccerCount} soccer picks saved but 0 NBA picks. Retry needed.`);
+    } catch (_) {
+    }
+  } else {
+    console.log(`[Multi-Sport Sync] \u2705 FULL SYNC: Soccer=${soccerCount}/3 + Basketball=${nbaCount}/3 \u2014 Both sports published to all tiers simultaneously.`);
+  }
   console.log(`[Engine] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
   console.log(`[Engine] COMPLETE: ${total} picks saved for ${date2}`);
   console.log(`[Engine]   Soccer: ${soccerCount}/3 | NBA: ${nbaCount}/3 | MLS: ${mlsCount}/3 | Power: ${powerCount}/1 | Free: ${freeCount}/2`);
+  console.log(`[Engine]   Multi-Sport Sync: ${multiSportSyncStatus} (active=${MULTI_SPORT_SYNC_ACTIVE})`);
   console.log(`[Engine] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 `);
-  return { total, soccer: soccerCount, nba: nbaCount, mls: mlsCount, powerPick: powerCount, ftpUploaded };
+  return { total, soccer: soccerCount, nba: nbaCount, mls: mlsCount, powerPick: powerCount, ftpUploaded, multiSportSyncStatus };
 }
 async function registerRoutes(app) {
   await initializeDatabase();
@@ -50719,6 +51156,25 @@ async function registerRoutes(app) {
       const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
       const picks2 = await getPicksByDate(today);
       res.json({ picks: picks2, date: today, total: picks2.length });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/personal-picks", requireAuth, async (req, res) => {
+    try {
+      const dateFilter = req.query.date;
+      const db2 = getDb();
+      let query;
+      let params;
+      if (dateFilter) {
+        query = "SELECT * FROM picks WHERE is_personal = TRUE AND date = $1 ORDER BY confidence DESC";
+        params = [dateFilter];
+      } else {
+        query = "SELECT * FROM picks WHERE is_personal = TRUE ORDER BY date DESC, confidence DESC LIMIT 500";
+        params = [];
+      }
+      const result = await db2.$client.query(query, params);
+      res.json({ picks: result.rows, total: result.rows.length });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -51993,7 +52449,7 @@ async function registerRoutes(app) {
       const V3_PRO_QUOTA = 6;
       const V3_LIFETIME_QUOTA = 10;
       const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-      const tierFilter = activeTier === "lifetime" ? ["pro", "vip", "free"] : activeTier === "pro" ? ["pro", "vip", "free"] : activeTier === "vip" ? ["vip", "free"] : ["free"];
+      const tierFilter = activeTier === "lifetime" ? ["lifetime", "pro", "vip", "free"] : activeTier === "pro" ? ["pro", "vip", "free"] : activeTier === "vip" ? ["vip", "free"] : ["free"];
       const pool22 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
       const picksResult = await pool22.query(
         `SELECT DISTINCT ON (home_team, away_team) * FROM picks
@@ -52049,7 +52505,7 @@ async function registerRoutes(app) {
       const decoded = import_jsonwebtoken.default.verify(token, JWT_SECRET);
       const memberTier = decoded.tier || "free";
       const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-      const tierFilter = memberTier === "lifetime" ? ["pro", "vip", "free"] : memberTier === "pro" ? ["pro", "vip", "free"] : memberTier === "vip" ? ["vip", "free"] : ["free"];
+      const tierFilter = memberTier === "lifetime" ? ["lifetime", "pro", "vip", "free"] : memberTier === "pro" ? ["pro", "vip", "free"] : memberTier === "vip" ? ["vip", "free"] : ["free"];
       const PB_ALLOWED_SPORTS = ["soccer", "nba", "mls"];
       const PB_PRO_QUOTA = 6;
       const PB_LIFETIME_QUOTA = 10;
@@ -52168,6 +52624,251 @@ async function registerRoutes(app) {
     const validPlans = ["pro-monthly", "vip-monthly", "lifetime"];
     const safePlan = validPlans.includes(plan) ? plan : "pro-monthly";
     return res.redirect(`/register?plan=${safePlan}&payment=success&test=1`);
+  });
+  app.get("/api/admin/pending-validator", requireAuth, async (req, res) => {
+    try {
+      const { Pool: PVPool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pvPool = new PVPool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const TZ_AST = "America/Moncton";
+      const defaultDate = /* @__PURE__ */ new Date();
+      defaultDate.setDate(defaultDate.getDate() + 1);
+      const date2 = req.query.date || defaultDate.toLocaleDateString("en-CA", { timeZone: TZ_AST });
+      const sport = req.query.sport || "all";
+      const minConf = parseFloat(req.query.min_confidence || "0");
+      let query = `SELECT * FROM pending_validator WHERE date = $1`;
+      const params = [date2];
+      if (sport !== "all") {
+        query += ` AND sport = $${params.length + 1}`;
+        params.push(sport);
+      }
+      if (minConf > 0) {
+        query += ` AND confidence >= $${params.length + 1}`;
+        params.push(minConf);
+      }
+      query += ` ORDER BY confidence DESC`;
+      const result = await pvPool.query(query, params);
+      await pvPool.end();
+      return res.json({ success: true, date: date2, total: result.rows.length, games: result.rows });
+    } catch (err) {
+      if (err.message?.includes("does not exist")) {
+        return res.json({ success: true, date: req.query.date || "", total: 0, games: [], note: "pending_validator table not yet created \u2014 runs at 2 AM" });
+      }
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/pending-validator/sync", requireAuth, async (req, res) => {
+    try {
+      const { syncTomorrowGames: syncTomorrowGames2 } = await Promise.resolve().then(() => (init_tomorrowSync(), tomorrowSync_exports));
+      const result = await syncTomorrowGames2("admin-manual");
+      return res.json({ success: true, ...result });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/pending-validator/approve", requireAuth, async (req, res) => {
+    try {
+      const { id, tier = "pro" } = req.body;
+      if (!id) return res.status(400).json({ error: "id required" });
+      const { Pool: ApprovePool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const aPool = new ApprovePool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const pvRow = await aPool.query(`SELECT * FROM pending_validator WHERE id = $1`, [id]);
+      if (!pvRow.rows.length) {
+        await aPool.end();
+        return res.status(404).json({ error: "Row not found" });
+      }
+      const g = pvRow.rows[0];
+      const pickResult = await aPool.query(`
+        INSERT INTO picks (date, sport, league, home_team, away_team, prediction, confidence, tier, status, is_power_pick, metadata, created_at, updated_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending',$9,$10,NOW(),NOW())
+        ON CONFLICT DO NOTHING RETURNING id
+      `, [
+        g.date,
+        g.sport,
+        g.league,
+        g.home_team,
+        g.away_team,
+        g.best_pick,
+        g.confidence,
+        tier,
+        g.confidence >= 72,
+        JSON.stringify({ source: "pending_validator", game_id: g.game_id, factors: g.factors, reasoning: g.reasoning })
+      ]);
+      await aPool.query(`UPDATE pending_validator SET approved = true, pushed_to_live = true, updated_at = NOW() WHERE id = $1`, [id]);
+      await aPool.end();
+      return res.json({ success: true, pickId: pickResult.rows[0]?.id, message: `Approved and pushed to ${tier} tier` });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/command", requireAuth, async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
+        return res.status(400).json({ error: "prompt is required", success: false });
+      }
+      const GEMINI_API_KEY3 = process.env.GEMINI_API_KEY || "";
+      if (!GEMINI_API_KEY3) {
+        return res.status(500).json({ error: "GEMINI_API_KEY not configured on server", success: false });
+      }
+      const lowerPrompt = prompt.toLowerCase().trim();
+      if (lowerPrompt.includes("test") && (lowerPrompt.includes("database") || lowerPrompt.includes("db") || lowerPrompt.includes("connection"))) {
+        const { Pool: TestPool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+        const testPool = new TestPool({
+          connectionString: process.env.DATABASE_URL,
+          ssl: process.env.DATABASE_URL?.includes("neon.tech") ? { rejectUnauthorized: false } : false,
+          max: 1,
+          connectionTimeoutMillis: 5e3
+        });
+        const testClient = await testPool.connect();
+        const testResult = await testClient.query(
+          "SELECT 1 AS connection_ok, NOW() AS server_time, current_database() AS db_name"
+        );
+        testClient.release();
+        await testPool.end();
+        const row = testResult.rows[0];
+        return res.json({
+          message: `\u2705 Database connection OK \u2014 Connected to "${row.db_name}" at ${new Date(row.server_time).toUTCString()}. SELECT 1 returned ${row.connection_ok}.`,
+          action: "db_test",
+          success: true
+        });
+      }
+      const { GoogleGenerativeAI: GoogleGenerativeAI2 } = await Promise.resolve().then(() => (init_dist(), dist_exports));
+      const genAI3 = new GoogleGenerativeAI2(GEMINI_API_KEY3);
+      const controlTools = {
+        functionDeclarations: [
+          {
+            name: "update_pick_status",
+            description: "Updates a pick status (win/loss/pending) in the picks table by pick ID.",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                pick_id: { type: "NUMBER", description: "The numeric ID of the pick to update" },
+                status: { type: "STRING", enum: ["win", "loss", "pending"], description: "New status for the pick" }
+              },
+              required: ["pick_id", "status"]
+            }
+          },
+          {
+            name: "publish_parlay",
+            description: "Publishes a 3-leg parlay to a specific member tier (pro or lifetime) in the parlays table.",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                tier: { type: "STRING", enum: ["pro", "lifetime"], description: "Target tier for the parlay" },
+                games: { type: "ARRAY", items: { type: "STRING" }, description: "Array of exactly 3 pick IDs or game identifiers" },
+                date: { type: "STRING", description: "Date for the parlay in YYYY-MM-DD format" }
+              },
+              required: ["tier", "games"]
+            }
+          },
+          {
+            name: "get_picks_summary",
+            description: "Returns a summary of picks for a given date (count, wins, losses, pending).",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                date: { type: "STRING", description: "Date in YYYY-MM-DD format. Use today if not specified." }
+              },
+              required: []
+            }
+          },
+          {
+            name: "disable_pick",
+            description: "Disables (hides) a pick from the live dashboard by setting is_disabled = true.",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                pick_id: { type: "NUMBER", description: "The numeric ID of the pick to disable" }
+              },
+              required: ["pick_id"]
+            }
+          }
+        ]
+      };
+      const model = genAI3.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        tools: [controlTools]
+      });
+      const chat = model.startChat();
+      const result = await chat.sendMessage(
+        `You are the AI Commander for the Parlay King admin dashboard. The user says: "${prompt}" Use the available functions to execute the request. If no function applies, respond with a helpful plain-text answer.`
+      );
+      const calls = result.response.functionCalls();
+      if (!calls || calls.length === 0) {
+        return res.json({ message: result.response.text(), action: "text_response", success: true });
+      }
+      const call = calls[0];
+      const args = call.args;
+      const { Pool: CmdPool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const cmdPool = new CmdPool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.DATABASE_URL?.includes("neon.tech") ? { rejectUnauthorized: false } : false,
+        max: 2,
+        connectionTimeoutMillis: 5e3
+      });
+      const cmdClient = await cmdPool.connect();
+      try {
+        let responseMessage = "";
+        if (call.name === "update_pick_status") {
+          const { pick_id, status } = args;
+          const upd = await cmdClient.query(
+            "UPDATE picks SET status = $1 WHERE id = $2 RETURNING id, status, home_team, away_team",
+            [status, pick_id]
+          );
+          if (upd.rowCount === 0) {
+            responseMessage = `\u26A0\uFE0F No pick found with ID ${pick_id}. No changes made.`;
+          } else {
+            const r = upd.rows[0];
+            responseMessage = `\u2705 Pick #${pick_id} (${r.home_team} vs ${r.away_team}) updated to **${status.toUpperCase()}**.`;
+          }
+        } else if (call.name === "publish_parlay") {
+          const { tier, games, date: parlayDate } = args;
+          const pDate = parlayDate || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+          if (!games || games.length !== 3) {
+            responseMessage = `\u26A0\uFE0F A parlay requires exactly 3 games. Received ${games?.length || 0}.`;
+          } else {
+            await cmdClient.query(
+              "INSERT INTO parlays (tier, game_ids, date, created_at) VALUES ($1, $2, $3, NOW()) ON CONFLICT DO NOTHING",
+              [tier, JSON.stringify(games), pDate]
+            );
+            responseMessage = `\u2705 3-Leg **${tier.toUpperCase()}** parlay published for ${pDate} with games: ${games.join(", ")}.`;
+          }
+        } else if (call.name === "get_picks_summary") {
+          const summaryDate = args.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+          const s = await cmdClient.query(
+            `SELECT COUNT(*) FILTER (WHERE status='win') AS wins,
+                    COUNT(*) FILTER (WHERE status='loss') AS losses,
+                    COUNT(*) FILTER (WHERE status='pending') AS pending,
+                    COUNT(*) AS total
+             FROM picks WHERE date = $1`,
+            [summaryDate]
+          );
+          const row = s.rows[0];
+          responseMessage = `\u{1F4CA} Picks for **${summaryDate}**: ${row.total} total \u2014 ${row.wins} wins, ${row.losses} losses, ${row.pending} pending.`;
+        } else if (call.name === "disable_pick") {
+          const { pick_id } = args;
+          const dis = await cmdClient.query(
+            "UPDATE picks SET is_disabled = true WHERE id = $1 RETURNING id, home_team, away_team",
+            [pick_id]
+          );
+          if (dis.rowCount === 0) {
+            responseMessage = `\u26A0\uFE0F No pick found with ID ${pick_id}.`;
+          } else {
+            const r = dis.rows[0];
+            responseMessage = `\u{1F6AB} Pick #${pick_id} (${r.home_team} vs ${r.away_team}) disabled and hidden from the live dashboard.`;
+          }
+        } else {
+          responseMessage = `\u26A0\uFE0F Unknown function: ${call.name}`;
+        }
+        return res.json({ message: responseMessage, action: call.name, args, success: true });
+      } finally {
+        cmdClient.release();
+        await cmdPool.end();
+      }
+    } catch (err) {
+      console.error("[AI Commander] Error:", err.message);
+      return res.status(500).json({ error: `AI Commander error: ${err.message}`, success: false });
+    }
   });
   app.get("/api/admin/members-full", requireAuth, async (req, res) => {
     try {
@@ -53418,7 +54119,7 @@ function startKeepAlive() {
   console.log("[Scheduler] Keep-alive ping started (every 5 minutes)");
 }
 function todayStr() {
-  return (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: TZ });
+  return (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: TZ2 });
 }
 async function runDailyGeneration(triggeredBy = "scheduler") {
   const today = todayStr();
@@ -53431,7 +54132,7 @@ async function runDailyGeneration(triggeredBy = "scheduler") {
     if (budget.used_today >= 90) {
       const msg = `[Scheduler] THROTTLE GUARD: ${budget.used_today}/100 API calls used. Auto-tasks paused to reserve 10 calls for manual actions.`;
       console.warn(msg);
-      await createAlert("warning", msg);
+      await createAlert2("warning", msg);
       return false;
     }
     if (budget.used_today >= 80) {
@@ -53460,13 +54161,21 @@ async function runDailyGeneration(triggeredBy = "scheduler") {
         duration
       });
     }
-    dailyRunCompleted = true;
-    lastRunDate = today;
-    console.log(`[Scheduler] Daily generation complete: ${result.total} picks in ${duration}ms`);
+    const syncStatus = result.multiSportSyncStatus ?? "FULL";
+    if (syncStatus !== "FULL") {
+      console.warn(`[Multi-Sport Sync] Sync status: ${syncStatus}. Scheduling targeted retry in 10 minutes...`);
+      await createAlert2("warning", `Multi-Sport Sync ${syncStatus} for ${today}. Targeted retry scheduled in 10 min.`);
+      dailyRunCompleted = false;
+    } else {
+      dailyRunCompleted = true;
+      lastRunDate = today;
+      console.log(`[Multi-Sport Sync] \u2705 FULL SYNC confirmed \u2014 Soccer + Basketball both live on all tier dashboards.`);
+    }
+    console.log(`[Scheduler] Daily generation complete: ${result.total} picks in ${duration}ms (sync=${syncStatus})`);
     pingGoogleAfterUpdate(`daily-generation-${today}`).catch((err) => {
       console.warn("[Scheduler] Google ping failed (non-critical):", err);
     });
-    return true;
+    return syncStatus === "FULL";
   } catch (err) {
     const duration = Date.now() - startTime;
     const errorMsg = err?.message || String(err);
@@ -53478,7 +54187,7 @@ async function runDailyGeneration(triggeredBy = "scheduler") {
         duration
       });
     }
-    await createAlert("critical", `Daily pick generation failed: ${errorMsg}`);
+    await createAlert2("critical", `Daily pick generation failed: ${errorMsg}`);
     return false;
   }
 }
@@ -53492,76 +54201,88 @@ function startScheduler() {
   import_node_cron.default.schedule("0 0 0 * * *", () => {
     dailyRunCompleted = false;
     console.log(`[Scheduler] Midnight reset (America/Moncton) \u2014 daily flag cleared for ${todayStr()}`);
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 2 0 * * *", async () => {
     console.log("[Scheduler] 12:02 AM AST \u2014 Midnight archival");
     try {
-      await createAlert("info", `Midnight archival completed for ${todayStr()}`);
+      await createAlert2("info", `Midnight archival completed for ${todayStr()}`);
     } catch (err) {
       console.error("[Scheduler] Midnight archival error:", err);
     }
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 30 0 * * *", async () => {
     console.log("[Scheduler] 12:30 AM AST \u2014 Pre-check watchdog");
     dailyRunCompleted = false;
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 0 1 * * *", async () => {
     console.log("[Scheduler] 1:00 AM AST (America/Moncton) \u2014 PRIMARY daily pick generation");
     await runDailyGeneration("scheduler-1am");
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 10 1 * * *", async () => {
     if (!dailyRunCompleted) {
       console.warn("[Scheduler] 1:10 AM AST \u2014 CRITICAL: 1:00 AM run did not complete!");
-      await createAlert("critical", "1:00 AM daily generation did not complete \u2014 retry cascade starting");
+      await createAlert2("critical", "1:00 AM daily generation did not complete \u2014 retry cascade starting");
     }
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 30 1 * * *", async () => {
     if (!dailyRunCompleted) {
       console.log("[Scheduler] 1:30 AM AST \u2014 Retry 1");
       await runDailyGeneration("scheduler-retry1");
     }
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 0 2 * * *", async () => {
     if (!dailyRunCompleted) {
       console.log("[Scheduler] 2:00 AM AST \u2014 Retry 2");
       await runDailyGeneration("scheduler-retry2");
     }
-  }, { timezone: TZ });
+    console.log("[Scheduler] 2:00 AM AST \u2014 Tomorrow V3-15 Pre-Audit Sync starting");
+    try {
+      const syncResult = await syncTomorrowGames("scheduler-2am");
+      const msg = `Tomorrow sync: ${syncResult.gamesFound} games found, ${syncResult.gamesSaved} saved for ${syncResult.date} (${syncResult.budgetUsed} API calls)`;
+      console.log(`[Scheduler] ${msg}`);
+      if (syncResult.errors.length > 0) {
+        await createAlert2("warning", `Tomorrow sync had ${syncResult.errors.length} error(s): ${syncResult.errors.slice(0, 2).join("; ")}`);
+      }
+    } catch (err) {
+      console.error("[Scheduler] Tomorrow sync failed:", err.message);
+      await createAlert2("critical", `Tomorrow V3-15 sync failed at 2 AM: ${err.message}`);
+    }
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 30 2 * * *", async () => {
     if (!dailyRunCompleted) {
       console.log("[Scheduler] 2:30 AM AST \u2014 Retry 3");
       await runDailyGeneration("scheduler-retry3");
     }
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 0 3 * * *", async () => {
     if (!dailyRunCompleted) {
       console.error("[Scheduler] 3:00 AM AST \u2014 FINAL FAILSAFE");
       const success = await runDailyGeneration("scheduler-failsafe");
       if (!success) {
-        await createAlert("critical", `TOTAL FAILURE: All retry attempts failed for ${todayStr()}`);
+        await createAlert2("critical", `TOTAL FAILURE: All retry attempts failed for ${todayStr()}`);
       }
     }
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 0 4 * * *", async () => {
     console.log("[Scheduler] 4:00 AM AST \u2014 Player stats collection");
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 0 8 * * *", async () => {
     console.log("[Scheduler] 8:00 AM AST \u2014 Featured auto-pilot");
     pingGoogleAfterUpdate("featured-autopilot").catch(() => {
     });
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 0 10 * * *", async () => {
     console.log("[Scheduler] 10:00 AM AST \u2014 Re-engagement check");
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 0 11 * * *", async () => {
     console.log("[Scheduler] 11:00 AM AST \u2014 NBA props fetch");
     pingGoogleAfterUpdate("nba-props-update").catch(() => {
     });
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 59 23 * * *", async () => {
     console.log("[Scheduler] 11:59 PM AST \u2014 Nightly reset");
     dailyRunCompleted = false;
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 0 */2 * * *", async () => {
     console.log("[Scheduler] Auto-settle results check \u2014 fetching final scores from API");
     try {
@@ -53570,7 +54291,7 @@ function startScheduler() {
     } catch (err) {
       console.error("[Scheduler] Settlement error:", err);
     }
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 0 6 * * *", async () => {
     console.log("[Scheduler] 6:00 AM AST \u2014 Morning settlement pass");
     try {
@@ -53579,12 +54300,12 @@ function startScheduler() {
     } catch (err) {
       console.error("[Scheduler] Morning settlement error:", err);
     }
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 */15 * * * *", async () => {
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 0 23 * * 0", async () => {
     console.log("[Scheduler] Sunday 11 PM AST \u2014 Weekly audit");
-  }, { timezone: TZ });
+  }, { timezone: TZ2 });
   console.log("[Scheduler] All cron jobs registered");
   console.log("[Scheduler] Timezone: America/Moncton (AST UTC-4 / ADT UTC-3)");
   console.log("[Scheduler] Primary generation: 1:00 AM AST with 4-layer retry cascade");
@@ -53593,20 +54314,20 @@ function startScheduler() {
     try {
       const today = todayStr();
       const nowHour = parseInt(
-        (/* @__PURE__ */ new Date()).toLocaleString("en-US", { timeZone: TZ, hour: "numeric", hour12: false }),
+        (/* @__PURE__ */ new Date()).toLocaleString("en-US", { timeZone: TZ2, hour: "numeric", hour12: false }),
         10
       );
       if (nowHour >= 1 && nowHour <= 23) {
         const existingPicks = await getPicksByDate(today);
         if (existingPicks.length === 0) {
           console.log(`[Scheduler] STARTUP CATCH-UP: No picks found for ${today} (hour=${nowHour} AST) \u2014 triggering generation now`);
-          await createAlert("warning", `Startup catch-up triggered: no picks found for ${today} at hour ${nowHour} AST`);
+          await createAlert2("warning", `Startup catch-up triggered: no picks found for ${today} at hour ${nowHour} AST`);
           const success = await runDailyGeneration("startup-catchup");
           if (success) {
             console.log(`[Scheduler] Startup catch-up SUCCEEDED for ${today}`);
           } else {
             console.error(`[Scheduler] Startup catch-up FAILED for ${today}`);
-            await createAlert("critical", `Startup catch-up failed for ${today} \u2014 picks may be missing`);
+            await createAlert2("critical", `Startup catch-up failed for ${today} \u2014 picks may be missing`);
           }
         } else {
           console.log(`[Scheduler] Startup check: ${existingPicks.length} picks already exist for ${today} \u2014 no catch-up needed`);
@@ -53621,7 +54342,7 @@ function startScheduler() {
     }
   }, 15e3);
 }
-var import_node_cron, TZ, schedulerStarted, keepAliveInterval, dailyRunCompleted, lastRunDate;
+var import_node_cron, TZ2, schedulerStarted, keepAliveInterval, dailyRunCompleted, lastRunDate;
 var init_scheduler = __esm({
   "server/scheduler.ts"() {
     import_node_cron = __toESM(require_node_cron());
@@ -53630,7 +54351,8 @@ var init_scheduler = __esm({
     init_seo();
     init_resultsSettler();
     init_oddsApi();
-    TZ = "America/Moncton";
+    init_tomorrowSync();
+    TZ2 = "America/Moncton";
     schedulerStarted = false;
     keepAliveInterval = null;
     dailyRunCompleted = false;
@@ -53641,8 +54363,8 @@ var init_scheduler = __esm({
 // server/index.ts
 var import_http = __toESM(require("http"));
 var PORT = parseInt(process.env.PORT || "8080", 10);
-var TZ2 = process.env.TZ || "America/Moncton";
-process.env.TZ = TZ2;
+var TZ3 = process.env.TZ || "America/Moncton";
+process.env.TZ = TZ3;
 var serverFullyReady = false;
 var expressApp = null;
 var rawServer = import_http.default.createServer((req, res) => {
@@ -53780,7 +54502,7 @@ async function initializeExpress() {
       console.error("[SEO] FAILED to register SEO routes:", seoErr);
       app.get("/sitemap.xml", (_req, res) => {
         const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-        const pages = ["/", "/picks", "/soccer-picks", "/nba-picks", "/parlays", "/results", "/vip", "/pro"];
+        const pages = ["/", "/picks", "/soccer-picks", "/nba-picks", "/parlays", "/results", "/vip", "/pro", "/match/atalanta-vs-bayern-munich"];
         const urls = pages.map((p) => `<url><loc>https://soccernbaparlayking.vip${p}</loc><lastmod>${today}</lastmod><priority>0.9</priority></url>`).join("");
         res.setHeader("Content-Type", "application/xml");
         res.send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`);
@@ -53834,6 +54556,14 @@ ${schemaTag}`);
       }
       return res.sendFile(clientHtmlPath);
     });
+    const matchHtmlPath = path3.join(process.cwd(), "server/templates/match-atalanta-vs-bayern.html");
+    app.get("/match/atalanta-vs-bayern-munich", (_req, res) => {
+      if (fs3.existsSync(matchHtmlPath)) return res.sendFile(matchHtmlPath);
+      res.redirect("/");
+    });
+    app.get("/match/atalanta-vs-bayern", (_req, res) => res.redirect(301, "/match/atalanta-vs-bayern-munich"));
+    app.get("/match/atalanta-bayern-munich", (_req, res) => res.redirect(301, "/match/atalanta-vs-bayern-munich"));
+    console.log("[SEO] Match preview route registered: /match/atalanta-vs-bayern-munich");
     const publicPages = [
       "/picks",
       "/soccer-picks",

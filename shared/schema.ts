@@ -36,6 +36,7 @@ export const results = pgTable('results', {
   pickId: integer('pick_id'),
   date: text('date').notNull(),
   sport: text('sport').notNull(),
+  match: text('match').notNull().default(''),
   homeTeam: text('home_team').notNull(),
   awayTeam: text('away_team').notNull(),
   prediction: text('prediction').notNull(),
