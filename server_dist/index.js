@@ -50955,7 +50955,10 @@ async function registerRoutes(app) {
           sport: powerPick.sport || "nba",
           time: `${date2} \u2014 Today`,
           analysis: powerPick.analysis || powerPick.metadata?.recommendation || `Gold Standard V3 Titan XII \u2014 Top pick at ${Math.round(powerPick.confidence ?? 0)}%.`,
-          enabled: ppAdminEnabled
+          enabled: ppAdminEnabled,
+          momentum: powerPick?.momentum ?? null,
+          quality: powerPick?.quality ?? null,
+          mq_composite: powerPick?.mqComposite ?? powerPick?.mq_composite ?? null
         } : null,
         featured_pick: featuredMegaPick ? {
           game: `${featuredMegaPick.homeTeam} vs ${featuredMegaPick.awayTeam}`,
@@ -50983,7 +50986,10 @@ async function registerRoutes(app) {
           hero_title: featuredMegaPick.isFeatured ? `FEATURED: ${featuredMegaPick.awayTeam?.toUpperCase()} vs ${featuredMegaPick.homeTeam?.toUpperCase()} \u2014 ${Math.round(featuredMegaPick.confidence ?? 0)}% CONFIDENCE` : "",
           auto_generated: true,
           tag: featuredMegaPick.isFeatured ? "FEATURED" : "POWER PICK",
-          disclaimer: "For entertainment purposes only."
+          disclaimer: "For entertainment purposes only.",
+          momentum: featuredMegaPick?.momentum ?? null,
+          quality: featuredMegaPick?.quality ?? null,
+          mq_composite: featuredMegaPick?.mqComposite ?? featuredMegaPick?.mq_composite ?? null
         } : null,
         featured_soccer: parlayLegs[0] ? {
           match: parlayLegs[0].match || parlayLegs[0].game || "",
@@ -51016,8 +51022,11 @@ async function registerRoutes(app) {
           confidence_display: `${Math.round(nbaLegs[0].confidence ?? 0)}%`,
           reasoning: nbaLegs[0].reasoning || `Gold Standard V3 Titan XII \u2014 ${nbaLegs[0].pick} at ${Math.round(nbaLegs[0].confidence ?? 0)}%.`,
           match_date: date2,
-          enabled: nbaAdminEnabled
-        } : { match: "", league: "NBA", sport: "nba", pick: "", confidence: 0, confidence_display: "0%", reasoning: "", match_date: date2, enabled: nbaAdminEnabled },
+          enabled: nbaAdminEnabled,
+          momentum: nbaLegs[0].momentum ?? null,
+          quality: nbaLegs[0].quality ?? null,
+          mq_composite: nbaLegs[0].mqComposite ?? nbaLegs[0].mq_composite ?? null
+        } : { match: "", league: "NBA", sport: "nba", pick: "", confidence: 0, confidence_display: "0%", reasoning: "", match_date: date2, enabled: nbaAdminEnabled, momentum: null, quality: null, mq_composite: null },
         nba_picks: nbaLegs,
         player_prop_picks: [],
         free_tier_picks: active.filter((p) => p.tier === "free").slice(0, 3).map(fmtLeg),
