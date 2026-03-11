@@ -1054,7 +1054,10 @@ export async function registerRoutes(app: Express) {
           reasoning: parlayLegs[0].reasoning || `Gold Standard V3 Titan XII — ${parlayLegs[0].pick} at ${Math.round(parlayLegs[0].confidence ?? 0)}%.`,
           match_date: date,
           enabled: socAdminEnabled,
-        } : { match: '', league: '', sport: 'soccer', pick: '', confidence: 0, confidence_display: '0%', reasoning: '', match_date: date, enabled: socAdminEnabled },
+          momentum: (parlayLegs[0] as any).momentum ?? null,
+          quality: (parlayLegs[0] as any).quality ?? null,
+          mq_composite: (parlayLegs[0] as any).mqComposite ?? (parlayLegs[0] as any).mq_composite ?? null,
+        } : { match: '', league: '', sport: 'soccer', pick: '', confidence: 0, confidence_display: '0%', reasoning: '', match_date: date, enabled: socAdminEnabled, momentum: null, quality: null, mq_composite: null },
         featured_mls: mlsLegs[0] ? {
           match: mlsLegs[0].match || mlsLegs[0].game || '',
           league: mlsLegs[0].league || 'MLS',
