@@ -50898,54 +50898,18 @@ async function registerRoutes(app) {
       const publicActive = active.filter((p) => (p.confidence ?? 0) >= 68 && p.tier !== "free");
       const sportOnly = publicActive.filter((p) => !p.isPowerPick);
       const cfg = await getEngineConfig();
-      const nbaAdminEnabled = cfg["nba_parlay_enabled"] !== "false";
-      const nbaAdminLegs = nbaAdminEnabled && cfg["nba_leg1_home"] ? [1, 2, 3].map((i) => cfgLeg(`nba_leg${i}`)).filter((l) => l.home_team) : null;
-      const nbaPicks = nbaAdminLegs || sportOnly.filter((p) => p.sport === "nba").slice(0, 3);
-      const socAdminEnabled = cfg["soc_parlay_enabled"] !== "false";
-      const socAdminLegs = socAdminEnabled && cfg["soc_leg1_home"] ? [1, 2, 3].map((i) => cfgLeg(`soc_leg${i}`)).filter((l) => l.home_team) : null;
-      const soccerPicks = socAdminLegs || sportOnly.filter((p) => p.sport === "soccer").slice(0, 3);
-      const mlsAdminEnabled = cfg["mls_parlay_enabled"] !== "false";
-      const mlsAdminLegs = mlsAdminEnabled && cfg["mls_leg1_home"] ? [1, 2, 3].map((i) => cfgLeg(`mls_leg${i}`)).filter((l) => l.home_team) : null;
-      const mlsPicks = mlsAdminLegs || sportOnly.filter((p) => p.sport === "mls").slice(0, 3);
-      const ppAdminEnabled = cfg["pp_enabled"] !== "false";
-      const ppAdminActive = ppAdminEnabled && cfg["pp_home"];
+      const nbaAdminEnabled = true;
+      const nbaPicks = sportOnly.filter((p) => p.sport === "nba").slice(0, 3);
+      const socAdminEnabled = true;
+      const soccerPicks = sportOnly.filter((p) => p.sport === "soccer").slice(0, 3);
+      const mlsAdminEnabled = true;
+      const mlsPicks = sportOnly.filter((p) => p.sport === "mls").slice(0, 3);
+      const ppAdminEnabled = true;
       const dbPowerPick = publicActive.find((p) => p.isPowerPick) || [...publicActive].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
-      const powerPick = ppAdminActive ? {
-        homeTeam: cfg["pp_home"],
-        awayTeam: cfg["pp_away"],
-        league: cfg["pp_league"],
-        sport: cfg["pp_sport"],
-        prediction: cfg["pp_pick"],
-        confidence: parseFloat(cfg["pp_confidence"] || "0"),
-        odds: cfg["pp_odds"],
-        analysis: cfg["pp_analysis"],
-        isPowerPick: true,
-        isFeatured: false,
-        tier: "pro",
-        metadata: { recommendation: cfg["pp_analysis"] }
-      } : dbPowerPick;
-      const fgLive = cfg["fg_live"] === "true" && cfg["fg_home"];
-      const adminFeaturedGame = fgLive ? {
-        homeTeam: cfg["fg_home"],
-        awayTeam: cfg["fg_away"],
-        league: cfg["fg_league"],
-        sport: cfg["fg_sport"],
-        prediction: cfg["fg_pick"],
-        confidence: parseFloat(cfg["fg_confidence"] || "0"),
-        odds: cfg["fg_home_odds"],
-        homeOdds: cfg["fg_home_odds"],
-        awayOdds: cfg["fg_away_odds"],
-        drawOdds: cfg["fg_draw_odds"],
-        dateLabel: cfg["fg_date_label"] || "",
-        imageUrl: cfg["fg_image_url"] || "",
-        liveOnSite: true,
-        isFeatured: true,
-        isPowerPick: false,
-        tier: "pro",
-        metadata: {}
-      } : null;
+      const powerPick = dbPowerPick;
+      const adminFeaturedGame = null;
       const dbFeaturedPick = publicActive.find((p) => p.isFeatured);
-      const featuredMegaPick = adminFeaturedGame || dbFeaturedPick || powerPick;
+      const featuredMegaPick = dbFeaturedPick || powerPick;
       const eaVisible = cfg["ea_visible"] !== "false";
       const expertAnalysis = eaVisible && cfg["ea_body"] ? {
         title: cfg["ea_title"] || `Gold Standard V3 Titan XII \u2014 ${(/* @__PURE__ */ new Date()).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "America/Moncton" })}`,

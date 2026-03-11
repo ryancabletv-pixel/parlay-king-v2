@@ -900,72 +900,29 @@ export async function registerRoutes(app: Express) {
         };
       }
 
-      // ── NBA parlay: use admin override if enabled, else DB picks ─────────────
-      const nbaAdminEnabled = cfg['nba_parlay_enabled'] !== 'false';
-      const nbaAdminLegs = nbaAdminEnabled && cfg['nba_leg1_home']
-        ? [1,2,3].map(i => cfgLeg(`nba_leg${i}`)).filter(l => l.home_team)
-        : null;
-      const nbaPicks = nbaAdminLegs || sportOnly.filter(p => p.sport === 'nba').slice(0, 3);
+      // ── SOP: DATABASE FIRST — all picks come directly from NeonDB picks table ──
+      // engine_config overrides are DISABLED per SOP. Only DB data is used.
+      const nbaAdminEnabled = true;
+      const nbaPicks = sportOnly.filter(p => p.sport === 'nba').slice(0, 3);
 
-      // ── Soccer parlay: use admin override if enabled, else DB picks ──────────
-      const socAdminEnabled = cfg['soc_parlay_enabled'] !== 'false';
-      const socAdminLegs = socAdminEnabled && cfg['soc_leg1_home']
-        ? [1,2,3].map(i => cfgLeg(`soc_leg${i}`)).filter(l => l.home_team)
-        : null;
-      const soccerPicks = socAdminLegs || sportOnly.filter(p => p.sport === 'soccer').slice(0, 3);
+      const socAdminEnabled = true;
+      const soccerPicks = sportOnly.filter(p => p.sport === 'soccer').slice(0, 3);
 
-      // ── MLS parlay: use admin override if enabled, else DB picks ─────────────
-      const mlsAdminEnabled = cfg['mls_parlay_enabled'] !== 'false';
-      const mlsAdminLegs = mlsAdminEnabled && cfg['mls_leg1_home']
-        ? [1,2,3].map(i => cfgLeg(`mls_leg${i}`)).filter(l => l.home_team)
-        : null;
-      const mlsPicks = mlsAdminLegs || sportOnly.filter(p => p.sport === 'mls').slice(0, 3);
+      const mlsAdminEnabled = true;
+      const mlsPicks = sportOnly.filter(p => p.sport === 'mls').slice(0, 3);
 
-      // ── Power Pick: use admin override if enabled, else DB pick ──────────────
-      const ppAdminEnabled = cfg['pp_enabled'] !== 'false';
-      const ppAdminActive  = ppAdminEnabled && cfg['pp_home'];
+      // ── Power Pick: always highest-confidence active pick from DB ─────────────
+      const ppAdminEnabled = true;
       const dbPowerPick    = publicActive.find(p => p.isPowerPick) ||
                              [...publicActive].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
-      const powerPick: any = ppAdminActive ? {
-        homeTeam:   cfg['pp_home'],
-        awayTeam:   cfg['pp_away'],
-        league:     cfg['pp_league'],
-        sport:      cfg['pp_sport'],
-        prediction: cfg['pp_pick'],
-        confidence: parseFloat(cfg['pp_confidence'] || '0'),
-        odds:       cfg['pp_odds'],
-        analysis:   cfg['pp_analysis'],
-        isPowerPick: true,
-        isFeatured:  false,
-        tier:        'pro',
-        metadata:    { recommendation: cfg['pp_analysis'] },
-      } : dbPowerPick;
+      const powerPick: any = dbPowerPick;
 
-      // ── Featured Game: use admin override if liveOnSite=true ─────────────────
-      const fgLive = cfg['fg_live'] === 'true' && cfg['fg_home'];
-      const adminFeaturedGame: any = fgLive ? {
-        homeTeam:   cfg['fg_home'],
-        awayTeam:   cfg['fg_away'],
-        league:     cfg['fg_league'],
-        sport:      cfg['fg_sport'],
-        prediction: cfg['fg_pick'],
-        confidence: parseFloat(cfg['fg_confidence'] || '0'),
-        odds:       cfg['fg_home_odds'],
-        homeOdds:   cfg['fg_home_odds'],
-        awayOdds:   cfg['fg_away_odds'],
-        drawOdds:   cfg['fg_draw_odds'],
-        dateLabel:  cfg['fg_date_label'] || '',
-        imageUrl:   cfg['fg_image_url']  || '',
-        liveOnSite: true,
-        isFeatured:  true,
-        isPowerPick: false,
-        tier:        'pro',
-        metadata:    {},
-      } : null;
+      // ── Featured Game: always isFeatured=true pick from DB ───────────────────
+      const adminFeaturedGame: any = null; // SOP: no engine_config overrides
 
-      // Featured Mega-Pick: admin featured game > isFeatured DB pick > powerPick
+      // Featured Mega-Pick: isFeatured DB pick > powerPick
       const dbFeaturedPick   = publicActive.find(p => p.isFeatured);
-      const featuredMegaPick = adminFeaturedGame || dbFeaturedPick || powerPick;
+      const featuredMegaPick = dbFeaturedPick || powerPick;
 
       // ── Expert Analysis: use admin override if visible ───────────────────────
       const eaVisible = cfg['ea_visible'] !== 'false';
