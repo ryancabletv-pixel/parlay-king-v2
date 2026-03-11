@@ -39040,6 +39040,11 @@ var init_schema2 = __esm({
       isFeatured: boolean("is_featured").default(false),
       isDisabled: boolean("is_disabled").default(false),
       metadata: jsonb("metadata"),
+      momentum: integer("momentum"),
+      quality: integer("quality"),
+      mqComposite: real("mq_composite"),
+      isPersonal: boolean("is_personal").default(false),
+      confidenceScore: real("confidence_score"),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
