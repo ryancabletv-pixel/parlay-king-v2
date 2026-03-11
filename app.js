@@ -51691,78 +51691,54 @@ async function registerRoutes(app) {
   });
   app.get("/api/admin/v3-games", requireAuth, async (req, res) => {
     try {
-      const { getGlobalSoccerOdds: getGlobalSoccerOdds2, getNBAOdds: getNBAOdds2, getMLSOdds: getMLSOdds2, getBudgetLedger: getBudgetLedger2 } = await Promise.resolve().then(() => (init_oddsApi(), oddsApi_exports));
-      const [soccerGames, nbaGames, mlsGames] = await Promise.all([
-        getGlobalSoccerOdds2().catch(() => []),
-        getNBAOdds2().catch(() => []),
-        getMLSOdds2().catch(() => [])
-      ]);
-      const allGames = [...soccerGames, ...nbaGames, ...mlsGames];
-      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
-      const in7Days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1e3).toLocaleDateString("en-CA");
-      const filteredGames = allGames.filter((g) => {
-        const d = new Date(g.commence_time).toLocaleDateString("en-CA");
-        return d >= today && d <= in7Days;
-      });
-      const games = await Promise.all(filteredGames.map(async (g) => {
-        const sport = g.sport_key.startsWith("basketball") ? "nba" : g.sport_key === "soccer_usa_mls" ? "mls" : "soccer";
-        const fixture = {
-          fixtureId: parseInt(g.id.replace(/\D/g, "").slice(0, 8) || "0", 10),
-          homeTeam: g.home_team,
-          awayTeam: g.away_team,
-          league: g.sport_title,
-          sport,
-          homeOdds: g.home_odds ?? void 0,
-          drawOdds: g.draw_odds ?? void 0,
-          awayOdds: g.away_odds ?? void 0,
-          homeInjuries: 0,
-          awayInjuries: 0,
-          isNeutralVenue: false
-        };
-        const preds = await runBatchPredictionsV15([fixture]);
-        const pred = preds[0];
-        const conf = pred ? pred.topConfidence : 0;
-        const outcomes = [];
-        if (pred) {
-          const p = pred.predictions;
-          if (p.homeWin) outcomes.push({ label: `${g.home_team} Win`, conf: p.homeWin });
-          if (p.awayWin) outcomes.push({ label: `${g.away_team} Win`, conf: p.awayWin });
-          if (p.draw) outcomes.push({ label: "Draw", conf: p.draw });
-          if (p.homeOrDraw) outcomes.push({ label: `${g.home_team} Win or Draw`, conf: p.homeOrDraw });
-          if (p.awayOrDraw) outcomes.push({ label: `${g.away_team} Win or Draw`, conf: p.awayOrDraw });
-          if (p.over25) outcomes.push({ label: "Over 2.5 Goals", conf: p.over25 });
-          if (p.under25) outcomes.push({ label: "Under 2.5 Goals", conf: p.under25 });
-          if (p.btts) outcomes.push({ label: "Both Teams to Score", conf: p.btts });
-        }
-        return {
-          id: g.id,
-          sportKey: g.sport_key,
-          sport,
-          league: g.sport_title,
-          homeTeam: g.home_team,
-          awayTeam: g.away_team,
-          commenceTime: g.commence_time,
-          lastUpdated: g.last_update,
-          date: new Date(g.commence_time).toLocaleDateString("en-CA"),
-          homeOdds: g.home_odds,
-          awayOdds: g.away_odds,
-          drawOdds: g.draw_odds,
-          bookmaker: g.bookmaker,
-          confidence: Math.round(conf * 10) / 10,
-          bestPick: pred ? pred.topPick : "N/A",
-          outcomes: outcomes.sort((a, b) => b.conf - a.conf),
-          validated: false
-        };
+      const { Pool: V3Pool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool2 = new V3Pool({ connectionString: process.env.DATABASE_URL });
+      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const in48h = new Date(Date.now() + 48 * 60 * 60 * 1e3).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const result = await pool2.query(`
+        SELECT id, date, sport, league, home_team, away_team, prediction, confidence,
+               odds, tier, is_power_pick, momentum, quality, mq_composite, metadata, is_disabled
+        FROM picks
+        WHERE date >= $1 AND date <= $2
+          AND confidence >= 68
+          AND is_disabled = FALSE
+        ORDER BY date ASC, confidence DESC
+      `, [today, in48h]);
+      await pool2.end();
+      const games = result.rows.map((r) => ({
+        id: String(r.id),
+        sportKey: r.sport === "nba" ? "basketball_nba" : "soccer_global",
+        sport: r.sport,
+        league: r.league || "",
+        homeTeam: r.home_team,
+        awayTeam: r.away_team,
+        commenceTime: r.date + "T00:00:00Z",
+        date: r.date,
+        confidence: parseFloat(r.confidence) || 0,
+        bestPick: r.prediction || "N/A",
+        odds: r.odds || "",
+        tier: r.tier || "pro",
+        is_power_pick: r.is_power_pick || false,
+        momentum: r.momentum || null,
+        quality: r.quality || null,
+        mq_composite: r.mq_composite || null,
+        analysis: r.metadata?.analysis || "",
+        outcomes: [{ label: r.prediction, conf: parseFloat(r.confidence) || 0 }],
+        validated: true,
+        source: "neondb-v3"
       }));
-      const ledger = getBudgetLedger2();
+      if (games.length === 0) {
+        return res.json({ success: true, games: [], total: 0, message: "No High-Probability Games Found", budget: { used: 0, remaining: 100, resetTime: today } });
+      }
       res.json({
         success: true,
         games,
         total: games.length,
-        budget: { used: ledger.used, remaining: ledger.remaining, resetTime: ledger.lastReset }
+        budget: { used: 0, remaining: 100, resetTime: today }
       });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      console.error("[V3Games] DB error (no retry):", err.message);
+      res.status(500).json({ error: err.message, message: "DB fetch failed \u2014 no retry per Efficiency Veto" });
     }
   });
   app.post("/api/admin/v3-validate", requireAuth, async (req, res) => {
