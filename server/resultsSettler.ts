@@ -229,6 +229,14 @@ export async function autoSettleResults(): Promise<{
       // Skip today's picks — games may not have finished yet
       if (pick.date >= today) continue;
 
+      // Skip picks that already have a result in the results table (avoid duplicate settlement)
+      const alreadySettled = await storage.resultExistsForMatch(pick.homeTeam, pick.awayTeam, pick.date);
+      if (alreadySettled) {
+        // Mark the pick as settled in the picks table to stop future checks
+        await storage.updatePick(pick.id, { status: 'won' }); // status doesn't matter, just not 'pending'
+        continue;
+      }
+
       // Skip picks without a fixtureId
       if (!pick.fixtureId) {
         // For picks without fixtureId, check if the date is old enough (2+ days) and mark void

@@ -61,6 +61,19 @@ export async function createResult(data: typeof schema.results.$inferInsert) {
   return result;
 }
 
+export async function resultExistsForMatch(homeTeam: string, awayTeam: string, date: string): Promise<boolean> {
+  const db = getDb();
+  const rows = await db.select({ id: schema.results.id })
+    .from(schema.results)
+    .where(and(
+      eq(schema.results.homeTeam, homeTeam),
+      eq(schema.results.awayTeam, awayTeam),
+      eq(schema.results.date, date)
+    ))
+    .limit(1);
+  return rows.length > 0;
+}
+
 export async function updateResult(id: number, data: Partial<typeof schema.results.$inferInsert>) {
   const db = getDb();
   const [result] = await db.update(schema.results).set(data).where(eq(schema.results.id, id)).returning();

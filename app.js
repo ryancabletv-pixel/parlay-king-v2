@@ -39194,6 +39194,7 @@ __export(storage_exports, {
   initializeDatabase: () => initializeDatabase,
   recordHeartbeat: () => recordHeartbeat,
   resolveAlert: () => resolveAlert,
+  resultExistsForMatch: () => resultExistsForMatch,
   saveParlays: () => saveParlays,
   savePlayerStat: () => savePlayerStat,
   setEngineConfig: () => setEngineConfig,
@@ -39245,6 +39246,15 @@ async function createResult(data) {
   const db2 = getDb();
   const [result] = await db2.insert(results).values(data).returning();
   return result;
+}
+async function resultExistsForMatch(homeTeam, awayTeam, date2) {
+  const db2 = getDb();
+  const rows = await db2.select({ id: results.id }).from(results).where(and(
+    eq(results.homeTeam, homeTeam),
+    eq(results.awayTeam, awayTeam),
+    eq(results.date, date2)
+  )).limit(1);
+  return rows.length > 0;
 }
 async function updateResult(id, data) {
   const db2 = getDb();
@@ -50278,6 +50288,7 @@ var init_tomorrowSync = __esm({
 // server/routes.ts
 var routes_exports = {};
 __export(routes_exports, {
+  clearModulePicksCache: () => clearModulePicksCache,
   generateDailyPicks: () => generateDailyPicks,
   registerRoutes: () => registerRoutes
 });
@@ -50318,6 +50329,9 @@ function selectBestLegs(predictions, count, minConfidence = CONFIDENCE_THRESHOLD
     }
   }
   return unique.slice(0, count);
+}
+function clearModulePicksCache() {
+  _modulePicksCache = null;
 }
 async function generateDailyPicks(date2) {
   console.log(`
@@ -50532,10 +50546,19 @@ async function generateDailyPicks(date2) {
   console.log(`[Titan XII] Threshold filter: Free=${freePicks.length} (64-67%) | Pro=${proPicks.length} (68%+) | Lifetime=${lifetimePicks.length} (70%+) | Discarded=${totalDiscarded}`);
   try {
     const existingPicks = await getPicksByDate(date2);
+    let cleared = 0;
+    let protected_ = 0;
     for (const pick of existingPicks) {
+      const meta = pick.metadata || {};
+      const isManual = meta.source_model === "manual-admin-push" || meta.source === "admin-manual" || meta.bypass_gemini === true;
+      if (isManual) {
+        protected_++;
+        continue;
+      }
       await deletePick(pick.id);
+      cleared++;
     }
-    console.log(`[Engine] Cleared ${existingPicks.length} existing picks for ${date2}`);
+    console.log(`[Engine] Cleared ${cleared} V3 picks for ${date2} | Protected ${protected_} manual picks`);
   } catch (err) {
     console.warn("[Engine] Failed to clear existing picks:", err);
   }
@@ -50830,9 +50853,12 @@ async function registerRoutes(app) {
       const sportPicks = publicActive.filter((p) => !p.isPowerPick);
       res.json({
         date: date2,
-        nba: sportPicks.filter((p) => p.sport === "nba").slice(0, 3),
-        mls: sportPicks.filter((p) => p.sport === "mls").slice(0, 3),
-        soccer: sportPicks.filter((p) => p.sport === "soccer").slice(0, 3),
+        nba: sportPicks.filter((p) => p.sport === "nba"),
+        // Hybrid: no limit
+        mls: sportPicks.filter((p) => p.sport === "mls"),
+        // Hybrid: no limit
+        soccer: sportPicks.filter((p) => p.sport === "soccer"),
+        // Hybrid: no limit
         power: publicActive.filter((p) => p.isPowerPick).slice(0, 1),
         total: publicActive.length
       });
@@ -50903,15 +50929,23 @@ async function registerRoutes(app) {
       const date2 = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
       const picks2 = await getPicksByDate(date2);
       const active = picks2.filter((p) => !p.isDisabled);
-      const publicActive = active.filter((p) => (p.confidence ?? 0) >= 68 && p.tier !== "free");
+      const isManualPick = (p) => {
+        const meta = p.metadata || {};
+        return meta.source_model === "manual-admin-push" || meta.source === "admin-manual" || meta.bypass_gemini === true;
+      };
+      const manualActive = active.filter((p) => isManualPick(p));
+      const v3Active = active.filter((p) => !isManualPick(p) && (p.confidence ?? 0) >= 68);
+      const manualSorted = [...manualActive].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+      const v3Sorted = [...v3Active].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+      const publicActive = [...manualSorted, ...v3Sorted];
       const sportOnly = publicActive.filter((p) => !p.isPowerPick);
       const cfg = await getEngineConfig();
       const nbaAdminEnabled = true;
-      const nbaPicks = sportOnly.filter((p) => p.sport === "nba").slice(0, 3);
+      const nbaPicks = sportOnly.filter((p) => p.sport === "nba");
       const socAdminEnabled = true;
-      const soccerPicks = sportOnly.filter((p) => p.sport === "soccer").slice(0, 3);
+      const soccerPicks = sportOnly.filter((p) => p.sport === "soccer");
       const mlsAdminEnabled = true;
-      const mlsPicks = sportOnly.filter((p) => p.sport === "mls").slice(0, 3);
+      const mlsPicks = sportOnly.filter((p) => p.sport === "mls");
       const ppAdminEnabled = true;
       const dbPowerPick = publicActive.find((p) => p.isPowerPick) || [...publicActive].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
       const powerPick = dbPowerPick;
@@ -50942,7 +50976,44 @@ async function registerRoutes(app) {
         generated_at: now,
         last_generated: now,
         last_updated_display: dateDisplay,
-        tiers: { power_pick: "free", soccer_picks: "free", mls_parlay: "free", nba_parlay: "free", nba_picks: "free" },
+        // ── Tier Dashboard Mapping — NeonDB rows → tiers.pro / tiers.lifetime ──
+        // Pro: top 6 picks by confidence (68%+, soccer+nba+mls only)
+        // Lifetime: top 10 picks by confidence (includes the Pro 6)
+        // Both tiers read from the same publicActive NeonDB array — no schema changes
+        tiers: (() => {
+          const V3_SPORTS = ["soccer", "nba", "mls"];
+          const eligible = publicActive.filter((p) => V3_SPORTS.includes(p.sport)).sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+          const proTier = eligible.slice(0, 6).map(fmtLeg);
+          const lifetimeTier = eligible.slice(0, 10).map(fmtLeg);
+          return {
+            pro: {
+              picks: proTier,
+              count: proTier.length,
+              quota: 6,
+              sport_breakdown: {
+                soccer: proTier.filter((p) => p.sport === "soccer").length,
+                nba: proTier.filter((p) => p.sport === "nba").length,
+                mls: proTier.filter((p) => p.sport === "mls").length
+              }
+            },
+            lifetime: {
+              picks: lifetimeTier,
+              count: lifetimeTier.length,
+              quota: 10,
+              sport_breakdown: {
+                soccer: lifetimeTier.filter((p) => p.sport === "soccer").length,
+                nba: lifetimeTier.filter((p) => p.sport === "nba").length,
+                mls: lifetimeTier.filter((p) => p.sport === "mls").length
+              }
+            },
+            // Legacy string labels preserved for backward compatibility
+            power_pick: "free",
+            soccer_picks: "free",
+            mls_parlay: "free",
+            nba_parlay: "free",
+            nba_picks: "free"
+          };
+        })(),
         parlay: { legs: parlayLegs, legs_count: parlayLegs.length, combined_probability: combinedProb2(soccerPicks) },
         three_leg_conservative: { legs: parlayLegs, legs_count: parlayLegs.length, combined_probability: combinedProb2(soccerPicks) },
         soccer_picks: parlayLegs,
@@ -51316,7 +51387,10 @@ async function registerRoutes(app) {
     try {
       const date2 = req.body.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
       res.json({ success: true, message: `Generation triggered for ${date2}`, date: date2 });
-      generateDailyPicks(date2).catch((err) => console.error("[Admin] Manual trigger failed:", err));
+      generateDailyPicks(date2).then(() => {
+        app._clearPicksCache?.();
+        app._pingSearchEngines?.();
+      }).catch((err) => console.error("[Admin] Manual trigger failed:", err));
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -51690,11 +51764,15 @@ async function registerRoutes(app) {
     }
   });
   app.get("/api/admin/v3-games", requireAuth, async (req, res) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
     try {
       const { Pool: V3Pool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
       const pool2 = new V3Pool({ connectionString: process.env.DATABASE_URL });
-      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-      const in48h = new Date(Date.now() + 48 * 60 * 60 * 1e3).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const serverNow = /* @__PURE__ */ new Date();
+      const serverNowISO = serverNow.toISOString();
+      const today = serverNow.toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const in48h = new Date(serverNow.getTime() + 48 * 60 * 60 * 1e3).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
       const result = await pool2.query(`
         SELECT id, date, sport, league, home_team, away_team, prediction, confidence,
                odds, tier, is_power_pick, momentum, quality, mq_composite, metadata, is_disabled
@@ -51705,28 +51783,37 @@ async function registerRoutes(app) {
         ORDER BY date ASC, confidence DESC
       `, [today, in48h]);
       await pool2.end();
-      const games = result.rows.map((r) => ({
-        id: String(r.id),
-        sportKey: r.sport === "nba" ? "basketball_nba" : "soccer_global",
-        sport: r.sport,
-        league: r.league || "",
-        homeTeam: r.home_team,
-        awayTeam: r.away_team,
-        commenceTime: r.date + "T00:00:00Z",
-        date: r.date,
-        confidence: parseFloat(r.confidence) || 0,
-        bestPick: r.prediction || "N/A",
-        odds: r.odds || "",
-        tier: r.tier || "pro",
-        is_power_pick: r.is_power_pick || false,
-        momentum: r.momentum || null,
-        quality: r.quality || null,
-        mq_composite: r.mq_composite || null,
-        analysis: r.metadata?.analysis || "",
-        outcomes: [{ label: r.prediction, conf: parseFloat(r.confidence) || 0 }],
-        validated: true,
-        source: "neondb-v3"
-      }));
+      const games = result.rows.map((r) => {
+        const metaTime = r.metadata?.commence_time || r.metadata?.commenceTime || r.metadata?.game_time || null;
+        const commenceTime = metaTime ? new Date(metaTime).toISOString() : r.date + "T17:00:00Z";
+        return {
+          id: String(r.id),
+          sportKey: r.sport === "nba" ? "basketball_nba" : "soccer_global",
+          sport: r.sport,
+          league: r.league || "",
+          homeTeam: r.home_team,
+          awayTeam: r.away_team,
+          commenceTime,
+          date: r.date,
+          confidence: parseFloat(r.confidence) || 0,
+          bestPick: r.prediction || "N/A",
+          odds: r.odds || "",
+          tier: r.tier || "pro",
+          is_power_pick: r.is_power_pick || false,
+          momentum: r.momentum || null,
+          quality: r.quality || null,
+          mq_composite: r.mq_composite || null,
+          analysis: r.metadata?.analysis || "",
+          outcomes: [{ label: r.prediction, conf: parseFloat(r.confidence) || 0 }],
+          validated: true,
+          source: "neondb-v3"
+        };
+      }).filter((g) => {
+        const gameDate = g.commenceTime.substring(0, 10);
+        if (gameDate > today) return true;
+        if (gameDate === today) return true;
+        return false;
+      });
       if (games.length === 0) {
         return res.json({ success: true, games: [], total: 0, message: "No High-Probability Games Found", budget: { used: 0, remaining: 100, resetTime: today } });
       }
@@ -51734,6 +51821,8 @@ async function registerRoutes(app) {
         success: true,
         games,
         total: games.length,
+        serverNow: serverNowISO,
+        // FIX 1: server ISO timestamp for client stale-game check
         budget: { used: 0, remaining: 100, resetTime: today }
       });
     } catch (err) {
@@ -51851,12 +51940,22 @@ async function registerRoutes(app) {
   let _picksCache = null;
   function clearPicksCache() {
     _picksCache = null;
+    _modulePicksCache = null;
   }
   app._clearPicksCache = clearPicksCache;
+  clearModulePicksCache._impl = clearPicksCache;
   app._getPicksCache = () => _picksCache;
   app._setPicksCache = (v) => {
     _picksCache = v;
   };
+  function pingSearchEngines() {
+    const sitemap = "https://soccernbaparlayking.vip/sitemap.xml";
+    fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(sitemap)}`).then(() => console.log("[Ping] Google sitemap ping sent")).catch(() => {
+    });
+    fetch(`https://www.bing.com/ping?sitemap=${encodeURIComponent(sitemap)}`).then(() => console.log("[Ping] Bing sitemap ping sent")).catch(() => {
+    });
+  }
+  app._pingSearchEngines = pingSearchEngines;
   app.get("/api/admin/featured-game", requireAuth, async (req, res) => {
     try {
       const cfg = await getEngineConfig();
@@ -51900,6 +51999,7 @@ async function registerRoutes(app) {
         setEngineConfig("fg_live", liveOnSite ? "true" : "false")
       ]);
       clearPicksCache();
+      pingSearchEngines();
       res.json({ success: true, message: liveOnSite ? "Featured game is LIVE on site" : "Featured game saved (not live)" });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -51939,6 +52039,7 @@ async function registerRoutes(app) {
         setEngineConfig("ea_visible", visible !== false ? "true" : "false")
       ]);
       clearPicksCache();
+      pingSearchEngines();
       res.json({ success: true, message: visible !== false ? "Expert analysis visible on site" : "Expert analysis hidden" });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -51965,6 +52066,52 @@ async function registerRoutes(app) {
     try {
       const { legs, enabled } = req.body;
       const saves = [];
+      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      for (const leg of (legs || []).slice(0, 10)) {
+        const conf = parseFloat(leg.confidence) || 75;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
+        const homeTeam = (leg.homeTeam || "").trim();
+        const awayTeam = (leg.awayTeam || "").trim();
+        if (!homeTeam || !awayTeam) continue;
+        const fixtureId = `manual-nba-${homeTeam.replace(/\s+/g, "-").toLowerCase()}-${awayTeam.replace(/\s+/g, "-").toLowerCase()}-${today}`;
+        const meta = JSON.stringify({
+          source_model: "manual-admin-push",
+          source: "admin-manual",
+          bypass_gemini: true,
+          original_pick_label: leg.pick || "",
+          pushed_at: (/* @__PURE__ */ new Date()).toISOString(),
+          audit_log: { note: "Admin 3-Leg NBA Parlay form \u2014 manual push" }
+        });
+        await pool2.query(
+          `UPDATE picks SET is_disabled=TRUE, updated_at=NOW()
+           WHERE date=$1 AND home_team=$2 AND away_team=$3
+             AND metadata->>'source_model'='manual-admin-push'`,
+          [today, homeTeam, awayTeam]
+        );
+        await pool2.query(
+          `INSERT INTO picks
+             (date, sport, tier, home_team, away_team, league, prediction,
+              confidence, odds, fixture_id, status, is_power_pick, is_featured,
+              is_disabled, metadata, is_personal, momentum, quality, mq_composite,
+              created_at, updated_at)
+           VALUES ($1,'nba','free',$2,$3,$4,$5,$6,$7,$8,'active',
+                   FALSE,TRUE,FALSE,$9::jsonb,FALSE,8,7,7.5,NOW(),NOW())`,
+          [
+            today,
+            homeTeam,
+            awayTeam,
+            leg.league || "NBA",
+            leg.pick || `${homeTeam} Win`,
+            conf,
+            autoOdds,
+            fixtureId,
+            meta
+          ]
+        );
+      }
+      await pool2.end();
       (legs || []).slice(0, 3).forEach((leg, i) => {
         const n = i + 1;
         const conf = parseFloat(leg.confidence) || 0;
@@ -51980,7 +52127,8 @@ async function registerRoutes(app) {
       saves.push(setEngineConfig("nba_parlay_enabled", enabled !== false ? "true" : "false"));
       await Promise.all(saves);
       clearPicksCache();
-      res.json({ success: true, message: enabled !== false ? "NBA parlay enabled on site" : "NBA parlay disabled \u2014 placeholder shown" });
+      pingSearchEngines();
+      res.json({ success: true, message: enabled !== false ? "NBA parlay saved to NeonDB and enabled on site" : "NBA parlay disabled" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -52005,6 +52153,52 @@ async function registerRoutes(app) {
     try {
       const { legs, enabled } = req.body;
       const saves = [];
+      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      for (const leg of (legs || []).slice(0, 10)) {
+        const conf = parseFloat(leg.confidence) || 75;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
+        const homeTeam = (leg.homeTeam || "").trim();
+        const awayTeam = (leg.awayTeam || "").trim();
+        if (!homeTeam || !awayTeam) continue;
+        const fixtureId = `manual-soc-${homeTeam.replace(/\s+/g, "-").toLowerCase()}-${awayTeam.replace(/\s+/g, "-").toLowerCase()}-${today}`;
+        const meta = JSON.stringify({
+          source_model: "manual-admin-push",
+          source: "admin-manual",
+          bypass_gemini: true,
+          original_pick_label: leg.pick || "",
+          pushed_at: (/* @__PURE__ */ new Date()).toISOString(),
+          audit_log: { note: "Admin 3-Leg Soccer Parlay form \u2014 manual push" }
+        });
+        await pool2.query(
+          `UPDATE picks SET is_disabled=TRUE, updated_at=NOW()
+           WHERE date=$1 AND home_team=$2 AND away_team=$3
+             AND metadata->>'source_model'='manual-admin-push'`,
+          [today, homeTeam, awayTeam]
+        );
+        await pool2.query(
+          `INSERT INTO picks
+             (date, sport, tier, home_team, away_team, league, prediction,
+              confidence, odds, fixture_id, status, is_power_pick, is_featured,
+              is_disabled, metadata, is_personal, momentum, quality, mq_composite,
+              created_at, updated_at)
+           VALUES ($1,'soccer','free',$2,$3,$4,$5,$6,$7,$8,'active',
+                   FALSE,TRUE,FALSE,$9::jsonb,FALSE,8,7,7.5,NOW(),NOW())`,
+          [
+            today,
+            homeTeam,
+            awayTeam,
+            leg.league || "Soccer",
+            leg.pick || `${homeTeam} Win`,
+            conf,
+            autoOdds,
+            fixtureId,
+            meta
+          ]
+        );
+      }
+      await pool2.end();
       (legs || []).slice(0, 3).forEach((leg, i) => {
         const n = i + 1;
         const conf = parseFloat(leg.confidence) || 0;
@@ -52019,7 +52213,8 @@ async function registerRoutes(app) {
       saves.push(setEngineConfig("soc_parlay_enabled", enabled !== false ? "true" : "false"));
       await Promise.all(saves);
       clearPicksCache();
-      res.json({ success: true, message: enabled !== false ? "Soccer parlay enabled on site" : "Soccer parlay disabled \u2014 placeholder shown" });
+      pingSearchEngines();
+      res.json({ success: true, message: enabled !== false ? "Soccer parlay saved to NeonDB and enabled on site" : "Soccer parlay disabled" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -52043,6 +52238,52 @@ async function registerRoutes(app) {
     try {
       const { legs, enabled } = req.body;
       const saves = [];
+      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      for (const leg of (legs || []).slice(0, 10)) {
+        const conf = parseFloat(leg.confidence) || 75;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
+        const homeTeam = (leg.homeTeam || "").trim();
+        const awayTeam = (leg.awayTeam || "").trim();
+        if (!homeTeam || !awayTeam) continue;
+        const fixtureId = `manual-mls-${homeTeam.replace(/\s+/g, "-").toLowerCase()}-${awayTeam.replace(/\s+/g, "-").toLowerCase()}-${today}`;
+        const meta = JSON.stringify({
+          source_model: "manual-admin-push",
+          source: "admin-manual",
+          bypass_gemini: true,
+          original_pick_label: leg.pick || "",
+          pushed_at: (/* @__PURE__ */ new Date()).toISOString(),
+          audit_log: { note: "Admin 3-Leg MLS Parlay form \u2014 manual push" }
+        });
+        await pool2.query(
+          `UPDATE picks SET is_disabled=TRUE, updated_at=NOW()
+           WHERE date=$1 AND home_team=$2 AND away_team=$3
+             AND metadata->>'source_model'='manual-admin-push'`,
+          [today, homeTeam, awayTeam]
+        );
+        await pool2.query(
+          `INSERT INTO picks
+             (date, sport, tier, home_team, away_team, league, prediction,
+              confidence, odds, fixture_id, status, is_power_pick, is_featured,
+              is_disabled, metadata, is_personal, momentum, quality, mq_composite,
+              created_at, updated_at)
+           VALUES ($1,'mls','free',$2,$3,$4,$5,$6,$7,$8,'active',
+                   FALSE,TRUE,FALSE,$9::jsonb,FALSE,8,7,7.5,NOW(),NOW())`,
+          [
+            today,
+            homeTeam,
+            awayTeam,
+            leg.league || "MLS",
+            leg.pick || `${homeTeam} Win`,
+            conf,
+            autoOdds,
+            fixtureId,
+            meta
+          ]
+        );
+      }
+      await pool2.end();
       (legs || []).slice(0, 3).forEach((leg, i) => {
         const n = i + 1;
         const conf = parseFloat(leg.confidence) || 0;
@@ -52056,7 +52297,8 @@ async function registerRoutes(app) {
       saves.push(setEngineConfig("mls_parlay_enabled", enabled !== false ? "true" : "false"));
       await Promise.all(saves);
       clearPicksCache();
-      res.json({ success: true, message: enabled !== false ? "MLS parlay enabled on site" : "MLS parlay disabled \u2014 placeholder shown" });
+      pingSearchEngines();
+      res.json({ success: true, message: enabled !== false ? "MLS parlay saved to NeonDB and enabled on site" : "MLS parlay disabled" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -52096,6 +52338,7 @@ async function registerRoutes(app) {
         setEngineConfig("pp_enabled", enabled !== false ? "true" : "false")
       ]);
       clearPicksCache();
+      pingSearchEngines();
       res.json({ success: true, message: enabled !== false ? "Power Pick is LIVE on site" : "Power Pick disabled \u2014 placeholder shown" });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -52852,7 +53095,7 @@ async function registerRoutes(app) {
     }
   });
 }
-var import_bcryptjs, import_jsonwebtoken, path2, fs2, ADMIN_PASSWORDS, activeTokens, CONFIDENCE_THRESHOLDS2, TIER_PICK_COUNTS;
+var import_bcryptjs, import_jsonwebtoken, path2, fs2, ADMIN_PASSWORDS, activeTokens, CONFIDENCE_THRESHOLDS2, TIER_PICK_COUNTS, _modulePicksCache;
 var init_routes = __esm({
   "server/routes.ts"() {
     init_storage();
@@ -52884,6 +53127,7 @@ var init_routes = __esm({
       lifetime: 10
       // 10 picks at 70%+
     };
+    _modulePicksCache = null;
   }
 });
 
@@ -53934,6 +54178,11 @@ async function autoSettleResults() {
     const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
     for (const pick of pendingPicks) {
       if (pick.date >= today) continue;
+      const alreadySettled = await resultExistsForMatch(pick.homeTeam, pick.awayTeam, pick.date);
+      if (alreadySettled) {
+        await updatePick(pick.id, { status: "won" });
+        continue;
+      }
       if (!pick.fixtureId) {
         const pickDate = new Date(pick.date);
         const daysDiff = (Date.now() - pickDate.getTime()) / (1e3 * 60 * 60 * 24);
@@ -54122,16 +54371,30 @@ async function runDailyGeneration(triggeredBy = "scheduler") {
       });
     }
     const syncStatus = result.multiSportSyncStatus ?? "FULL";
-    if (syncStatus !== "FULL") {
-      console.warn(`[Multi-Sport Sync] Sync status: ${syncStatus}. Scheduling targeted retry in 10 minutes...`);
-      await createAlert2("warning", `Multi-Sport Sync ${syncStatus} for ${today}. Targeted retry scheduled in 10 min.`);
-      dailyRunCompleted = false;
+    if (result.total === 0) {
+      console.warn(`[Multi-Sport Sync] 0 picks generated for ${today}. Logging and waiting for next 24h cycle (no retry).`);
+      await createAlert2("warning", `Multi-Sport Sync: 0 picks for ${today}. No retry \u2014 waiting for next 24h cycle.`);
+      dailyRunCompleted = true;
+      lastRunDate = today;
+    } else if (syncStatus !== "FULL") {
+      console.warn(`[Multi-Sport Sync] Partial sync (${syncStatus}) for ${today}. Marking complete \u2014 no retry cascade.`);
+      await createAlert2("warning", `Multi-Sport Sync partial (${syncStatus}) for ${today}. Picks are live. No retry.`);
+      dailyRunCompleted = true;
+      lastRunDate = today;
     } else {
       dailyRunCompleted = true;
       lastRunDate = today;
       console.log(`[Multi-Sport Sync] \u2705 FULL SYNC confirmed \u2014 Soccer + Basketball both live on all tier dashboards.`);
     }
     console.log(`[Scheduler] Daily generation complete: ${result.total} picks in ${duration}ms (sync=${syncStatus})`);
+    try {
+      const { clearModulePicksCache: clearModulePicksCache2 } = await Promise.resolve().then(() => (init_routes(), routes_exports));
+      const impl = clearModulePicksCache2._impl;
+      if (typeof impl === "function") impl();
+      else clearModulePicksCache2();
+      console.log("[Scheduler] picks.json cache cleared \u2014 site will update within 1-2 seconds");
+    } catch (_) {
+    }
     pingGoogleAfterUpdate(`daily-generation-${today}`).catch((err) => {
       console.warn("[Scheduler] Google ping failed (non-critical):", err);
     });
