@@ -2143,8 +2143,59 @@ export async function registerRoutes(app: Express) {
         return false;
       });
 
+      // ── FALLBACK: If no picks in NeonDB yet, serve from upcoming_fixtures (free ESPN data) ──
       if (games.length === 0) {
-        return res.json({ success: true, games: [], total: 0, message: 'No High-Probability Games Found', budget: { used: 0, remaining: 100, resetTime: today } });
+        try {
+          const { Pool: FPool } = await import('pg');
+          const fpool = new FPool({ connectionString: process.env.DATABASE_URL });
+          const fResult = await fpool.query(`
+            SELECT id, sport, league, home_team, away_team, game_date, game_datetime, status, analysis_result, analysis_score, analysis_pass
+            FROM upcoming_fixtures
+            WHERE game_date >= $1 AND game_date <= $2
+              AND status NOT IN ('final', 'in_progress')
+            ORDER BY game_date ASC, sport ASC
+          `, [today, in48h]);
+          await fpool.end();
+
+          if (fResult.rows.length > 0) {
+            const fallbackGames = fResult.rows.map((r: any) => ({
+              id:           'fix_' + r.id,
+              sportKey:     r.sport === 'nba' ? 'basketball_nba' : 'soccer_global',
+              sport:        r.sport,
+              league:       r.league || '',
+              homeTeam:     r.home_team,
+              awayTeam:     r.away_team,
+              commenceTime: r.game_datetime ? new Date(r.game_datetime).toISOString() : (r.game_date + 'T17:00:00Z'),
+              date:         typeof r.game_date === 'string' ? r.game_date.substring(0, 10) : new Date(r.game_date).toISOString().substring(0, 10),
+              confidence:   r.analysis_score ? parseFloat(r.analysis_score) : 0,
+              bestPick:     r.analysis_result ? (JSON.parse(r.analysis_result)?.pick || 'Pending Analysis') : 'Pending Analysis',
+              odds:         '',
+              tier:         'pro',
+              is_power_pick: false,
+              momentum:     null,
+              quality:      null,
+              mq_composite: null,
+              analysis:     r.analysis_result ? (JSON.parse(r.analysis_result)?.summary || '') : '',
+              outcomes:     [{ label: 'Pending Analysis', conf: 0 }],
+              validated:    r.analysis_pass === true,
+              source:       'upcoming-fixtures',
+              analyzed:     !!r.analysis_result,
+              analysisPassed: r.analysis_pass,
+            }));
+            return res.json({
+              success: true,
+              games: fallbackGames,
+              total: fallbackGames.length,
+              serverNow: serverNowISO,
+              source: 'upcoming-fixtures-fallback',
+              message: `${fallbackGames.length} upcoming fixtures loaded (picks generate at 1 AM AST)`,
+              budget: { used: 0, remaining: 100, resetTime: today },
+            });
+          }
+        } catch (fallbackErr: any) {
+          console.warn('[V3Games] Fallback to upcoming_fixtures failed:', fallbackErr.message);
+        }
+        return res.json({ success: true, games: [], total: 0, message: 'No games found — picks generate at 1 AM AST', budget: { used: 0, remaining: 100, resetTime: today } });
       }
 
       res.json({
