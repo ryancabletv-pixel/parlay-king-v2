@@ -692,6 +692,47 @@
         </div>
       </div>
 
+      <!-- ===== V3-15 QUICK AUDIT PANEL — Zero API Credits ===== -->
+      <div id="v3-quick-audit-panel" style="background:rgba(255,215,0,0.06);border:2px solid rgba(255,215,0,0.4);border-radius:12px;padding:20px;margin-bottom:20px">
+        <div style="font-size:14px;font-weight:900;color:var(--gold);letter-spacing:1px;margin-bottom:4px">⚡ V3-15 QUICK AUDIT — Gemini Powered</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">Type any matchup → Run → See all 15 V3 factors with PASS/FAIL at 65% threshold. Zero API credits used.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>
+            <label style="font-size:11px;color:var(--text-dim);font-weight:700;display:block;margin-bottom:4px">HOME TEAM</label>
+            <input id="qa-home" type="text" placeholder="e.g. Marseille" style="width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--gold-border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box;outline:none">
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--text-dim);font-weight:700;display:block;margin-bottom:4px">AWAY TEAM</label>
+            <input id="qa-away" type="text" placeholder="e.g. Auxerre" style="width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--gold-border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box;outline:none">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+          <div>
+            <label style="font-size:11px;color:var(--text-dim);font-weight:700;display:block;margin-bottom:4px">SPORT</label>
+            <select id="qa-sport" style="width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--gold-border);border-radius:8px;color:var(--text);font-size:13px">
+              <option value="soccer">⚽ Soccer</option>
+              <option value="nba">🏀 NBA</option>
+              <option value="mls">🇺🇸 MLS</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--text-dim);font-weight:700;display:block;margin-bottom:4px">LEAGUE (optional)</label>
+            <input id="qa-league" type="text" placeholder="e.g. Ligue 1" style="width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--gold-border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box;outline:none">
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--text-dim);font-weight:700;display:block;margin-bottom:4px">SPECIFIC PICK (optional)</label>
+            <input id="qa-pick" type="text" placeholder="e.g. Marseille ML" style="width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--gold-border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box;outline:none">
+          </div>
+        </div>
+        <button onclick="runQuickAudit()" id="qa-run-btn" style="padding:11px 28px;background:linear-gradient(135deg,var(--gold),#FFA500);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:900;cursor:pointer;letter-spacing:0.5px">⚡ Run V3-15 Audit</button>
+        <span id="qa-status" style="margin-left:14px;font-size:12px;color:var(--text-dim)"></span>
+        <div id="qa-results" style="display:none;margin-top:20px">
+          <div id="qa-verdict" style="padding:14px 18px;border-radius:10px;margin-bottom:16px;font-size:15px;font-weight:900"></div>
+          <div id="qa-summary" style="font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.6"></div>
+          <div style="font-size:12px;font-weight:800;color:var(--gold);letter-spacing:1px;margin-bottom:10px">15-FACTOR BREAKDOWN</div>
+          <div id="qa-factors" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px"></div>
+        </div>
+      </div>
       <!-- Budget Banner -->
       <div style="background:rgba(79,195,247,0.08);border:1px solid rgba(79,195,247,0.25);border-radius:10px;padding:10px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;font-size:12px">
         <span id="v3-budget-text" style="color:var(--blue)">API Budget: Loading...</span>
@@ -3391,6 +3432,69 @@ async function v3LoadSettled() {
   } catch(e) {
     document.getElementById('v3-settled-table').innerHTML =
       `<div class="alert alert-error">Error loading audit: ${e.message}</div>`;
+  }
+}
+
+// ===== V3-15 QUICK AUDIT — Gemini Powered, Zero API Credits =====
+const QA_ENDPOINT = 'https://7771-ijd59rpz6gs89ueils5pf-281f510d.us2.manus.computer/v3-audit';
+
+async function runQuickAudit() {
+  const home = document.getElementById('qa-home').value.trim();
+  const away = document.getElementById('qa-away').value.trim();
+  const sport = document.getElementById('qa-sport').value;
+  const league = document.getElementById('qa-league').value.trim();
+  const pick = document.getElementById('qa-pick').value.trim();
+  if (!home || !away) { showNotif('Enter both Home and Away team names', 'error'); return; }
+  const btn = document.getElementById('qa-run-btn');
+  const status = document.getElementById('qa-status');
+  const results = document.getElementById('qa-results');
+  btn.disabled = true;
+  btn.textContent = '⏳ Analyzing...';
+  status.textContent = 'Running Gemini V3-15 analysis...';
+  results.style.display = 'none';
+  try {
+    const resp = await fetch(QA_ENDPOINT, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({home_team: home, away_team: away, sport, league, pick})
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    // Verdict
+    const pass = data.overall_pass;
+    const conf = (data.confidence || 0).toFixed(1);
+    const verdict = document.getElementById('qa-verdict');
+    verdict.style.background = pass ? 'rgba(0,230,118,0.12)' : 'rgba(255,68,68,0.12)';
+    verdict.style.border = pass ? '1px solid rgba(0,230,118,0.4)' : '1px solid rgba(255,68,68,0.4)';
+    verdict.style.color = pass ? 'var(--green)' : 'var(--red)';
+    verdict.innerHTML = `${pass ? '✅ PASS' : '❌ FAIL'} — ${data.best_pick || home + ' Win'} &nbsp;|&nbsp; Confidence: <b>${conf}%</b> &nbsp;|&nbsp; Factors Passed: <b>${data.factors_passed || 0}/15</b>`;
+    // Summary
+    document.getElementById('qa-summary').textContent = data.summary || '';
+    // Factors
+    const container = document.getElementById('qa-factors');
+    container.innerHTML = '';
+    const factors = data.factors || {};
+    Object.entries(factors).forEach(([code, f]) => {
+      const pct = Math.round((f.score || 0) * 100);
+      const fp = f.pass;
+      const card = document.createElement('div');
+      card.style.cssText = `background:${fp ? 'rgba(0,230,118,0.05)' : 'rgba(255,68,68,0.05)'};border:1px solid ${fp ? 'rgba(0,230,118,0.25)' : 'rgba(255,68,68,0.25)'};border-radius:8px;padding:10px 12px`;
+      card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:11px;font-weight:800;color:${fp ? 'var(--green)' : 'var(--red)'}">${code}: ${f.name}</span>
+        <span style="font-size:11px;font-weight:900;color:${fp ? 'var(--green)' : 'var(--red)'}">${fp ? '✅' : '❌'} ${pct}%</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);line-height:1.4">${f.finding || ''}</div>
+      <div style="height:4px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:6px"><div style="height:100%;width:${pct}%;background:${fp ? 'var(--green)' : 'var(--red)'};border-radius:2px"></div></div>`;
+      container.appendChild(card);
+    });
+    results.style.display = 'block';
+    status.textContent = `Analysis complete — ${data.factors_passed || 0}/15 factors passed`;
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    showNotif('Audit failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⚡ Run V3-15 Audit';
   }
 }
 
