@@ -103,8 +103,8 @@ var require_package = __commonJS({
 // node_modules/dotenv/lib/main.js
 var require_main = __commonJS({
   "node_modules/dotenv/lib/main.js"(exports2, module2) {
-    var fs3 = require("fs");
-    var path3 = require("path");
+    var fs6 = require("fs");
+    var path6 = require("path");
     var os2 = require("os");
     var crypto4 = require("crypto");
     var packageJson = require_package();
@@ -212,7 +212,7 @@ var require_main = __commonJS({
       if (options && options.path && options.path.length > 0) {
         if (Array.isArray(options.path)) {
           for (const filepath of options.path) {
-            if (fs3.existsSync(filepath)) {
+            if (fs6.existsSync(filepath)) {
               possibleVaultPath = filepath.endsWith(".vault") ? filepath : `${filepath}.vault`;
             }
           }
@@ -220,15 +220,15 @@ var require_main = __commonJS({
           possibleVaultPath = options.path.endsWith(".vault") ? options.path : `${options.path}.vault`;
         }
       } else {
-        possibleVaultPath = path3.resolve(process.cwd(), ".env.vault");
+        possibleVaultPath = path6.resolve(process.cwd(), ".env.vault");
       }
-      if (fs3.existsSync(possibleVaultPath)) {
+      if (fs6.existsSync(possibleVaultPath)) {
         return possibleVaultPath;
       }
       return null;
     }
     function _resolveHome(envPath) {
-      return envPath[0] === "~" ? path3.join(os2.homedir(), envPath.slice(1)) : envPath;
+      return envPath[0] === "~" ? path6.join(os2.homedir(), envPath.slice(1)) : envPath;
     }
     function _configVault(options) {
       const debug = Boolean(options && options.debug);
@@ -245,7 +245,7 @@ var require_main = __commonJS({
       return { parsed };
     }
     function configDotenv(options) {
-      const dotenvPath = path3.resolve(process.cwd(), ".env");
+      const dotenvPath = path6.resolve(process.cwd(), ".env");
       let encoding = "utf8";
       const debug = Boolean(options && options.debug);
       const quiet = options && "quiet" in options ? options.quiet : true;
@@ -269,13 +269,13 @@ var require_main = __commonJS({
       }
       let lastError;
       const parsedAll = {};
-      for (const path4 of optionPaths) {
+      for (const path7 of optionPaths) {
         try {
-          const parsed = DotenvModule.parse(fs3.readFileSync(path4, { encoding }));
+          const parsed = DotenvModule.parse(fs6.readFileSync(path7, { encoding }));
           DotenvModule.populate(parsedAll, parsed, options);
         } catch (e) {
           if (debug) {
-            _debug(`Failed to load ${path4} ${e.message}`);
+            _debug(`Failed to load ${path7} ${e.message}`);
           }
           lastError = e;
         }
@@ -290,7 +290,7 @@ var require_main = __commonJS({
         const shortPaths = [];
         for (const filePath of optionPaths) {
           try {
-            const relative = path3.relative(process.cwd(), filePath);
+            const relative = path6.relative(process.cwd(), filePath);
             shortPaths.push(relative);
           } catch (e) {
             if (debug) {
@@ -1650,8 +1650,8 @@ var require_node = __commonJS({
           }
           break;
         case "FILE":
-          var fs3 = require("fs");
-          stream2 = new fs3.SyncWriteStream(fd2, { autoClose: false });
+          var fs6 = require("fs");
+          stream2 = new fs6.SyncWriteStream(fd2, { autoClose: false });
           stream2._type = "fs";
           break;
         case "PIPE":
@@ -14438,11 +14438,11 @@ var require_mime_types = __commonJS({
       }
       return exts[0];
     }
-    function lookup(path3) {
-      if (!path3 || typeof path3 !== "string") {
+    function lookup(path6) {
+      if (!path6 || typeof path6 !== "string") {
         return false;
       }
-      var extension2 = extname("x." + path3).toLowerCase().substr(1);
+      var extension2 = extname("x." + path6).toLowerCase().substr(1);
       if (!extension2) {
         return false;
       }
@@ -17997,8 +17997,8 @@ var require_node2 = __commonJS({
           }
           break;
         case "FILE":
-          var fs3 = require("fs");
-          stream2 = new fs3.SyncWriteStream(fd2, { autoClose: false });
+          var fs6 = require("fs");
+          stream2 = new fs6.SyncWriteStream(fd2, { autoClose: false });
           stream2._type = "fs";
           break;
         case "PIPE":
@@ -18716,8 +18716,8 @@ var require_node3 = __commonJS({
           }
           break;
         case "FILE":
-          var fs3 = require("fs");
-          stream2 = new fs3.SyncWriteStream(fd2, { autoClose: false });
+          var fs6 = require("fs");
+          stream2 = new fs6.SyncWriteStream(fd2, { autoClose: false });
           stream2._type = "fs";
           break;
         case "PIPE":
@@ -18805,7 +18805,7 @@ var require_path_to_regexp = __commonJS({
   "node_modules/path-to-regexp/index.js"(exports2, module2) {
     module2.exports = pathToRegexp;
     var MATCHING_GROUP_REGEXP = /\\.|\((?:\?<(.*?)>)?(?!\?)/g;
-    function pathToRegexp(path3, keys, options) {
+    function pathToRegexp(path6, keys, options) {
       options = options || {};
       keys = keys || [];
       var strict = options.strict;
@@ -18819,8 +18819,8 @@ var require_path_to_regexp = __commonJS({
       var pos = 0;
       var backtrack = "";
       var m;
-      if (path3 instanceof RegExp) {
-        while (m = MATCHING_GROUP_REGEXP.exec(path3.source)) {
+      if (path6 instanceof RegExp) {
+        while (m = MATCHING_GROUP_REGEXP.exec(path6.source)) {
           if (m[0][0] === "\\") continue;
           keys.push({
             name: m[1] || name++,
@@ -18828,18 +18828,18 @@ var require_path_to_regexp = __commonJS({
             offset: m.index
           });
         }
-        return path3;
+        return path6;
       }
-      if (Array.isArray(path3)) {
-        path3 = path3.map(function(value) {
+      if (Array.isArray(path6)) {
+        path6 = path6.map(function(value) {
           return pathToRegexp(value, keys, options).source;
         });
-        return new RegExp(path3.join("|"), flags);
+        return new RegExp(path6.join("|"), flags);
       }
-      if (typeof path3 !== "string") {
+      if (typeof path6 !== "string") {
         throw new TypeError("path must be a string, array of strings, or regular expression");
       }
-      path3 = path3.replace(
+      path6 = path6.replace(
         /\\.|(\/)?(\.)?:(\w+)(\(.*?\))?(\*)?(\?)?|[.*]|\/\(/g,
         function(match, slash, format, key, capture, star, optional, offset) {
           if (match[0] === "\\") {
@@ -18856,7 +18856,7 @@ var require_path_to_regexp = __commonJS({
           if (slash || format) {
             backtrack = "";
           } else {
-            backtrack += path3.slice(pos, offset);
+            backtrack += path6.slice(pos, offset);
           }
           pos = offset + match.length;
           if (match === "*") {
@@ -18884,7 +18884,7 @@ var require_path_to_regexp = __commonJS({
           return result;
         }
       );
-      while (m = MATCHING_GROUP_REGEXP.exec(path3)) {
+      while (m = MATCHING_GROUP_REGEXP.exec(path6)) {
         if (m[0][0] === "\\") continue;
         if (keysOffset + i === keys.length || keys[keysOffset + i].offset > m.index) {
           keys.splice(keysOffset + i, 0, {
@@ -18896,13 +18896,13 @@ var require_path_to_regexp = __commonJS({
         }
         i++;
       }
-      path3 += strict ? "" : path3[path3.length - 1] === "/" ? "?" : "/?";
+      path6 += strict ? "" : path6[path6.length - 1] === "/" ? "?" : "/?";
       if (end) {
-        path3 += "$";
-      } else if (path3[path3.length - 1] !== "/") {
-        path3 += lookahead ? "(?=/|$)" : "(?:/|$)";
+        path6 += "$";
+      } else if (path6[path6.length - 1] !== "/") {
+        path6 += lookahead ? "(?=/|$)" : "(?:/|$)";
       }
-      return new RegExp("^" + path3, flags);
+      return new RegExp("^" + path6, flags);
     }
   }
 });
@@ -18915,19 +18915,19 @@ var require_layer = __commonJS({
     var debug = require_src3()("express:router:layer");
     var hasOwnProperty = Object.prototype.hasOwnProperty;
     module2.exports = Layer;
-    function Layer(path3, options, fn) {
+    function Layer(path6, options, fn) {
       if (!(this instanceof Layer)) {
-        return new Layer(path3, options, fn);
+        return new Layer(path6, options, fn);
       }
-      debug("new %o", path3);
+      debug("new %o", path6);
       var opts = options || {};
       this.handle = fn;
       this.name = fn.name || "<anonymous>";
       this.params = void 0;
       this.path = void 0;
-      this.regexp = pathRegexp(path3, this.keys = [], opts);
-      this.regexp.fast_star = path3 === "*";
-      this.regexp.fast_slash = path3 === "/" && opts.end === false;
+      this.regexp = pathRegexp(path6, this.keys = [], opts);
+      this.regexp.fast_star = path6 === "*";
+      this.regexp.fast_slash = path6 === "/" && opts.end === false;
     }
     Layer.prototype.handle_error = function handle_error(error, req, res, next) {
       var fn = this.handle;
@@ -18951,20 +18951,20 @@ var require_layer = __commonJS({
         next(err);
       }
     };
-    Layer.prototype.match = function match(path3) {
+    Layer.prototype.match = function match(path6) {
       var match2;
-      if (path3 != null) {
+      if (path6 != null) {
         if (this.regexp.fast_slash) {
           this.params = {};
           this.path = "";
           return true;
         }
         if (this.regexp.fast_star) {
-          this.params = { "0": decode_param(path3) };
-          this.path = path3;
+          this.params = { "0": decode_param(path6) };
+          this.path = path6;
           return true;
         }
-        match2 = this.regexp.exec(path3);
+        match2 = this.regexp.exec(path6);
       }
       if (!match2) {
         this.params = void 0;
@@ -19057,10 +19057,10 @@ var require_route = __commonJS({
     var slice = Array.prototype.slice;
     var toString = Object.prototype.toString;
     module2.exports = Route;
-    function Route(path3) {
-      this.path = path3;
+    function Route(path6) {
+      this.path = path6;
       this.stack = [];
-      debug("new %o", path3);
+      debug("new %o", path6);
       this.methods = {};
     }
     Route.prototype._handles_method = function _handles_method(method) {
@@ -19272,8 +19272,8 @@ var require_router = __commonJS({
         if (++sync > 100) {
           return setImmediate(next, err);
         }
-        var path3 = getPathname(req);
-        if (path3 == null) {
+        var path6 = getPathname(req);
+        if (path6 == null) {
           return done(layerError);
         }
         var layer;
@@ -19281,7 +19281,7 @@ var require_router = __commonJS({
         var route;
         while (match !== true && idx < stack.length) {
           layer = stack[idx++];
-          match = matchLayer(layer, path3);
+          match = matchLayer(layer, path6);
           route = layer.route;
           if (typeof match !== "boolean") {
             layerError = layerError || match;
@@ -19319,18 +19319,18 @@ var require_router = __commonJS({
           } else if (route) {
             layer.handle_request(req, res, next);
           } else {
-            trim_prefix(layer, layerError, layerPath, path3);
+            trim_prefix(layer, layerError, layerPath, path6);
           }
           sync = 0;
         });
       }
-      function trim_prefix(layer, layerError, layerPath, path3) {
+      function trim_prefix(layer, layerError, layerPath, path6) {
         if (layerPath.length !== 0) {
-          if (layerPath !== path3.slice(0, layerPath.length)) {
+          if (layerPath !== path6.slice(0, layerPath.length)) {
             next(layerError);
             return;
           }
-          var c = path3[layerPath.length];
+          var c = path6[layerPath.length];
           if (c && c !== "/" && c !== ".") return next(layerError);
           debug("trim prefix (%s) from url %s", layerPath, req.url);
           removed = layerPath;
@@ -19408,7 +19408,7 @@ var require_router = __commonJS({
     };
     proto.use = function use(fn) {
       var offset = 0;
-      var path3 = "/";
+      var path6 = "/";
       if (typeof fn !== "function") {
         var arg = fn;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -19416,7 +19416,7 @@ var require_router = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path3 = fn;
+          path6 = fn;
         }
       }
       var callbacks = flatten(slice.call(arguments, offset));
@@ -19428,8 +19428,8 @@ var require_router = __commonJS({
         if (typeof fn !== "function") {
           throw new TypeError("Router.use() requires a middleware function but got a " + gettype(fn));
         }
-        debug("use %o %s", path3, fn.name || "<anonymous>");
-        var layer = new Layer(path3, {
+        debug("use %o %s", path6, fn.name || "<anonymous>");
+        var layer = new Layer(path6, {
           sensitive: this.caseSensitive,
           strict: false,
           end: false
@@ -19439,9 +19439,9 @@ var require_router = __commonJS({
       }
       return this;
     };
-    proto.route = function route(path3) {
-      var route2 = new Route(path3);
-      var layer = new Layer(path3, {
+    proto.route = function route(path6) {
+      var route2 = new Route(path6);
+      var layer = new Layer(path6, {
         sensitive: this.caseSensitive,
         strict: this.strict,
         end: true
@@ -19451,8 +19451,8 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      proto[method] = function(path3) {
-        var route = this.route(path3);
+      proto[method] = function(path6) {
+        var route = this.route(path6);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
       };
@@ -19488,9 +19488,9 @@ var require_router = __commonJS({
       }
       return toString.call(obj).replace(objectRegExp, "$1");
     }
-    function matchLayer(layer, path3) {
+    function matchLayer(layer, path6) {
       try {
-        return layer.match(path3);
+        return layer.match(path6);
       } catch (err) {
         return err;
       }
@@ -19608,13 +19608,13 @@ var require_view = __commonJS({
   "node_modules/express/lib/view.js"(exports2, module2) {
     "use strict";
     var debug = require_src3()("express:view");
-    var path3 = require("path");
-    var fs3 = require("fs");
-    var dirname = path3.dirname;
-    var basename = path3.basename;
-    var extname = path3.extname;
-    var join3 = path3.join;
-    var resolve = path3.resolve;
+    var path6 = require("path");
+    var fs6 = require("fs");
+    var dirname = path6.dirname;
+    var basename = path6.basename;
+    var extname = path6.extname;
+    var join6 = path6.join;
+    var resolve = path6.resolve;
     module2.exports = View2;
     function View2(name, options) {
       var opts = options || {};
@@ -19643,17 +19643,17 @@ var require_view = __commonJS({
       this.path = this.lookup(fileName);
     }
     View2.prototype.lookup = function lookup(name) {
-      var path4;
+      var path7;
       var roots = [].concat(this.root);
       debug('lookup "%s"', name);
-      for (var i = 0; i < roots.length && !path4; i++) {
+      for (var i = 0; i < roots.length && !path7; i++) {
         var root = roots[i];
         var loc = resolve(root, name);
         var dir = dirname(loc);
         var file = basename(loc);
-        path4 = this.resolve(dir, file);
+        path7 = this.resolve(dir, file);
       }
-      return path4;
+      return path7;
     };
     View2.prototype.render = function render(options, callback) {
       debug('render "%s"', this.path);
@@ -19661,21 +19661,21 @@ var require_view = __commonJS({
     };
     View2.prototype.resolve = function resolve2(dir, file) {
       var ext = this.ext;
-      var path4 = join3(dir, file);
-      var stat = tryStat(path4);
+      var path7 = join6(dir, file);
+      var stat = tryStat(path7);
       if (stat && stat.isFile()) {
-        return path4;
+        return path7;
       }
-      path4 = join3(dir, basename(file, ext), "index" + ext);
-      stat = tryStat(path4);
+      path7 = join6(dir, basename(file, ext), "index" + ext);
+      stat = tryStat(path7);
       if (stat && stat.isFile()) {
-        return path4;
+        return path7;
       }
     };
-    function tryStat(path4) {
-      debug('stat "%s"', path4);
+    function tryStat(path7) {
+      debug('stat "%s"', path7);
       try {
-        return fs3.statSync(path4);
+        return fs6.statSync(path7);
       } catch (e) {
         return void 0;
       }
@@ -20280,8 +20280,8 @@ var require_node4 = __commonJS({
           }
           break;
         case "FILE":
-          var fs3 = require("fs");
-          stream2 = new fs3.SyncWriteStream(fd2, { autoClose: false });
+          var fs6 = require("fs");
+          stream2 = new fs6.SyncWriteStream(fd2, { autoClose: false });
           stream2._type = "fs";
           break;
         case "PIPE":
@@ -20453,8 +20453,8 @@ var require_types = __commonJS({
 // node_modules/mime/mime.js
 var require_mime = __commonJS({
   "node_modules/mime/mime.js"(exports2, module2) {
-    var path3 = require("path");
-    var fs3 = require("fs");
+    var path6 = require("path");
+    var fs6 = require("fs");
     function Mime() {
       this.types = /* @__PURE__ */ Object.create(null);
       this.extensions = /* @__PURE__ */ Object.create(null);
@@ -20475,7 +20475,7 @@ var require_mime = __commonJS({
     };
     Mime.prototype.load = function(file) {
       this._loading = file;
-      var map = {}, content = fs3.readFileSync(file, "ascii"), lines = content.split(/[\r\n]+/);
+      var map = {}, content = fs6.readFileSync(file, "ascii"), lines = content.split(/[\r\n]+/);
       lines.forEach(function(line2) {
         var fields = line2.replace(/\s*#.*|^\s*|\s*$/g, "").split(/\s+/);
         map[fields.shift()] = fields;
@@ -20483,8 +20483,8 @@ var require_mime = __commonJS({
       this.define(map);
       this._loading = null;
     };
-    Mime.prototype.lookup = function(path4, fallback) {
-      var ext = path4.replace(/^.*[\.\/\\]/, "").toLowerCase();
+    Mime.prototype.lookup = function(path7, fallback) {
+      var ext = path7.replace(/^.*[\.\/\\]/, "").toLowerCase();
       return this.types[ext] || fallback || this.default_type;
     };
     Mime.prototype.extension = function(mimeType) {
@@ -20713,33 +20713,33 @@ var require_send = __commonJS({
     var escapeHtml = require_escape_html();
     var etag = require_etag();
     var fresh = require_fresh();
-    var fs3 = require("fs");
+    var fs6 = require("fs");
     var mime = require_mime();
     var ms = require_ms5();
     var onFinished = require_on_finished();
     var parseRange = require_range_parser();
-    var path3 = require("path");
+    var path6 = require("path");
     var statuses = require_statuses();
     var Stream = require("stream");
     var util = require("util");
-    var extname = path3.extname;
-    var join3 = path3.join;
-    var normalize = path3.normalize;
-    var resolve = path3.resolve;
-    var sep = path3.sep;
+    var extname = path6.extname;
+    var join6 = path6.join;
+    var normalize = path6.normalize;
+    var resolve = path6.resolve;
+    var sep = path6.sep;
     var BYTES_RANGE_REGEXP = /^ *bytes=/;
     var MAX_MAXAGE = 60 * 60 * 24 * 365 * 1e3;
     var UP_PATH_REGEXP = /(?:^|[\\/])\.\.(?:[\\/]|$)/;
     module2.exports = send;
     module2.exports.mime = mime;
-    function send(req, path4, options) {
-      return new SendStream(req, path4, options);
+    function send(req, path7, options) {
+      return new SendStream(req, path7, options);
     }
-    function SendStream(req, path4, options) {
+    function SendStream(req, path7, options) {
       Stream.call(this);
       var opts = options || {};
       this.options = opts;
-      this.path = path4;
+      this.path = path7;
       this.req = req;
       this._acceptRanges = opts.acceptRanges !== void 0 ? Boolean(opts.acceptRanges) : true;
       this._cacheControl = opts.cacheControl !== void 0 ? Boolean(opts.cacheControl) : true;
@@ -20785,8 +20785,8 @@ var require_send = __commonJS({
       this._index = index2;
       return this;
     }, "send.index: pass index as option");
-    SendStream.prototype.root = function root(path4) {
-      this._root = resolve(String(path4));
+    SendStream.prototype.root = function root(path7) {
+      this._root = resolve(String(path7));
       debug("root %s", this._root);
       return this;
     };
@@ -20899,10 +20899,10 @@ var require_send = __commonJS({
       var lastModified = this.res.getHeader("Last-Modified");
       return parseHttpDate(lastModified) <= parseHttpDate(ifRange);
     };
-    SendStream.prototype.redirect = function redirect(path4) {
+    SendStream.prototype.redirect = function redirect(path7) {
       var res = this.res;
       if (hasListeners(this, "directory")) {
-        this.emit("directory", res, path4);
+        this.emit("directory", res, path7);
         return;
       }
       if (this.hasTrailingSlash()) {
@@ -20922,42 +20922,42 @@ var require_send = __commonJS({
     SendStream.prototype.pipe = function pipe(res) {
       var root = this._root;
       this.res = res;
-      var path4 = decode(this.path);
-      if (path4 === -1) {
+      var path7 = decode(this.path);
+      if (path7 === -1) {
         this.error(400);
         return res;
       }
-      if (~path4.indexOf("\0")) {
+      if (~path7.indexOf("\0")) {
         this.error(400);
         return res;
       }
       var parts;
       if (root !== null) {
-        if (path4) {
-          path4 = normalize("." + sep + path4);
+        if (path7) {
+          path7 = normalize("." + sep + path7);
         }
-        if (UP_PATH_REGEXP.test(path4)) {
-          debug('malicious path "%s"', path4);
+        if (UP_PATH_REGEXP.test(path7)) {
+          debug('malicious path "%s"', path7);
           this.error(403);
           return res;
         }
-        parts = path4.split(sep);
-        path4 = normalize(join3(root, path4));
+        parts = path7.split(sep);
+        path7 = normalize(join6(root, path7));
       } else {
-        if (UP_PATH_REGEXP.test(path4)) {
-          debug('malicious path "%s"', path4);
+        if (UP_PATH_REGEXP.test(path7)) {
+          debug('malicious path "%s"', path7);
           this.error(403);
           return res;
         }
-        parts = normalize(path4).split(sep);
-        path4 = resolve(path4);
+        parts = normalize(path7).split(sep);
+        path7 = resolve(path7);
       }
       if (containsDotFile(parts)) {
         var access = this._dotfiles;
         if (access === void 0) {
           access = parts[parts.length - 1][0] === "." ? this._hidden ? "allow" : "ignore" : "allow";
         }
-        debug('%s dotfile "%s"', access, path4);
+        debug('%s dotfile "%s"', access, path7);
         switch (access) {
           case "allow":
             break;
@@ -20971,13 +20971,13 @@ var require_send = __commonJS({
         }
       }
       if (this._index.length && this.hasTrailingSlash()) {
-        this.sendIndex(path4);
+        this.sendIndex(path7);
         return res;
       }
-      this.sendFile(path4);
+      this.sendFile(path7);
       return res;
     };
-    SendStream.prototype.send = function send2(path4, stat) {
+    SendStream.prototype.send = function send2(path7, stat) {
       var len = stat.size;
       var options = this.options;
       var opts = {};
@@ -20989,9 +20989,9 @@ var require_send = __commonJS({
         this.headersAlreadySent();
         return;
       }
-      debug('pipe "%s"', path4);
-      this.setHeader(path4, stat);
-      this.type(path4);
+      debug('pipe "%s"', path7);
+      this.setHeader(path7, stat);
+      this.type(path7);
       if (this.isConditionalGET()) {
         if (this.isPreconditionFailure()) {
           this.error(412);
@@ -21040,28 +21040,28 @@ var require_send = __commonJS({
         res.end();
         return;
       }
-      this.stream(path4, opts);
+      this.stream(path7, opts);
     };
-    SendStream.prototype.sendFile = function sendFile(path4) {
+    SendStream.prototype.sendFile = function sendFile(path7) {
       var i = 0;
       var self2 = this;
-      debug('stat "%s"', path4);
-      fs3.stat(path4, function onstat(err, stat) {
-        if (err && err.code === "ENOENT" && !extname(path4) && path4[path4.length - 1] !== sep) {
+      debug('stat "%s"', path7);
+      fs6.stat(path7, function onstat(err, stat) {
+        if (err && err.code === "ENOENT" && !extname(path7) && path7[path7.length - 1] !== sep) {
           return next(err);
         }
         if (err) return self2.onStatError(err);
-        if (stat.isDirectory()) return self2.redirect(path4);
-        self2.emit("file", path4, stat);
-        self2.send(path4, stat);
+        if (stat.isDirectory()) return self2.redirect(path7);
+        self2.emit("file", path7, stat);
+        self2.send(path7, stat);
       });
       function next(err) {
         if (self2._extensions.length <= i) {
           return err ? self2.onStatError(err) : self2.error(404);
         }
-        var p = path4 + "." + self2._extensions[i++];
+        var p = path7 + "." + self2._extensions[i++];
         debug('stat "%s"', p);
-        fs3.stat(p, function(err2, stat) {
+        fs6.stat(p, function(err2, stat) {
           if (err2) return next(err2);
           if (stat.isDirectory()) return next();
           self2.emit("file", p, stat);
@@ -21069,7 +21069,7 @@ var require_send = __commonJS({
         });
       }
     };
-    SendStream.prototype.sendIndex = function sendIndex(path4) {
+    SendStream.prototype.sendIndex = function sendIndex(path7) {
       var i = -1;
       var self2 = this;
       function next(err) {
@@ -21077,9 +21077,9 @@ var require_send = __commonJS({
           if (err) return self2.onStatError(err);
           return self2.error(404);
         }
-        var p = join3(path4, self2._index[i]);
+        var p = join6(path7, self2._index[i]);
         debug('stat "%s"', p);
-        fs3.stat(p, function(err2, stat) {
+        fs6.stat(p, function(err2, stat) {
           if (err2) return next(err2);
           if (stat.isDirectory()) return next();
           self2.emit("file", p, stat);
@@ -21088,10 +21088,10 @@ var require_send = __commonJS({
       }
       next();
     };
-    SendStream.prototype.stream = function stream(path4, options) {
+    SendStream.prototype.stream = function stream(path7, options) {
       var self2 = this;
       var res = this.res;
-      var stream2 = fs3.createReadStream(path4, options);
+      var stream2 = fs6.createReadStream(path7, options);
       this.emit("stream", stream2);
       stream2.pipe(res);
       function cleanup() {
@@ -21106,10 +21106,10 @@ var require_send = __commonJS({
         self2.emit("end");
       });
     };
-    SendStream.prototype.type = function type(path4) {
+    SendStream.prototype.type = function type(path7) {
       var res = this.res;
       if (res.getHeader("Content-Type")) return;
-      var type2 = mime.lookup(path4);
+      var type2 = mime.lookup(path7);
       if (!type2) {
         debug("no content-type");
         return;
@@ -21118,9 +21118,9 @@ var require_send = __commonJS({
       debug("content-type %s", type2);
       res.setHeader("Content-Type", type2 + (charset ? "; charset=" + charset : ""));
     };
-    SendStream.prototype.setHeader = function setHeader(path4, stat) {
+    SendStream.prototype.setHeader = function setHeader(path7, stat) {
       var res = this.res;
-      this.emit("headers", res, path4, stat);
+      this.emit("headers", res, path7, stat);
       if (this._acceptRanges && !res.getHeader("Accept-Ranges")) {
         debug("accept ranges");
         res.setHeader("Accept-Ranges", "bytes");
@@ -21179,9 +21179,9 @@ var require_send = __commonJS({
       }
       return err instanceof Error ? createError(status, err, { expose: false }) : createError(status, err);
     }
-    function decode(path4) {
+    function decode(path7) {
       try {
-        return decodeURIComponent(path4);
+        return decodeURIComponent(path7);
       } catch (err) {
         return -1;
       }
@@ -22090,10 +22090,10 @@ var require_utils2 = __commonJS({
     var querystring = require("querystring");
     exports2.etag = createETagGenerator({ weak: false });
     exports2.wetag = createETagGenerator({ weak: true });
-    exports2.isAbsolute = function(path3) {
-      if ("/" === path3[0]) return true;
-      if (":" === path3[1] && ("\\" === path3[2] || "/" === path3[2])) return true;
-      if ("\\\\" === path3.substring(0, 2)) return true;
+    exports2.isAbsolute = function(path6) {
+      if ("/" === path6[0]) return true;
+      if (":" === path6[1] && ("\\" === path6[2] || "/" === path6[2])) return true;
+      if ("\\\\" === path6.substring(0, 2)) return true;
     };
     exports2.flatten = deprecate.function(
       flatten,
@@ -22304,7 +22304,7 @@ var require_application = __commonJS({
     };
     app.use = function use(fn) {
       var offset = 0;
-      var path3 = "/";
+      var path6 = "/";
       if (typeof fn !== "function") {
         var arg = fn;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -22312,7 +22312,7 @@ var require_application = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path3 = fn;
+          path6 = fn;
         }
       }
       var fns = flatten(slice.call(arguments, offset));
@@ -22323,12 +22323,12 @@ var require_application = __commonJS({
       var router = this._router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router.use(path3, fn2);
+          return router.use(path6, fn2);
         }
-        debug(".use app under %s", path3);
-        fn2.mountpath = path3;
+        debug(".use app under %s", path6);
+        fn2.mountpath = path6;
         fn2.parent = this;
-        router.use(path3, function mounted_app(req, res, next) {
+        router.use(path6, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             setPrototypeOf(req, orig.request);
@@ -22340,9 +22340,9 @@ var require_application = __commonJS({
       }, this);
       return this;
     };
-    app.route = function route(path3) {
+    app.route = function route(path6) {
       this.lazyrouter();
-      return this._router.route(path3);
+      return this._router.route(path6);
     };
     app.engine = function engine(ext, fn) {
       if (typeof fn !== "function") {
@@ -22393,7 +22393,7 @@ var require_application = __commonJS({
       }
       return this;
     };
-    app.path = function path3() {
+    app.path = function path6() {
       return this.parent ? this.parent.path() + this.mountpath : "";
     };
     app.enabled = function enabled(setting) {
@@ -22409,19 +22409,19 @@ var require_application = __commonJS({
       return this.set(setting, false);
     };
     methods.forEach(function(method) {
-      app[method] = function(path3) {
+      app[method] = function(path6) {
         if (method === "get" && arguments.length === 1) {
-          return this.set(path3);
+          return this.set(path6);
         }
         this.lazyrouter();
-        var route = this._router.route(path3);
+        var route = this._router.route(path6);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
       };
     });
-    app.all = function all(path3) {
+    app.all = function all(path6) {
       this.lazyrouter();
-      var route = this._router.route(path3);
+      var route = this._router.route(path6);
       var args = slice.call(arguments, 1);
       for (var i = 0; i < methods.length; i++) {
         route[methods[i]].apply(route, args);
@@ -23180,7 +23180,7 @@ var require_request = __commonJS({
       var subdomains2 = !isIP(hostname) ? hostname.split(".").reverse() : [hostname];
       return subdomains2.slice(offset);
     });
-    defineGetter(req, "path", function path3() {
+    defineGetter(req, "path", function path6() {
       return parse2(this).pathname;
     });
     defineGetter(req, "hostname", function hostname() {
@@ -23502,7 +23502,7 @@ var require_response = __commonJS({
     var http3 = require("http");
     var isAbsolute = require_utils2().isAbsolute;
     var onFinished = require_on_finished();
-    var path3 = require("path");
+    var path6 = require("path");
     var statuses = require_statuses();
     var merge = require_utils_merge();
     var sign = require_cookie_signature().sign;
@@ -23511,9 +23511,9 @@ var require_response = __commonJS({
     var setCharset = require_utils2().setCharset;
     var cookie = require_cookie();
     var send = require_send();
-    var extname = path3.extname;
+    var extname = path6.extname;
     var mime = send.mime;
-    var resolve = path3.resolve;
+    var resolve = path6.resolve;
     var vary = require_vary();
     var res = Object.create(http3.ServerResponse.prototype);
     module2.exports = res;
@@ -23690,26 +23690,26 @@ var require_response = __commonJS({
       this.type("txt");
       return this.send(body);
     };
-    res.sendFile = function sendFile(path4, options, callback) {
+    res.sendFile = function sendFile(path7, options, callback) {
       var done = callback;
       var req = this.req;
       var res2 = this;
       var next = req.next;
       var opts = options || {};
-      if (!path4) {
+      if (!path7) {
         throw new TypeError("path argument is required to res.sendFile");
       }
-      if (typeof path4 !== "string") {
+      if (typeof path7 !== "string") {
         throw new TypeError("path must be a string to res.sendFile");
       }
       if (typeof options === "function") {
         done = options;
         opts = {};
       }
-      if (!opts.root && !isAbsolute(path4)) {
+      if (!opts.root && !isAbsolute(path7)) {
         throw new TypeError("path must be absolute or specify root to res.sendFile");
       }
-      var pathname = encodeURI(path4);
+      var pathname = encodeURI(path7);
       var file = send(req, pathname, opts);
       sendfile(res2, file, opts, function(err) {
         if (done) return done(err);
@@ -23719,7 +23719,7 @@ var require_response = __commonJS({
         }
       });
     };
-    res.sendfile = function(path4, options, callback) {
+    res.sendfile = function(path7, options, callback) {
       var done = callback;
       var req = this.req;
       var res2 = this;
@@ -23729,7 +23729,7 @@ var require_response = __commonJS({
         done = options;
         opts = {};
       }
-      var file = send(req, path4, opts);
+      var file = send(req, path7, opts);
       sendfile(res2, file, opts, function(err) {
         if (done) return done(err);
         if (err && err.code === "EISDIR") return next();
@@ -23742,7 +23742,7 @@ var require_response = __commonJS({
       res.sendfile,
       "res.sendfile: Use res.sendFile instead"
     );
-    res.download = function download(path4, filename, options, callback) {
+    res.download = function download(path7, filename, options, callback) {
       var done = callback;
       var name = filename;
       var opts = options || null;
@@ -23759,7 +23759,7 @@ var require_response = __commonJS({
         opts = filename;
       }
       var headers = {
-        "Content-Disposition": contentDisposition(name || path4)
+        "Content-Disposition": contentDisposition(name || path7)
       };
       if (opts && opts.headers) {
         var keys = Object.keys(opts.headers);
@@ -23772,7 +23772,7 @@ var require_response = __commonJS({
       }
       opts = Object.create(opts);
       opts.headers = headers;
-      var fullPath = !opts.root ? resolve(path4) : path4;
+      var fullPath = !opts.root ? resolve(path7) : path7;
       return this.sendFile(fullPath, opts, done);
     };
     res.contentType = res.type = function contentType(type) {
@@ -24073,11 +24073,11 @@ var require_serve_static = __commonJS({
         }
         var forwardError = !fallthrough;
         var originalUrl = parseUrl.original(req);
-        var path3 = parseUrl(req).pathname;
-        if (path3 === "/" && originalUrl.pathname.substr(-1) !== "/") {
-          path3 = "";
+        var path6 = parseUrl(req).pathname;
+        if (path6 === "/" && originalUrl.pathname.substr(-1) !== "/") {
+          path6 = "";
         }
-        var stream = send(req, path3, opts);
+        var stream = send(req, path6, opts);
         stream.on("directory", onDirectory);
         if (setHeaders) {
           stream.on("headers", setHeaders);
@@ -24589,8 +24589,8 @@ var require_node5 = __commonJS({
           }
           break;
         case "FILE":
-          var fs3 = require("fs");
-          stream2 = new fs3.SyncWriteStream(fd2, { autoClose: false });
+          var fs6 = require("fs");
+          stream2 = new fs6.SyncWriteStream(fd2, { autoClose: false });
           stream2._type = "fs";
           break;
         case "PIPE":
@@ -27594,15 +27594,15 @@ var require_pg_connection_string = __commonJS({
       if (config.sslcert || config.sslkey || config.sslrootcert || config.sslmode) {
         config.ssl = {};
       }
-      const fs3 = config.sslcert || config.sslkey || config.sslrootcert ? require("fs") : null;
+      const fs6 = config.sslcert || config.sslkey || config.sslrootcert ? require("fs") : null;
       if (config.sslcert) {
-        config.ssl.cert = fs3.readFileSync(config.sslcert).toString();
+        config.ssl.cert = fs6.readFileSync(config.sslcert).toString();
       }
       if (config.sslkey) {
-        config.ssl.key = fs3.readFileSync(config.sslkey).toString();
+        config.ssl.key = fs6.readFileSync(config.sslkey).toString();
       }
       if (config.sslrootcert) {
-        config.ssl.ca = fs3.readFileSync(config.sslrootcert).toString();
+        config.ssl.ca = fs6.readFileSync(config.sslrootcert).toString();
       }
       if (options.useLibpqCompat && config.uselibpqcompat) {
         throw new Error("Both useLibpqCompat and uselibpqcompat are set. Please use only one of them.");
@@ -29367,7 +29367,7 @@ var require_split2 = __commonJS({
 var require_helper = __commonJS({
   "node_modules/pgpass/lib/helper.js"(exports2, module2) {
     "use strict";
-    var path3 = require("path");
+    var path6 = require("path");
     var Stream = require("stream").Stream;
     var split = require_split2();
     var util = require("util");
@@ -29406,7 +29406,7 @@ var require_helper = __commonJS({
     };
     module2.exports.getFileName = function(rawEnv) {
       var env = rawEnv || process.env;
-      var file = env.PGPASSFILE || (isWin ? path3.join(env.APPDATA || "./", "postgresql", "pgpass.conf") : path3.join(env.HOME || "./", ".pgpass"));
+      var file = env.PGPASSFILE || (isWin ? path6.join(env.APPDATA || "./", "postgresql", "pgpass.conf") : path6.join(env.HOME || "./", ".pgpass"));
       return file;
     };
     module2.exports.usePgPass = function(stats, fname) {
@@ -29538,16 +29538,16 @@ var require_helper = __commonJS({
 var require_lib4 = __commonJS({
   "node_modules/pgpass/lib/index.js"(exports2, module2) {
     "use strict";
-    var path3 = require("path");
-    var fs3 = require("fs");
+    var path6 = require("path");
+    var fs6 = require("fs");
     var helper = require_helper();
     module2.exports = function(connInfo, cb) {
       var file = helper.getFileName();
-      fs3.stat(file, function(err, stat) {
+      fs6.stat(file, function(err, stat) {
         if (err || !helper.usePgPass(stat, file)) {
           return cb(void 0);
         }
-        var st = fs3.createReadStream(file);
+        var st = fs6.createReadStream(file);
         helper.getPassword(connInfo, st, cb);
       });
     };
@@ -30217,15 +30217,15 @@ var require_pg_pool = __commonJS({
       });
       return { callback: cb, result };
     }
-    function makeIdleListener(pool2, client) {
+    function makeIdleListener(pool3, client) {
       return function idleListener(err) {
         err.client = client;
         client.removeListener("error", idleListener);
         client.on("error", () => {
-          pool2.log("additional client error after disconnection due to error", err);
+          pool3.log("additional client error after disconnection due to error", err);
         });
-        pool2._remove(client);
-        pool2.emit("error", err, client);
+        pool3._remove(client);
+        pool3.emit("error", err, client);
       };
     }
     var Pool3 = class extends EventEmitter {
@@ -32295,7 +32295,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql2.raw = raw;
-      function join3(chunks, separator) {
+      function join6(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -32305,7 +32305,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql2.join = join3;
+      sql2.join = join6;
       function identifier(value) {
         return new Name(value);
       }
@@ -32385,7 +32385,7 @@ var init_sql = __esm({
 function mapResultRow(columns, row, joinsNotNullableMap) {
   const nullifyMap = {};
   const result = columns.reduce(
-    (result2, { path: path3, field }, columnIndex) => {
+    (result2, { path: path6, field }, columnIndex) => {
       let decoder;
       if (is(field, Column)) {
         decoder = field;
@@ -32395,8 +32395,8 @@ function mapResultRow(columns, row, joinsNotNullableMap) {
         decoder = field.sql.decoder;
       }
       let node = result2;
-      for (const [pathChunkIndex, pathChunk] of path3.entries()) {
-        if (pathChunkIndex < path3.length - 1) {
+      for (const [pathChunkIndex, pathChunk] of path6.entries()) {
+        if (pathChunkIndex < path6.length - 1) {
           if (!(pathChunk in node)) {
             node[pathChunk] = {};
           }
@@ -32404,8 +32404,8 @@ function mapResultRow(columns, row, joinsNotNullableMap) {
         } else {
           const rawValue = row[columnIndex];
           const value = node[pathChunk] = rawValue === null ? null : decoder.mapFromDriverValue(rawValue);
-          if (joinsNotNullableMap && is(field, Column) && path3.length === 2) {
-            const objectName = path3[0];
+          if (joinsNotNullableMap && is(field, Column) && path6.length === 2) {
+            const objectName = path6[0];
             if (!(objectName in nullifyMap)) {
               nullifyMap[objectName] = value === null ? getTableName(field.table) : false;
             } else if (typeof nullifyMap[objectName] === "string" && nullifyMap[objectName] !== getTableName(field.table)) {
@@ -36317,7 +36317,7 @@ var init_select2 = __esm({
         return (table, on) => {
           const baseTableName = this.tableName;
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins?.some((join3) => join3.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join6) => join6.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -37360,7 +37360,7 @@ var init_update = __esm({
       createJoin(joinType) {
         return (table, on) => {
           const tableName = getTableLikeName(table);
-          if (typeof tableName === "string" && this.config.joins.some((join3) => join3.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins.some((join6) => join6.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (typeof on === "function") {
@@ -37456,10 +37456,10 @@ var init_update = __esm({
               const fromFields = this.getTableLikeFields(this.config.from);
               fields[tableName] = fromFields;
             }
-            for (const join3 of this.config.joins) {
-              const tableName2 = getTableLikeName(join3.table);
-              if (typeof tableName2 === "string" && !is(join3.table, SQL)) {
-                const fromFields = this.getTableLikeFields(join3.table);
+            for (const join6 of this.config.joins) {
+              const tableName2 = getTableLikeName(join6.table);
+              if (typeof tableName2 === "string" && !is(join6.table, SQL)) {
+                const fromFields = this.getTableLikeFields(join6.table);
                 fields[tableName2] = fromFields;
               }
             }
@@ -39045,6 +39045,8 @@ var init_schema2 = __esm({
       mqComposite: real("mq_composite"),
       isPersonal: boolean("is_personal").default(false),
       confidenceScore: real("confidence_score"),
+      v3AuditPassed: boolean("v3_audit_passed").default(false),
+      // true = passed V3-15 threshold gate
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
@@ -41976,9 +41978,9 @@ var require_jws = __commonJS({
 var require_decode = __commonJS({
   "node_modules/jsonwebtoken/decode.js"(exports2, module2) {
     var jws = require_jws();
-    module2.exports = function(jwt2, options) {
+    module2.exports = function(jwt3, options) {
       options = options || {};
-      var decoded = jws.decode(jwt2, options);
+      var decoded = jws.decode(jwt3, options);
       if (!decoded) {
         return null;
       }
@@ -44957,6 +44959,13 @@ var require_jsonwebtoken = __commonJS({
 });
 
 // server/goldStandardV2.ts
+var goldStandardV2_exports = {};
+__export(goldStandardV2_exports, {
+  CONFIDENCE_THRESHOLDS: () => CONFIDENCE_THRESHOLDS,
+  DEFAULT_WEIGHTS: () => DEFAULT_WEIGHTS,
+  runBatchPredictions: () => runBatchPredictions,
+  runTitanXII: () => runTitanXII
+});
 function calcF01_MarketConsensus(homeOdds, drawOdds, awayOdds) {
   if (!homeOdds || !awayOdds) return { home: 0.44, draw: 0.26, away: 0.3 };
   const homeImpl = 1 / homeOdds;
@@ -45136,8 +45145,8 @@ function runTitanXII(fixture, weights = DEFAULT_WEIGHTS) {
   outcomes.sort((a, b) => b[1] - a[1]);
   const [topPick, topConfidence] = outcomes[0];
   let tier = "free";
-  if (topConfidence >= CONFIDENCE_THRESHOLDS.PRO_TIER) tier = "pro";
-  else if (topConfidence >= CONFIDENCE_THRESHOLDS.VIP_TIER) tier = "vip";
+  if (topConfidence >= CONFIDENCE_THRESHOLDS.LIFETIME_TIER) tier = "lifetime";
+  else if (topConfidence >= CONFIDENCE_THRESHOLDS.PRO_TIER) tier = "pro";
   else if (topConfidence >= CONFIDENCE_THRESHOLDS.FREE_TIER) tier = "free";
   const isPowerPick = topConfidence >= CONFIDENCE_THRESHOLDS.POWER_PICK;
   const factorBreakdown = {
@@ -45251,10 +45260,10 @@ var init_goldStandardV2 = __esm({
       // Below this -> pick is discarded (Free tier starts at 64%)
       FREE_TIER: 64,
       // 64-67% — Free tier (dashboard only, NOT on main site)
-      VIP_TIER: 68,
-      // 68-69% — Pro tier minimum (shown on main site)
-      PRO_TIER: 70,
-      // 70-79% — Lifetime tier minimum
+      PRO_TIER: 68,
+      // 68-69.9% — Pro tier gate (6 slots, shown on main site)
+      LIFETIME_TIER: 70,
+      // 70%+ — Lifetime tier gate (10 slots, full board)
       POWER_PICK: 80
       // 80%+
     };
@@ -46285,6 +46294,12 @@ var init_dist = __esm({
 });
 
 // server/services/geminiV3Engine.ts
+var geminiV3Engine_exports = {};
+__export(geminiV3Engine_exports, {
+  DEFAULT_WEIGHTS_V15: () => DEFAULT_WEIGHTS_V15,
+  calcDeterministicBase: () => calcDeterministicBase,
+  runBatchPredictionsV15: () => runBatchPredictionsV15
+});
 async function runFlashBatchScan(fixtures) {
   if (!GEMINI_API_KEY || fixtures.length === 0) return [];
   const results2 = [];
@@ -46629,9 +46644,282 @@ var init_geminiV3Engine = __esm({
   }
 });
 
+// server/apis/espnScraper.ts
+var espnScraper_exports = {};
+__export(espnScraper_exports, {
+  convertEspnToV3Format: () => convertEspnToV3Format,
+  default: () => espnScraper_default,
+  fetchEspnFixtures: () => fetchEspnFixtures,
+  getCooldownStatus: () => getCooldownStatus,
+  isInCooldown: () => isInCooldown,
+  loadCooldowns: () => loadCooldowns,
+  loadPermanentCache: () => loadPermanentCache,
+  saveCooldowns: () => saveCooldowns,
+  savePermanentCache: () => savePermanentCache,
+  setCooldown: () => setCooldown
+});
+function loadCooldowns() {
+  try {
+    if (fs.existsSync(COOLDOWN_PATH)) {
+      return JSON.parse(fs.readFileSync(COOLDOWN_PATH, "utf8"));
+    }
+  } catch (_) {
+  }
+  return {};
+}
+function saveCooldowns(cooldowns) {
+  try {
+    fs.writeFileSync(COOLDOWN_PATH, JSON.stringify(cooldowns, null, 2));
+  } catch (_) {
+  }
+}
+function isInCooldown(apiName) {
+  const cooldowns = loadCooldowns();
+  const entry = cooldowns[apiName];
+  if (!entry) return false;
+  if (Date.now() > entry.until) {
+    delete cooldowns[apiName];
+    saveCooldowns(cooldowns);
+    return false;
+  }
+  const minutesLeft = Math.ceil((entry.until - Date.now()) / 6e4);
+  console.log(`[Cooldown] ${apiName} is in cooldown for ${minutesLeft} more minutes (reason: ${entry.reason})`);
+  return true;
+}
+function setCooldown(apiName, minutes, reason) {
+  const cooldowns = loadCooldowns();
+  cooldowns[apiName] = {
+    api: apiName,
+    until: Date.now() + minutes * 60 * 1e3,
+    reason
+  };
+  saveCooldowns(cooldowns);
+  console.log(`[Cooldown] \u23F8\uFE0F  ${apiName} put in cooldown for ${minutes} minutes \u2014 ${reason}`);
+}
+function getCooldownStatus() {
+  const cooldowns = loadCooldowns();
+  const now = Date.now();
+  const result = {};
+  for (const [api, entry] of Object.entries(cooldowns)) {
+    if (now > entry.until) {
+      result[api] = { active: false };
+    } else {
+      result[api] = {
+        active: true,
+        minutesLeft: Math.ceil((entry.until - now) / 6e4),
+        reason: entry.reason
+      };
+    }
+  }
+  return result;
+}
+async function fetchEspnLeague(sport, league, leagueName, type, dateStr) {
+  const url = `${ESPN_BASE}/${sport}/${league}/scoreboard?dates=${dateStr}`;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1e4);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) {
+      console.log(`[ESPN] HTTP ${res.status} for ${leagueName}`);
+      return [];
+    }
+    const data = await res.json();
+    const events = data.events || [];
+    return events.map((event) => {
+      const comp = event.competitions?.[0] || {};
+      const competitors = comp.competitors || [];
+      const home = competitors.find((c) => c.homeAway === "home") || competitors[0] || {};
+      const away = competitors.find((c) => c.homeAway === "away") || competitors[1] || {};
+      const statusType = comp.status?.type?.name || "STATUS_SCHEDULED";
+      const dateISO = event.date || comp.date || "";
+      const dateObj = dateISO ? new Date(dateISO) : /* @__PURE__ */ new Date();
+      const dateLocal = dateObj.toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      return {
+        id: `espn-${event.id || Math.random().toString(36).slice(2)}`,
+        homeTeam: home.team?.displayName || home.team?.name || "Home Team",
+        awayTeam: away.team?.displayName || away.team?.name || "Away Team",
+        homeTeamAbbr: home.team?.abbreviation || "",
+        awayTeamAbbr: away.team?.abbreviation || "",
+        league: leagueName,
+        leagueCode: league,
+        sport: type,
+        date: dateISO,
+        dateLocal,
+        status: statusType.includes("FINAL") ? "final" : statusType.includes("IN_PROGRESS") ? "in_progress" : "scheduled",
+        homeScore: home.score ? parseInt(home.score) : void 0,
+        awayScore: away.score ? parseInt(away.score) : void 0,
+        venue: comp.venue?.fullName,
+        source: "espn-free-scraper"
+      };
+    });
+  } catch (err) {
+    console.log(`[ESPN] Error fetching ${leagueName}: ${err.message}`);
+    return [];
+  }
+}
+async function fetchEspnFixtures(dateStr) {
+  const targetDate = dateStr || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+  const espnDate = targetDate.replace(/-/g, "");
+  console.log(`[ESPN] \u{1F193} Emergency scraper activated \u2014 fetching ${ESPN_LEAGUES.length} leagues for ${targetDate}`);
+  const allFixtures = [];
+  const leagueBreakdown = {};
+  const results2 = await Promise.allSettled(
+    ESPN_LEAGUES.map(
+      ({ sport, league, name, type }) => fetchEspnLeague(sport, league, name, type, espnDate)
+    )
+  );
+  for (let i = 0; i < results2.length; i++) {
+    const result = results2[i];
+    const { name } = ESPN_LEAGUES[i];
+    if (result.status === "fulfilled" && result.value.length > 0) {
+      allFixtures.push(...result.value);
+      leagueBreakdown[name] = result.value.length;
+    }
+  }
+  console.log(`[ESPN] \u2705 Total fixtures fetched: ${allFixtures.length} across ${Object.keys(leagueBreakdown).length} leagues`);
+  for (const [league, count] of Object.entries(leagueBreakdown)) {
+    console.log(`[ESPN]   ${league}: ${count} games`);
+  }
+  if (allFixtures.length > 0) {
+    savePermanentCache(allFixtures, targetDate);
+  }
+  return {
+    fixtures: allFixtures,
+    totalCount: allFixtures.length,
+    leagueBreakdown,
+    source: "espn-free-scraper",
+    cached: false,
+    dateQueried: targetDate
+  };
+}
+function savePermanentCache(fixtures, dateQueried) {
+  try {
+    const cache2 = {
+      lastUpdated: (/* @__PURE__ */ new Date()).toISOString(),
+      dateQueried,
+      fixtures,
+      totalCount: fixtures.length,
+      leagueBreakdown: fixtures.reduce((acc, f) => {
+        acc[f.league] = (acc[f.league] || 0) + 1;
+        return acc;
+      }, {})
+    };
+    fs.writeFileSync(CACHE_PATH, JSON.stringify(cache2, null, 2));
+    console.log(`[ESPN] \u{1F4BE} Saved ${fixtures.length} fixtures to permanent_fixtures.json`);
+  } catch (err) {
+    console.error("[ESPN] Failed to save permanent cache:", err.message);
+  }
+}
+function loadPermanentCache() {
+  try {
+    if (!fs.existsSync(CACHE_PATH)) return null;
+    const cache2 = JSON.parse(fs.readFileSync(CACHE_PATH, "utf8"));
+    if (!cache2.fixtures || cache2.fixtures.length === 0) return null;
+    console.log(`[ESPN] \u{1F4C2} Loaded ${cache2.fixtures.length} fixtures from permanent_fixtures.json (last updated: ${cache2.lastUpdated})`);
+    return {
+      fixtures: cache2.fixtures,
+      totalCount: cache2.fixtures.length,
+      leagueBreakdown: cache2.leagueBreakdown || {},
+      source: "espn-free-scraper",
+      cached: true,
+      lastUpdated: cache2.lastUpdated,
+      dateQueried: cache2.dateQueried
+    };
+  } catch (err) {
+    console.error("[ESPN] Failed to load permanent cache:", err.message);
+    return null;
+  }
+}
+function convertEspnToV3Format(fixture) {
+  return {
+    fixture: {
+      id: fixture.id,
+      date: fixture.date,
+      status: { short: fixture.status === "final" ? "FT" : fixture.status === "in_progress" ? "LIVE" : "NS" },
+      venue: { name: fixture.venue || "Unknown Venue", city: "" }
+    },
+    league: {
+      id: 0,
+      name: fixture.league,
+      country: "",
+      logo: "",
+      flag: "",
+      season: (/* @__PURE__ */ new Date()).getFullYear(),
+      round: ""
+    },
+    teams: {
+      home: {
+        id: 0,
+        name: fixture.homeTeam,
+        logo: "",
+        winner: fixture.homeScore !== void 0 && fixture.awayScore !== void 0 ? fixture.homeScore > fixture.awayScore : null
+      },
+      away: {
+        id: 0,
+        name: fixture.awayTeam,
+        logo: "",
+        winner: fixture.homeScore !== void 0 && fixture.awayScore !== void 0 ? fixture.awayScore > fixture.homeScore : null
+      }
+    },
+    goals: {
+      home: fixture.homeScore ?? null,
+      away: fixture.awayScore ?? null
+    },
+    score: {
+      halftime: { home: null, away: null },
+      fulltime: { home: fixture.homeScore ?? null, away: fixture.awayScore ?? null }
+    },
+    // ESPN-specific metadata
+    _espnSource: true,
+    _sport: fixture.sport,
+    _leagueCode: fixture.leagueCode,
+    _dateLocal: fixture.dateLocal
+  };
+}
+var fs, path, ESPN_BASE, CACHE_PATH, COOLDOWN_PATH, ESPN_LEAGUES, espnScraper_default;
+var init_espnScraper = __esm({
+  "server/apis/espnScraper.ts"() {
+    fs = __toESM(require("fs"));
+    path = __toESM(require("path"));
+    ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports";
+    CACHE_PATH = path.join(process.cwd(), "permanent_fixtures.json");
+    COOLDOWN_PATH = path.join(process.cwd(), "api_cooldowns.json");
+    ESPN_LEAGUES = [
+      // NBA
+      { sport: "basketball", league: "nba", name: "NBA", type: "nba" },
+      // Soccer — top 10 leagues
+      { sport: "soccer", league: "eng.1", name: "Premier League", type: "soccer" },
+      { sport: "soccer", league: "esp.1", name: "La Liga", type: "soccer" },
+      { sport: "soccer", league: "ger.1", name: "Bundesliga", type: "soccer" },
+      { sport: "soccer", league: "ita.1", name: "Serie A", type: "soccer" },
+      { sport: "soccer", league: "fra.1", name: "Ligue 1", type: "soccer" },
+      { sport: "soccer", league: "usa.1", name: "MLS", type: "soccer" },
+      { sport: "soccer", league: "por.1", name: "Primeira Liga", type: "soccer" },
+      { sport: "soccer", league: "ned.1", name: "Eredivisie", type: "soccer" },
+      { sport: "soccer", league: "mex.1", name: "Liga MX", type: "soccer" },
+      { sport: "soccer", league: "bra.1", name: "Brasileirao", type: "soccer" },
+      { sport: "soccer", league: "tur.1", name: "S\xFCper Lig", type: "soccer" },
+      { sport: "soccer", league: "sco.1", name: "Scottish Prem", type: "soccer" },
+      { sport: "soccer", league: "jpn.1", name: "J1 League", type: "soccer" },
+      { sport: "soccer", league: "arg.1", name: "Primera Divisi\xF3n", type: "soccer" }
+    ];
+    espnScraper_default = {
+      fetchEspnFixtures,
+      loadPermanentCache,
+      savePermanentCache,
+      convertEspnToV3Format,
+      isInCooldown,
+      setCooldown,
+      getCooldownStatus
+    };
+  }
+});
+
 // server/apis/apiFootball.ts
 var apiFootball_exports = {};
 __export(apiFootball_exports, {
+  ApiSuspendedError: () => ApiSuspendedError,
   clearApiCache: () => clearApiCache,
   fetchNBAFixtures: () => fetchNBAFixtures,
   fetchSoccerFixtures: () => fetchSoccerFixtures,
@@ -46639,20 +46927,20 @@ __export(apiFootball_exports, {
   getCacheStatus: () => getCacheStatus
 });
 function ensureCacheDir() {
-  if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
+  if (!fs2.existsSync(CACHE_DIR)) fs2.mkdirSync(CACHE_DIR, { recursive: true });
 }
 function getCacheKey(endpoint) {
   return endpoint.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 120) + ".json";
 }
 function readCache(cacheKey) {
   try {
-    const filePath = path.join(CACHE_DIR, cacheKey);
-    if (!fs.existsSync(filePath)) return null;
-    const raw = fs.readFileSync(filePath, "utf8");
+    const filePath = path2.join(CACHE_DIR, cacheKey);
+    if (!fs2.existsSync(filePath)) return null;
+    const raw = fs2.readFileSync(filePath, "utf8");
     const { timestamp: timestamp2, data } = JSON.parse(raw);
     const age = Date.now() - timestamp2;
     if (age > CACHE_TTL_MS) {
-      fs.unlinkSync(filePath);
+      fs2.unlinkSync(filePath);
       return null;
     }
     console.log(`[Cache] HIT (${Math.round(age / 6e4)}min): ${cacheKey}`);
@@ -46664,29 +46952,65 @@ function readCache(cacheKey) {
 function writeCache(cacheKey, data) {
   try {
     ensureCacheDir();
-    fs.writeFileSync(path.join(CACHE_DIR, cacheKey), JSON.stringify({ timestamp: Date.now(), data }), "utf8");
+    fs2.writeFileSync(path2.join(CACHE_DIR, cacheKey), JSON.stringify({ timestamp: Date.now(), data }), "utf8");
   } catch {
   }
 }
-async function apiFetch(endpoint, baseUrl = BASE_URL, apiKey = API_KEY) {
+async function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+async function apiFetch(endpoint, baseUrl = BASE_URL, apiKey = API_KEY, retries = 3) {
   if (!apiKey) throw new Error("API key not configured");
   const cacheKey = getCacheKey(baseUrl.replace(/https?:\/\//, "") + endpoint);
   const cached = readCache(cacheKey);
   if (cached !== null) return cached;
-  console.log(`[API] LIVE REQUEST: ${baseUrl}${endpoint}`);
-  const res = await fetch(`${baseUrl}${endpoint}`, {
-    headers: { "x-apisports-key": apiKey, "x-rapidapi-key": apiKey }
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
-  const data = await res.json();
-  writeCache(cacheKey, data);
-  return data;
+  let lastErr;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`[API] LIVE REQUEST (attempt ${attempt}/${retries}): ${baseUrl}${endpoint}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15e3);
+      const res = await fetch(`${baseUrl}${endpoint}`, {
+        headers: { "x-apisports-key": apiKey, "x-rapidapi-key": apiKey },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (res.status === 429 || res.status === 401) {
+        const reason = res.status === 429 ? "RATE_LIMITED_429" : "UNAUTHORIZED_401";
+        console.error(`[API-Football] ${reason} \u2014 putting in 60-minute cooldown`);
+        try {
+          const { setCooldown: setCooldown2 } = await Promise.resolve().then(() => (init_espnScraper(), espnScraper_exports));
+          setCooldown2("api-football", 60, reason);
+        } catch (_) {
+        }
+        throw new Error(`API error: ${res.status} ${res.statusText}`);
+      }
+      if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
+      const data = await res.json();
+      const accessErr = data?.errors?.access || data?.errors?.token;
+      if (accessErr) {
+        const msg = `[API-Sports] ACCOUNT SUSPENDED: ${accessErr} \u2014 Endpoint: ${endpoint}`;
+        console.error(msg);
+        throw new ApiSuspendedError(msg);
+      }
+      writeCache(cacheKey, data);
+      return data;
+    } catch (err) {
+      lastErr = err;
+      if (err instanceof ApiSuspendedError) throw err;
+      if (attempt === retries) break;
+      const delay2 = Math.pow(2, attempt) * 1e3;
+      console.warn(`[API] Attempt ${attempt} failed (${err.message}). Retrying in ${delay2}ms...`);
+      await sleep(delay2);
+    }
+  }
+  throw lastErr;
 }
 function clearApiCache() {
   try {
-    if (fs.existsSync(CACHE_DIR)) {
-      const files = fs.readdirSync(CACHE_DIR);
-      files.forEach((f) => fs.unlinkSync(path.join(CACHE_DIR, f)));
+    if (fs2.existsSync(CACHE_DIR)) {
+      const files = fs2.readdirSync(CACHE_DIR);
+      files.forEach((f) => fs2.unlinkSync(path2.join(CACHE_DIR, f)));
       console.log(`[Cache] Cleared ${files.length} cached responses`);
     }
   } catch {
@@ -46695,13 +47019,13 @@ function clearApiCache() {
 function getCacheStatus() {
   try {
     ensureCacheDir();
-    const files = fs.readdirSync(CACHE_DIR);
+    const files = fs2.readdirSync(CACHE_DIR);
     let totalSize = 0;
     const entries = files.map((f) => {
-      const fp = path.join(CACHE_DIR, f);
-      totalSize += fs.statSync(fp).size;
+      const fp = path2.join(CACHE_DIR, f);
+      totalSize += fs2.statSync(fp).size;
       try {
-        const { timestamp: timestamp2 } = JSON.parse(fs.readFileSync(fp, "utf8"));
+        const { timestamp: timestamp2 } = JSON.parse(fs2.readFileSync(fp, "utf8"));
         const ageMs = Date.now() - timestamp2;
         return { key: f, ageMin: Math.round(ageMs / 6e4), expiresMin: Math.round((CACHE_TTL_MS - ageMs) / 6e4) };
       } catch {
@@ -46720,7 +47044,16 @@ async function fetchSoccerFixtures(date2) {
   console.log(`[API-Football] Fetching ALL soccer fixtures for ${date2}`);
   const fixtures = [];
   try {
-    const data = await apiFetch(`/fixtures?date=${date2}&timezone=America/Moncton`);
+    let data;
+    try {
+      data = await apiFetch(`/fixtures?date=${date2}&timezone=America/Moncton`);
+    } catch (err) {
+      if (err.name === "ApiSuspendedError") {
+        console.error("[API-Football] \u274C SUSPENDED KEY \u2014 Falling back to The Odds API for soccer fixtures");
+        return [];
+      }
+      throw err;
+    }
     const rawFixtures = data.response || [];
     console.log(`[API-Football] Total raw fixtures on ${date2}: ${rawFixtures.length}`);
     for (const f of rawFixtures) {
@@ -46832,11 +47165,20 @@ async function fetchNBAFixtures(date2) {
   console.log(`[API-Basketball] Fetching NBA games for ${date2}`);
   const fixtures = [];
   try {
-    const data = await apiFetch(
-      `/games?league=${NBA_LEAGUE_ID}&season=${NBA_SEASON}&date=${date2}`,
-      NBA_BASE_URL,
-      NBA_API_KEY
-    );
+    let data;
+    try {
+      data = await apiFetch(
+        `/games?league=${NBA_LEAGUE_ID}&season=${NBA_SEASON}&date=${date2}`,
+        NBA_BASE_URL,
+        NBA_API_KEY
+      );
+    } catch (err) {
+      if (err.name === "ApiSuspendedError") {
+        console.error("[API-Basketball] \u274C SUSPENDED KEY \u2014 Falling back to The Odds API for NBA fixtures");
+        return [];
+      }
+      throw err;
+    }
     const rawGames = data.response || [];
     console.log(`[API-Basketball] Raw NBA games on ${date2}: ${rawGames.length}`);
     for (const g of rawGames) {
@@ -47172,19 +47514,25 @@ async function fetchWeather(city) {
 async function fetchTodayFixtures(date2) {
   return fetchSoccerFixtures(date2);
 }
-var fs, path, os, API_KEY, NBA_API_KEY, BASE_URL, NBA_BASE_URL, WEATHER_KEY, CACHE_DIR, CACHE_TTL_MS, SOCCER_LEAGUES, NBA_LEAGUE_ID, NBA_SEASON;
+var fs2, path2, os, API_KEY, NBA_API_KEY, BASE_URL, NBA_BASE_URL, WEATHER_KEY, CACHE_DIR, CACHE_TTL_MS, ApiSuspendedError, SOCCER_LEAGUES, NBA_LEAGUE_ID, NBA_SEASON;
 var init_apiFootball = __esm({
   "server/apis/apiFootball.ts"() {
-    fs = __toESM(require("fs"));
-    path = __toESM(require("path"));
+    fs2 = __toESM(require("fs"));
+    path2 = __toESM(require("path"));
     os = __toESM(require("os"));
     API_KEY = process.env.API_FOOTBALL_KEY || "";
     NBA_API_KEY = process.env.API_BASKETBALL_KEY || process.env.API_FOOTBALL_KEY || "";
     BASE_URL = "https://v3.football.api-sports.io";
     NBA_BASE_URL = "https://v1.basketball.api-sports.io";
     WEATHER_KEY = process.env.OPENWEATHER_KEY || "";
-    CACHE_DIR = path.join(os.tmpdir(), "parlay-king-cache");
+    CACHE_DIR = path2.join(os.tmpdir(), "parlay-king-cache");
     CACHE_TTL_MS = 60 * 60 * 1e3;
+    ApiSuspendedError = class extends Error {
+      constructor(msg) {
+        super(msg);
+        this.name = "ApiSuspendedError";
+      }
+    };
     SOCCER_LEAGUES = {
       // ── UEFA / Europe ──
       2: { name: "UEFA Champions League", tier: 1, sport: "soccer" },
@@ -47334,10 +47682,33 @@ async function fetchOdds2(sportKey, isManual) {
     const used = parseInt(resp.headers.get("x-requests-used") || "0", 10);
     recordCall(sportKey, "/odds", remaining, used);
     if (!resp.ok) {
+      if (resp.status === 401 || resp.status === 429) {
+        const reason = resp.status === 429 ? "RATE_LIMITED_429" : "UNAUTHORIZED_401";
+        console.error(`[OddsAPI] \u274C ${resp.status === 401 ? "UNAUTHORIZED (key invalid or quota exhausted)" : "RATE LIMITED (429)"} for ${sportKey} \u2014 putting in 60-minute cooldown`);
+        budgetUsedToday = BUDGET_CEILING;
+        try {
+          const { setCooldown: setCooldown2 } = await Promise.resolve().then(() => (init_espnScraper(), espnScraper_exports));
+          setCooldown2("odds-api", 60, reason);
+        } catch (_) {
+        }
+        return [];
+      }
       console.error(`[OddsAPI] HTTP ${resp.status} for ${sportKey}`);
       return [];
     }
     const raw = await resp.json();
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+      const errCode = raw.error_code || "";
+      const errMsg = raw.message || "";
+      if (errCode === "OUT_OF_USAGE_CREDITS" || errMsg.includes("quota") || errMsg.includes("Usage quota")) {
+        console.error(`[OddsAPI] \u274C QUOTA EXHAUSTED: ${errMsg} \u2014 All Odds API calls blocked until next billing cycle.`);
+        console.error(`[OddsAPI] See https://the-odds-api.com for usage plans.`);
+        budgetUsedToday = BUDGET_CEILING;
+        return [];
+      }
+      console.error(`[OddsAPI] Unexpected response for ${sportKey}:`, raw);
+      return [];
+    }
     if (!Array.isArray(raw)) {
       console.error(`[OddsAPI] Unexpected response for ${sportKey}:`, raw);
       return [];
@@ -49032,8 +49403,8 @@ var require_Client = __commonJS({
       /**
        * Set the working directory.
        */
-      async cd(path3) {
-        const validPath = await this.protectWhitespace(path3);
+      async cd(path6) {
+        const validPath = await this.protectWhitespace(path6);
         return this.send("CWD " + validPath);
       }
       /**
@@ -49046,8 +49417,8 @@ var require_Client = __commonJS({
        * Get the last modified time of a file. This is not supported by every FTP server, in which case
        * calling this method will throw an exception.
        */
-      async lastMod(path3) {
-        const validPath = await this.protectWhitespace(path3);
+      async lastMod(path6) {
+        const validPath = await this.protectWhitespace(path6);
         const res = await this.send(`MDTM ${validPath}`);
         const date2 = res.message.slice(4);
         return (0, parseListMLSD_1.parseMLSxDate)(date2);
@@ -49055,8 +49426,8 @@ var require_Client = __commonJS({
       /**
        * Get the size of a file.
        */
-      async size(path3) {
-        const validPath = await this.protectWhitespace(path3);
+      async size(path6) {
+        const validPath = await this.protectWhitespace(path6);
         const command = `SIZE ${validPath}`;
         const res = await this.send(command);
         const size = parseInt(res.message.slice(4), 10);
@@ -49083,8 +49454,8 @@ var require_Client = __commonJS({
        * You can ignore FTP error return codes which won't throw an exception if e.g.
        * the file doesn't exist.
        */
-      async remove(path3, ignoreErrorCodes = false) {
-        const validPath = await this.protectWhitespace(path3);
+      async remove(path6, ignoreErrorCodes = false) {
+        const validPath = await this.protectWhitespace(path6);
         if (ignoreErrorCodes) {
           return this.sendIgnoringError(`DELE ${validPath}`);
         }
@@ -49238,8 +49609,8 @@ var require_Client = __commonJS({
        *
        * @param [path]  Path to remote file or directory.
        */
-      async list(path3 = "") {
-        const validPath = await this.protectWhitespace(path3);
+      async list(path6 = "") {
+        const validPath = await this.protectWhitespace(path6);
         let lastError;
         for (const candidate of this.availableListCommands) {
           const command = validPath === "" ? candidate : `${candidate} ${validPath}`;
@@ -49409,21 +49780,21 @@ var require_Client = __commonJS({
       /**
        * Remove an empty directory, will fail if not empty.
        */
-      async removeEmptyDir(path3) {
-        const validPath = await this.protectWhitespace(path3);
+      async removeEmptyDir(path6) {
+        const validPath = await this.protectWhitespace(path6);
         return this.send(`RMD ${validPath}`);
       }
       /**
        * FTP servers can't handle filenames that have leading whitespace. This method transforms
        * a given path to fix that issue for most cases.
        */
-      async protectWhitespace(path3) {
-        if (!path3.startsWith(" ")) {
-          return path3;
+      async protectWhitespace(path6) {
+        if (!path6.startsWith(" ")) {
+          return path6;
         }
         const pwd = await this.pwd();
         const absolutePathPrefix = pwd.endsWith("/") ? pwd : pwd + "/";
-        return absolutePathPrefix + path3;
+        return absolutePathPrefix + path6;
       }
       async _exitAtCurrentDirectory(func) {
         const userDir = await this.pwd();
@@ -49500,11 +49871,11 @@ var require_Client = __commonJS({
       }
     };
     exports2.Client = Client3;
-    async function ensureLocalDirectory(path3) {
+    async function ensureLocalDirectory(path6) {
       try {
-        await fsStat(path3);
+        await fsStat(path6);
       } catch (_a) {
-        await fsMkDir(path3, { recursive: true });
+        await fsMkDir(path6, { recursive: true });
       }
     }
     async function ignoreError(func) {
@@ -49861,8 +50232,8 @@ async function downloadFTPFile(filename) {
   try {
     await client.access(FTP_CONFIG);
     await client.downloadTo(tmpPath, `/public_html/${filename}`);
-    const { readFileSync: readFileSync2 } = await import("fs");
-    return readFileSync2(tmpPath, "utf8");
+    const { readFileSync: readFileSync5 } = await import("fs");
+    return readFileSync5(tmpPath, "utf8");
   } finally {
     client.close();
     try {
@@ -49900,3234 +50271,415 @@ var init_upload = __esm({
   }
 });
 
-// server/services/tomorrowSync.ts
-var tomorrowSync_exports = {};
-__export(tomorrowSync_exports, {
-  syncTomorrowGames: () => syncTomorrowGames
+// server/goldTierRoutes.ts
+var goldTierRoutes_exports = {};
+__export(goldTierRoutes_exports, {
+  HARDENED_TIER_CONFIG: () => HARDENED_TIER_CONFIG,
+  registerGoldTierRoutes: () => registerGoldTierRoutes
 });
-function getPool() {
-  return new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-    max: 5,
-    idleTimeoutMillis: 1e4
-  });
-}
-async function ensureTable(pool2) {
-  await pool2.query(`
-    CREATE TABLE IF NOT EXISTS pending_validator (
-      id              SERIAL PRIMARY KEY,
-      game_id         TEXT NOT NULL UNIQUE,
-      date            TEXT NOT NULL,
-      sport           TEXT NOT NULL,
-      league          TEXT,
-      home_team       TEXT NOT NULL,
-      away_team       TEXT NOT NULL,
-      commence_time   TEXT,
-      home_odds       REAL,
-      away_odds       REAL,
-      draw_odds       REAL,
-      bookmaker       TEXT,
-      confidence      REAL NOT NULL DEFAULT 0,
-      best_pick       TEXT,
-      reasoning       TEXT,
-      factors         JSONB,
-      outcomes        JSONB,
-      status          TEXT NOT NULL DEFAULT 'pending',
-      approved        BOOLEAN NOT NULL DEFAULT false,
-      pushed_to_live  BOOLEAN NOT NULL DEFAULT false,
-      synced_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-    CREATE INDEX IF NOT EXISTS idx_pv_date   ON pending_validator (date);
-    CREATE INDEX IF NOT EXISTS idx_pv_sport  ON pending_validator (sport);
-    CREATE INDEX IF NOT EXISTS idx_pv_conf   ON pending_validator (confidence DESC);
-  `);
-}
-async function upsertValidatorRow(pool2, row) {
-  await pool2.query(`
-    INSERT INTO pending_validator
-      (game_id, date, sport, league, home_team, away_team, commence_time,
-       home_odds, away_odds, draw_odds, bookmaker,
-       confidence, best_pick, reasoning, factors, outcomes,
-       status, approved, pushed_to_live, synced_at, updated_at)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
-            'pending', false, false, NOW(), NOW())
-    ON CONFLICT (game_id) DO UPDATE SET
-      confidence     = EXCLUDED.confidence,
-      best_pick      = EXCLUDED.best_pick,
-      reasoning      = EXCLUDED.reasoning,
-      factors        = EXCLUDED.factors,
-      outcomes       = EXCLUDED.outcomes,
-      updated_at     = NOW()
-  `, [
-    row.game_id,
-    row.date,
-    row.sport,
-    row.league,
-    row.home_team,
-    row.away_team,
-    row.commence_time,
-    row.home_odds,
-    row.away_odds,
-    row.draw_odds,
-    row.bookmaker,
-    row.confidence,
-    row.best_pick,
-    row.reasoning,
-    JSON.stringify(row.factors),
-    JSON.stringify(row.outcomes)
-  ]);
-}
-async function fetchTomorrowOdds(sportKey, dateStr) {
-  const from = `${dateStr}T00:00:00Z`;
-  const to = `${dateStr}T23:59:59Z`;
-  const url = `${ODDS_API_BASE2}/sports/${sportKey}/odds/?apiKey=${ODDS_API_KEY2}&regions=us,eu&markets=h2h&dateFormat=iso&oddsFormat=decimal&commenceTimeFrom=${from}&commenceTimeTo=${to}`;
+function verifyMemberToken(req) {
   try {
-    const resp = await fetch(url);
-    if (!resp.ok) {
-      console.warn(`[TomorrowSync] HTTP ${resp.status} for ${sportKey}`);
-      return [];
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) return null;
+    return import_jsonwebtoken.default.verify(authHeader.slice(7), JWT_SECRET);
+  } catch {
+    return null;
+  }
+}
+async function buildGoldTiersForDate(pool3, date2) {
+  const { rows: allPicks } = await pool3.query(
+    `SELECT * FROM picks
+     WHERE date = $1
+       AND is_disabled = false
+       AND v3_audit_passed = true
+       AND sport IN ('soccer', 'nba', 'mls')
+     ORDER BY confidence DESC`,
+    [date2]
+  );
+  await pool3.query(`DELETE FROM gold_tiers WHERE date = $1`, [date2]);
+  const nbaPicks = allPicks.filter((p) => p.sport === "nba");
+  const soccerPicks = allPicks.filter((p) => p.sport === "soccer" || p.sport === "mls");
+  const inserted = [];
+  const summary = {};
+  for (const [tierName, cfg] of Object.entries(HARDENED_TIER_CONFIG)) {
+    const { primaryThresh, fallbackFloor, nbaSlots, soccerSlots, extraSlots, extraThresh } = cfg;
+    let nbaSelected = nbaPicks.filter((p) => p.confidence >= primaryThresh).slice(0, nbaSlots);
+    if (nbaSelected.length < nbaSlots) {
+      const needed = nbaSlots - nbaSelected.length;
+      const ids = new Set(nbaSelected.map((p) => p.id));
+      const fallback = nbaPicks.filter((p) => p.confidence >= fallbackFloor && p.confidence < primaryThresh && !ids.has(p.id)).slice(0, needed);
+      nbaSelected = [...nbaSelected, ...fallback];
     }
-    const raw = await resp.json();
-    return Array.isArray(raw) ? raw : [];
-  } catch (err) {
-    console.error(`[TomorrowSync] Fetch error for ${sportKey}:`, err.message);
-    return [];
-  }
-}
-function extractOdds(g) {
-  const preferred = ["draftkings", "fanduel", "betmgm", "betrivers", "unibet", "pinnacle", "bet365"];
-  const bk = g.bookmakers?.find((b) => preferred.includes(b.key)) || g.bookmakers?.[0];
-  if (!bk) return { homeOdds: null, awayOdds: null, drawOdds: null, bookmaker: "N/A" };
-  const h2h = bk.markets?.find((m) => m.key === "h2h");
-  let homeOdds = null, awayOdds = null, drawOdds = null;
-  for (const o of h2h?.outcomes || []) {
-    if (o.name === g.home_team) homeOdds = o.price;
-    else if (o.name === g.away_team) awayOdds = o.price;
-    else if (o.name === "Draw") drawOdds = o.price;
-  }
-  return { homeOdds, awayOdds, drawOdds, bookmaker: bk.title };
-}
-async function runGeminiAudit(games, sport, dateStr) {
-  if (!genAI2 || games.length === 0) {
-    return games.map((g) => {
-      const { homeOdds, awayOdds } = extractOdds(g);
-      const homeImpl = homeOdds ? 1 / homeOdds : 0.5;
-      const awayImpl = awayOdds ? 1 / awayOdds : 0.5;
-      const total = homeImpl + awayImpl;
-      const homeConf = homeImpl / total * 100;
-      const awayConf = awayImpl / total * 100;
-      const bestConf = Math.max(homeConf, awayConf);
-      const bestPick = homeConf >= awayConf ? `${g.home_team} Win` : `${g.away_team} Win`;
-      return {
-        game_id: g.id,
-        confidence_score: Math.round(bestConf * 10) / 10,
-        best_pick: bestPick,
-        v3_reasoning: `Deterministic fallback (no Gemini key) \u2014 implied odds: ${g.home_team} ${homeConf.toFixed(1)}% / ${g.away_team} ${awayConf.toFixed(1)}%`,
-        factors: {
-          f01_marketConsensus_home: Math.round(homeImpl / total * 100) / 100,
-          f01_marketConsensus_away: Math.round(awayImpl / total * 100) / 100,
-          gemini_model: 0
-        },
-        outcomes: [
-          { label: `${g.home_team} Win`, conf: Math.round(homeConf * 10) / 10 },
-          { label: `${g.away_team} Win`, conf: Math.round(awayConf * 10) / 10 }
-        ]
-      };
-    });
-  }
-  const model = genAI2.getGenerativeModel({ model: FLASH_MODEL2 });
-  const results2 = [];
-  const BATCH_SIZE = 10;
-  for (let i = 0; i < games.length; i += BATCH_SIZE) {
-    const batch = games.slice(i, i + BATCH_SIZE);
-    const gamesPayload = batch.map((g) => {
-      const { homeOdds, awayOdds, drawOdds } = extractOdds(g);
-      return {
-        id: g.id,
-        home_team: g.home_team,
-        away_team: g.away_team,
-        league: g.sport_title,
-        commence_time: g.commence_time,
-        home_odds: homeOdds,
-        away_odds: awayOdds,
-        draw_odds: drawOdds
-      };
-    });
-    const prompt = `You are the Gold Standard V3-15 Factor Audit Engine.
-Perform a V3-15 Factor Audit on these ${sport} games for ${dateStr}.
-Apply all 15 factors including:
-  F01 Market Consensus (from odds)
-  F02 Momentum
-  F03 Team Quality
-  F04 Head-to-Head History
-  F05 Market Steam
-  F06 Rest/Fatigue
-  F07 Injuries/Absences
-  F08 Travel Stress
-  F09 Referee Bias
-  F10 Environmental
-  F11 League Standing
-  F12 Venue Pressure
-  F13 Advanced Market Steam (multi-book)
-  F14 Altitude/Surface/Travel
-  F15 Referee Official Tendencies
-
-For each game return a confidence score (0-100) for the BEST pick only.
-Minimum threshold to be useful: 60%.
-
-Return ONLY a valid JSON array. No markdown, no explanation.
-Schema per item:
-{
-  "game_id": "<string>",
-  "confidence_score": <number 0-100>,
-  "best_pick": "<Home Team Win | Away Team Win | Draw | Over 2.5 | Under 2.5>",
-  "v3_reasoning": "<one sentence max>",
-  "f01_market": <0-1>,
-  "f02_momentum": <0-1>,
-  "f03_quality": <0-1>,
-  "f04_h2h": <0-1>,
-  "f05_steam": <0-1>,
-  "f06_rest": <0-1>,
-  "f07_injuries": <0-1>,
-  "f08_travel": <0-1>,
-  "f09_referee": <0-1>,
-  "f10_env": <0-1>,
-  "f11_standing": <0-1>,
-  "f12_venue": <0-1>,
-  "f13_adv_steam": <0-1>,
-  "f14_altitude": <0-1>,
-  "f15_official": <0-1>
-}
-
-Games: ${JSON.stringify(gamesPayload)}`;
-    try {
-      const result = await model.generateContent(prompt);
-      let text2 = result.response.text().trim();
-      text2 = text2.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
-      const parsed = JSON.parse(text2);
-      for (const item of parsed) {
-        const g = batch.find((x) => x.id === item.game_id);
-        if (!g) continue;
-        const { homeOdds, awayOdds, drawOdds } = extractOdds(g);
-        const outcomes = [];
-        const conf = item.confidence_score ?? 0;
-        outcomes.push({ label: item.best_pick || `${g.home_team} Win`, conf });
-        results2.push({
-          game_id: item.game_id,
-          confidence_score: Math.round(conf * 10) / 10,
-          best_pick: item.best_pick || `${g.home_team} Win`,
-          v3_reasoning: item.v3_reasoning || "",
-          factors: {
-            f01_marketConsensus: item.f01_market ?? 0.5,
-            f02_momentum: item.f02_momentum ?? 0.5,
-            f03_quality: item.f03_quality ?? 0.5,
-            f04_h2h: item.f04_h2h ?? 0.5,
-            f05_steam: item.f05_steam ?? 0.5,
-            f06_rest: item.f06_rest ?? 0.5,
-            f07_injuries: item.f07_injuries ?? 0.5,
-            f08_travel: item.f08_travel ?? 0.5,
-            f09_referee: item.f09_referee ?? 0.5,
-            f10_environmental: item.f10_env ?? 0.5,
-            f11_standing: item.f11_standing ?? 0.5,
-            f12_venue: item.f12_venue ?? 0.5,
-            f13_advSteam: item.f13_adv_steam ?? 0.5,
-            f14_altitude: item.f14_altitude ?? 0.5,
-            f15_official: item.f15_official ?? 0.5,
-            gemini_model: 1
-          },
-          outcomes
-        });
-      }
-    } catch (err) {
-      console.error(`[TomorrowSync] Gemini parse error for batch ${i}-${i + BATCH_SIZE}:`, err.message);
-      for (const g of batch) {
-        const { homeOdds, awayOdds } = extractOdds(g);
-        const homeImpl = homeOdds ? 1 / homeOdds : 0.5;
-        const awayImpl = awayOdds ? 1 / awayOdds : 0.5;
-        const total = homeImpl + awayImpl;
-        const homeConf = homeImpl / total * 100;
-        const awayConf = awayImpl / total * 100;
-        const bestConf = Math.max(homeConf, awayConf);
-        const bestPick = homeConf >= awayConf ? `${g.home_team} Win` : `${g.away_team} Win`;
-        results2.push({
-          game_id: g.id,
-          confidence_score: Math.round(bestConf * 10) / 10,
-          best_pick: bestPick,
-          v3_reasoning: `Fallback (Gemini parse error) \u2014 implied odds`,
-          factors: {
-            f01_marketConsensus: Math.round(homeImpl / total * 100) / 100,
-            gemini_model: 0
-          },
-          outcomes: [
-            { label: `${g.home_team} Win`, conf: Math.round(homeConf * 10) / 10 },
-            { label: `${g.away_team} Win`, conf: Math.round(awayConf * 10) / 10 }
+    let soccerSelected = soccerPicks.filter((p) => p.confidence >= primaryThresh).slice(0, soccerSlots);
+    if (soccerSelected.length < soccerSlots) {
+      const needed = soccerSlots - soccerSelected.length;
+      const ids = new Set(soccerSelected.map((p) => p.id));
+      const fallback = soccerPicks.filter((p) => p.confidence >= fallbackFloor && p.confidence < primaryThresh && !ids.has(p.id)).slice(0, needed);
+      soccerSelected = [...soccerSelected, ...fallback];
+    }
+    const alreadyIds = new Set([...nbaSelected, ...soccerSelected].map((p) => p.id));
+    const extraSelected = extraSlots > 0 ? allPicks.filter((p) => p.confidence >= extraThresh && !alreadyIds.has(p.id)).slice(0, extraSlots) : [];
+    const allSelected = [...nbaSelected, ...soccerSelected, ...extraSelected];
+    for (const p of allSelected) {
+      const nbaIdx = nbaSelected.indexOf(p);
+      const soccerIdx = soccerSelected.indexOf(p);
+      const extraIdx = extraSelected.indexOf(p);
+      const sportSlot = nbaIdx >= 0 ? `nba_${nbaIdx + 1}` : soccerIdx >= 0 ? `soccer_${soccerIdx + 1}` : `extra_${extraIdx + 1}`;
+      const isFallback = p.confidence < primaryThresh;
+      try {
+        await pool3.query(
+          `INSERT INTO gold_tiers
+           (date, sport, tier, home_team, away_team, league, prediction, confidence, odds,
+            fixture_id, is_power_pick, is_fallback, fallback_floor, v3_audit_passed, sport_slot, metadata)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,true,$14,$15)
+           ON CONFLICT (date, home_team, away_team, tier) DO UPDATE SET
+             confidence   = EXCLUDED.confidence,
+             prediction   = EXCLUDED.prediction,
+             is_fallback  = EXCLUDED.is_fallback,
+             sport_slot   = EXCLUDED.sport_slot,
+             updated_at   = now()`,
+          [
+            date2,
+            p.sport,
+            tierName,
+            p.home_team,
+            p.away_team,
+            p.league || "",
+            p.prediction,
+            p.confidence,
+            p.odds || "",
+            p.fixture_id,
+            p.is_power_pick || false,
+            isFallback,
+            isFallback ? fallbackFloor : null,
+            sportSlot,
+            p.metadata || null
           ]
-        });
+        );
+        inserted.push({ tier: tierName, sport: p.sport, match: `${p.home_team} vs ${p.away_team}`, confidence: p.confidence, fallback: isFallback, slot: sportSlot });
+      } catch (insertErr) {
+        console.error(`[GoldTiers] Insert error for ${p.home_team} vs ${p.away_team} (${tierName}):`, insertErr.message);
       }
     }
+    summary[tierName] = {
+      total: allSelected.length,
+      nba: nbaSelected.length,
+      soccer: soccerSelected.length,
+      extra: extraSelected.length,
+      fallbacks: allSelected.filter((p) => p.confidence < primaryThresh).length
+    };
+    console.log(`[GoldTiers] ${tierName.toUpperCase()}: ${allSelected.length}/${cfg.totalPicks} picks written | NBA=${nbaSelected.length}/${nbaSlots} Soccer=${soccerSelected.length}/${soccerSlots} Extra=${extraSelected.length}/${extraSlots}`);
   }
-  return results2;
+  return { summary, inserted };
 }
-async function syncTomorrowGames(triggeredBy = "scheduler") {
-  const tomorrowDate = /* @__PURE__ */ new Date();
-  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-  const dateStr = tomorrowDate.toLocaleDateString("en-CA", { timeZone: TZ });
-  console.log(`
-[TomorrowSync] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
-  console.log(`[TomorrowSync] V3-15 Nightly Pre-Audit \u2014 Target date: ${dateStr}`);
-  console.log(`[TomorrowSync] Triggered by: ${triggeredBy}`);
-  const result = {
-    date: dateStr,
-    sportsProcessed: 0,
-    gamesFound: 0,
-    gamesAudited: 0,
-    gamesSaved: 0,
-    errors: [],
-    budgetUsed: 0
-  };
-  const budgetBefore = getBudgetStatus();
-  if (budgetBefore.used_today >= 80) {
-    const msg = `[TomorrowSync] BUDGET GUARD: ${budgetBefore.used_today}/100 calls used \u2014 aborting sync to protect 1 AM daily run`;
-    console.warn(msg);
-    result.errors.push(msg);
-    return result;
-  }
-  const pool2 = getPool();
-  try {
-    await ensureTable(pool2);
-    console.log("[TomorrowSync] pending_validator table ready");
-    for (const { key, sport, label } of TOMORROW_SPORTS) {
-      const budget = getBudgetStatus();
-      if (budget.used_today >= 80) {
-        console.warn(`[TomorrowSync] Budget cap reached (${budget.used_today}/100) \u2014 stopping after ${result.sportsProcessed} sports`);
-        break;
-      }
-      console.log(`
-[TomorrowSync] Fetching ${label} (${key}) for ${dateStr}...`);
-      const rawGames = await fetchTomorrowOdds(key, dateStr);
-      result.sportsProcessed++;
-      if (rawGames.length === 0) {
-        console.log(`[TomorrowSync] No ${label} games found for ${dateStr} \u2014 skipping`);
-        continue;
-      }
-      console.log(`[TomorrowSync] Found ${rawGames.length} ${label} games \u2014 running V3-15 audit...`);
-      result.gamesFound += rawGames.length;
-      const auditResults = await runGeminiAudit(rawGames, sport, dateStr);
-      result.gamesAudited += auditResults.length;
-      for (const audit of auditResults) {
-        const g = rawGames.find((x) => x.id === audit.game_id);
-        if (!g) continue;
-        const { homeOdds, awayOdds, drawOdds, bookmaker } = extractOdds(g);
-        try {
-          await upsertValidatorRow(pool2, {
-            game_id: g.id,
-            date: dateStr,
-            sport,
-            league: g.sport_title,
-            home_team: g.home_team,
-            away_team: g.away_team,
-            commence_time: g.commence_time,
-            home_odds: homeOdds,
-            away_odds: awayOdds,
-            draw_odds: drawOdds,
-            bookmaker,
-            confidence: audit.confidence_score,
-            best_pick: audit.best_pick,
-            reasoning: audit.v3_reasoning,
-            factors: audit.factors,
-            outcomes: audit.outcomes
-          });
-          result.gamesSaved++;
-        } catch (err) {
-          result.errors.push(`Upsert error for ${g.home_team} vs ${g.away_team}: ${err.message}`);
-        }
-      }
-      console.log(`[TomorrowSync] ${label}: ${auditResults.length} audited, ${result.gamesSaved} saved`);
-    }
-    const budgetAfter = getBudgetStatus();
-    result.budgetUsed = budgetAfter.used_today - budgetBefore.used_today;
-    console.log(`
-[TomorrowSync] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
-    console.log(`[TomorrowSync] COMPLETE: ${result.gamesFound} found | ${result.gamesAudited} audited | ${result.gamesSaved} saved`);
-    console.log(`[TomorrowSync] API calls used: ${result.budgetUsed} | Total today: ${budgetAfter.used_today}/100`);
-    if (result.errors.length > 0) {
-      console.warn(`[TomorrowSync] ${result.errors.length} errors:`, result.errors);
-    }
-  } finally {
-    await pool2.end();
-  }
-  return result;
-}
-var TZ, ODDS_API_KEY2, ODDS_API_BASE2, GEMINI_API_KEY2, genAI2, FLASH_MODEL2, TOMORROW_SPORTS;
-var init_tomorrowSync = __esm({
-  "server/services/tomorrowSync.ts"() {
-    init_esm();
-    init_dist();
-    init_oddsApi();
-    TZ = "America/Moncton";
-    ODDS_API_KEY2 = process.env.ODDS_API_KEY || "e780bee8f11d6859d3d5a99ca8549fff";
-    ODDS_API_BASE2 = "https://api.the-odds-api.com/v4";
-    GEMINI_API_KEY2 = process.env.GEMINI_API_KEY || "";
-    genAI2 = GEMINI_API_KEY2 ? new GoogleGenerativeAI(GEMINI_API_KEY2) : null;
-    FLASH_MODEL2 = "gemini-2.0-flash";
-    TOMORROW_SPORTS = [
-      { key: "basketball_nba", sport: "nba", label: "NBA" },
-      { key: "soccer_usa_mls", sport: "mls", label: "MLS" },
-      { key: "soccer_uefa_champs_league", sport: "soccer", label: "UEFA Champions League" },
-      { key: "soccer_epl", sport: "soccer", label: "Premier League" },
-      { key: "soccer_spain_la_liga", sport: "soccer", label: "La Liga" },
-      { key: "soccer_italy_serie_a", sport: "soccer", label: "Serie A" },
-      { key: "soccer_germany_bundesliga", sport: "soccer", label: "Bundesliga" },
-      { key: "soccer_france_ligue_one", sport: "soccer", label: "Ligue 1" }
-    ];
-  }
-});
-
-// server/routes.ts
-var routes_exports = {};
-__export(routes_exports, {
-  clearModulePicksCache: () => clearModulePicksCache,
-  generateDailyPicks: () => generateDailyPicks,
-  registerRoutes: () => registerRoutes
-});
-function generateToken() {
-  return Buffer.from(`${Date.now()}-${Math.random()}`).toString("base64");
-}
-function requireAuth(req, res, next) {
-  const token = req.headers["x-admin-token"] || req.query.token;
-  if (!token || !activeTokens.has(token)) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  next();
-}
-function selectBestLegs(predictions, count, minConfidence = CONFIDENCE_THRESHOLDS2.PRO_MIN, maxConfidence = 100) {
-  function hasMinDataQuality(p) {
-    const f = p.factors;
-    if (!f) return false;
-    const hasOdds = f.f01_marketConsensus_home !== 0.44 && f.f01_marketConsensus_home !== 0.3;
-    const hasMomentum = f.f02_momentum_home !== 0.5 || f.f02_momentum_away !== 0.5;
-    const hasQuality = f.f03_quality_home !== 0.5 || f.f03_quality_away !== 0.5;
-    const hasStanding = f.f11_standing_home !== 0.5 || f.f11_standing_away !== 0.5;
-    const hasInjury = f.f07_injuries_home !== 0.9 || f.f07_injuries_away !== 0.9;
-    const dataPoints = [hasOdds, hasMomentum, hasQuality, hasStanding, hasInjury].filter(Boolean).length;
-    return dataPoints >= 2;
-  }
-  const qualified = predictions.filter((p) => p.topConfidence >= minConfidence && p.topConfidence <= maxConfidence).filter((p) => !p.topPick.toLowerCase().includes("draw")).filter((p) => hasMinDataQuality(p)).sort((a, b) => {
-    const aValue = a.topConfidence * (a.factors?.valueScore ?? 1);
-    const bValue = b.topConfidence * (b.factors?.valueScore ?? 1);
-    return bValue - aValue;
-  });
-  const seen = /* @__PURE__ */ new Set();
-  const unique = [];
-  for (const p of qualified) {
-    const key = `${p.homeTeam}|${p.awayTeam}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      unique.push(p);
-    }
-  }
-  return unique.slice(0, count);
-}
-function clearModulePicksCache() {
-  _modulePicksCache = null;
-}
-async function generateDailyPicks(date2) {
-  console.log(`
-[Engine] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
-  console.log(`[Engine] Gold Standard V3 Titan XII \u2014 Generating picks`);
-  console.log(`[Engine] Date: ${date2} | Timezone: America/Moncton`);
-  console.log(`[Engine] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
-  let soccerFixtures = [];
-  let nbaFixtures = [];
-  try {
-    const { fetchSoccerFixtures: fetchSoccerFixtures2, fetchNBAFixtures: fetchNBAFixtures2 } = await Promise.resolve().then(() => (init_apiFootball(), apiFootball_exports));
-    [soccerFixtures, nbaFixtures] = await Promise.all([
-      fetchSoccerFixtures2(date2).catch((err) => {
-        console.error("[Engine] CRITICAL: Soccer API fetch failed:", err.message);
-        return [];
-      }),
-      fetchNBAFixtures2(date2).catch((err) => {
-        console.error("[Engine] CRITICAL: NBA API fetch failed:", err.message);
-        return [];
-      })
-    ]);
-  } catch (err) {
-    console.error("[Engine] CRITICAL: API fetch completely failed:", err);
-  }
-  console.log(`[Engine] LIVE API data: ${soccerFixtures.length} soccer fixtures, ${nbaFixtures.length} NBA fixtures`);
-  if (soccerFixtures.length === 0) {
-    console.error("[Engine] WARNING: No live soccer fixtures returned by API-Football for", date2);
-  }
-  if (nbaFixtures.length === 0) {
-    console.error("[Engine] WARNING: No live NBA fixtures returned by API-Basketball for", date2);
-  }
-  const mlsFixtures = soccerFixtures.filter((f) => f.sport === "mls");
-  const pureSOccer = soccerFixtures.filter((f) => f.sport === "soccer");
-  console.log(`[Engine] Fixtures loaded: ${pureSOccer.length} soccer, ${mlsFixtures.length} MLS, ${nbaFixtures.length} NBA`);
-  const soccerPreds = runBatchPredictions(pureSOccer);
-  const mlsPreds = runBatchPredictions(mlsFixtures);
-  const nbaPreds = runBatchPredictions(nbaFixtures);
-  console.log(`[Engine] Predictions: ${soccerPreds.length} soccer, ${mlsPreds.length} MLS, ${nbaPreds.length} NBA`);
-  const allPreds = [...soccerPreds, ...mlsPreds, ...nbaPreds];
-  const freePicks = selectBestLegs(
-    allPreds,
-    TIER_PICK_COUNTS.free,
-    CONFIDENCE_THRESHOLDS2.FREE_MIN,
-    CONFIDENCE_THRESHOLDS2.FREE_MAX
-  );
-  const proPicks = selectBestLegs(
-    allPreds,
-    TIER_PICK_COUNTS.pro,
-    CONFIDENCE_THRESHOLDS2.PRO_MIN,
-    100
-  );
-  const lifetimePicks = selectBestLegs(
-    allPreds,
-    TIER_PICK_COUNTS.lifetime,
-    CONFIDENCE_THRESHOLDS2.LIFETIME_MIN,
-    100
-  );
-  const HARD_FLOOR = 65;
-  const HARD_FLOOR_LABEL = "High Volatility";
-  const highVolatilityLegs = /* @__PURE__ */ new Set();
-  function markHighVolatility(pred) {
-    highVolatilityLegs.add(`${pred.homeTeam}|${pred.awayTeam}`);
-  }
-  function isHighVol(pred) {
-    return highVolatilityLegs.has(`${pred.homeTeam}|${pred.awayTeam}`);
-  }
-  let soccerLegs = selectBestLegs(soccerPreds, 3, CONFIDENCE_THRESHOLDS2.PRO_MIN);
-  let mlsLegs = selectBestLegs(mlsPreds, 3, CONFIDENCE_THRESHOLDS2.PRO_MIN);
-  let nbaLegs = selectBestLegs(nbaPreds, 3, CONFIDENCE_THRESHOLDS2.PRO_MIN);
-  console.log(`[Waterfall] Step 1 \u2014 68%+ legs: Soccer=${soccerLegs.length}/3, NBA=${nbaLegs.length}/3, MLS=${mlsLegs.length}/3`);
-  if (soccerLegs.length < 3 || nbaLegs.length < 3) {
-    console.log(`[Waterfall] Step 2 \u2014 DIVERSITY CHECK: Scanning global leagues...`);
+function registerGoldTierRoutes(app, requireAuth2) {
+  const DB_OPTS = { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } };
+  app.post("/api/admin/gold-tiers/write", requireAuth2, async (req, res) => {
     try {
-      const { getGlobalSoccerOdds: getGlobalSoccerOdds2, getGlobalBasketballOdds: getGlobalBasketballOdds2 } = await Promise.resolve().then(() => (init_oddsApi(), oddsApi_exports));
-      const { convertOddsGameToFixture } = await Promise.resolve().then(() => (init_oddsApi(), oddsApi_exports)).then((m) => m).catch(() => ({ convertOddsGameToFixture: null }));
-      if (soccerLegs.length < 3) {
-        const globalSoccerGames = await getGlobalSoccerOdds2();
-        if (globalSoccerGames.length > 0) {
-          const globalFixtures = globalSoccerGames.map((g) => ({
-            fixtureId: parseInt(g.id.replace(/\D/g, "").slice(0, 8) || "0", 10),
-            homeTeam: g.home_team,
-            awayTeam: g.away_team,
-            league: g.sport_title,
-            sport: "soccer",
-            homeOdds: g.home_odds ?? void 0,
-            awayOdds: g.away_odds ?? void 0,
-            drawOdds: g.draw_odds ?? void 0,
-            homeWinRate: void 0,
-            awayWinRate: void 0,
-            homeForm: void 0,
-            awayForm: void 0,
-            homeRank: void 0,
-            awayRank: void 0,
-            homeGoalsFor: void 0,
-            awayGoalsFor: void 0,
-            homeGoalsAgainst: void 0,
-            awayGoalsAgainst: void 0,
-            homeInjuries: 0,
-            awayInjuries: 0,
-            isNeutralVenue: false,
-            venueName: void 0,
-            headToHead: void 0
-          }));
-          const globalPreds = runBatchPredictions(globalFixtures);
-          const globalLegs = selectBestLegs(globalPreds, 3 - soccerLegs.length, CONFIDENCE_THRESHOLDS2.PRO_MIN);
-          if (globalLegs.length > 0) {
-            soccerLegs = [...soccerLegs, ...globalLegs];
-            console.log(`[Waterfall] Diversity: Found ${globalLegs.length} additional soccer legs from global leagues`);
-          }
-        }
-      }
-      if (nbaLegs.length < 3) {
-        const globalBball = await getGlobalBasketballOdds2();
-        if (globalBball.length > 0) {
-          const bballFixtures = globalBball.map((g) => ({
-            fixtureId: parseInt(g.id.replace(/\D/g, "").slice(0, 8) || "0", 10),
-            homeTeam: g.home_team,
-            awayTeam: g.away_team,
-            league: g.sport_title,
-            sport: "nba",
-            homeOdds: g.home_odds ?? void 0,
-            awayOdds: g.away_odds ?? void 0,
-            homeWinRate: void 0,
-            awayWinRate: void 0,
-            homeForm: void 0,
-            awayForm: void 0,
-            homeRank: void 0,
-            awayRank: void 0,
-            homeGoalsFor: void 0,
-            awayGoalsFor: void 0,
-            homeGoalsAgainst: void 0,
-            awayGoalsAgainst: void 0,
-            homeInjuries: 0,
-            awayInjuries: 0,
-            isNeutralVenue: false,
-            venueName: void 0,
-            headToHead: void 0
-          }));
-          const bballPreds = runBatchPredictions(bballFixtures);
-          const bballLegs = selectBestLegs(bballPreds, 3 - nbaLegs.length, CONFIDENCE_THRESHOLDS2.PRO_MIN);
-          if (bballLegs.length > 0) {
-            nbaLegs = [...nbaLegs, ...bballLegs];
-            console.log(`[Waterfall] Diversity: Found ${bballLegs.length} additional NBA/basketball legs`);
-          }
-        }
-      }
-    } catch (divErr) {
-      console.error(`[Waterfall] Diversity check error:`, divErr.message);
-    }
-  }
-  console.log(`[Waterfall] After Step 2: Soccer=${soccerLegs.length}/3, NBA=${nbaLegs.length}/3, MLS=${mlsLegs.length}/3`);
-  if (soccerLegs.length < 3) {
-    const needed = 3 - soccerLegs.length;
-    const alreadySelected = new Set(soccerLegs.map((p) => `${p.homeTeam}|${p.awayTeam}`));
-    let fallbackPool = soccerPreds.filter((p) => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
-    if (fallbackPool.length === 0) {
-      fallbackPool = allPreds.filter((p) => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
-      console.log(`[Waterfall] Soccer fallback: using global allPreds pool (${fallbackPool.length} candidates)`);
-    }
-    const fallbackLegs = selectBestLegs(fallbackPool, needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS2.PRO_MIN - 0.01);
-    for (const leg of fallbackLegs) {
-      markHighVolatility(leg);
-      soccerLegs.push(leg);
-      console.log(`[Waterfall] \u26A0\uFE0F  Soccer FALLBACK (High Volatility): ${leg.homeTeam} vs ${leg.awayTeam} @ ${leg.topConfidence.toFixed(1)}%`);
-    }
-    if (soccerLegs.length < 3) {
-      console.error(`[Waterfall] CRITICAL: Only ${soccerLegs.length}/3 soccer legs available even at 65% floor. No picks below 65% are permitted.`);
-    }
-  }
-  if (nbaLegs.length < 3) {
-    const needed = 3 - nbaLegs.length;
-    const alreadySelected = new Set(nbaLegs.map((p) => `${p.homeTeam}|${p.awayTeam}`));
-    let fallbackPool = nbaPreds.filter((p) => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
-    if (fallbackPool.length === 0) {
-      fallbackPool = allPreds.filter((p) => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
-      console.log(`[Waterfall] NBA fallback: using global allPreds pool (${fallbackPool.length} candidates)`);
-    }
-    const fallbackLegs = selectBestLegs(fallbackPool, needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS2.PRO_MIN - 0.01);
-    for (const leg of fallbackLegs) {
-      markHighVolatility(leg);
-      nbaLegs.push(leg);
-      console.log(`[Waterfall] \u26A0\uFE0F  NBA FALLBACK (High Volatility): ${leg.homeTeam} vs ${leg.awayTeam} @ ${leg.topConfidence.toFixed(1)}%`);
-    }
-    if (nbaLegs.length < 3) {
-      console.error(`[Waterfall] CRITICAL: Only ${nbaLegs.length}/3 NBA legs available even at 65% floor. No picks below 65% are permitted.`);
-    }
-  }
-  if (mlsLegs.length < 2) {
-    const needed = 2 - mlsLegs.length;
-    const alreadySelected = new Set(mlsLegs.map((p) => `${p.homeTeam}|${p.awayTeam}`));
-    let fallbackPool = mlsPreds.filter((p) => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
-    if (fallbackPool.length === 0) {
-      fallbackPool = allPreds.filter((p) => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
-    }
-    const fallbackLegs = selectBestLegs(fallbackPool, needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS2.PRO_MIN - 0.01);
-    for (const leg of fallbackLegs) {
-      markHighVolatility(leg);
-      mlsLegs.push(leg);
-      console.log(`[Waterfall] \u26A0\uFE0F  MLS FALLBACK (High Volatility): ${leg.homeTeam} vs ${leg.awayTeam} @ ${leg.topConfidence.toFixed(1)}%`);
-    }
-  }
-  console.log(`[Waterfall] Final: Soccer=${soccerLegs.length}/3, NBA=${nbaLegs.length}/3, MLS=${mlsLegs.length}/2, HighVol=${highVolatilityLegs.size}`);
-  const powerCandidates = [...soccerLegs, ...nbaLegs, ...mlsLegs].filter((p) => p.topConfidence >= CONFIDENCE_THRESHOLDS2.PRO_MIN).filter((p) => !p.topPick.toLowerCase().includes("draw")).sort((a, b) => b.topConfidence - a.topConfidence);
-  const powerPickFallback = [...soccerLegs, ...nbaLegs, ...mlsLegs].filter((p) => p.topConfidence >= HARD_FLOOR).filter((p) => !p.topPick.toLowerCase().includes("draw")).sort((a, b) => b.topConfidence - a.topConfidence)[0] || null;
-  const powerPick = powerCandidates[0] || powerPickFallback;
-  console.log(`[Engine] Tiered picks: ${freePicks.length} Free (64-67%), ${proPicks.length} Pro (68%+), ${lifetimePicks.length} Lifetime (70%+)`);
-  console.log(`[Engine] Sport parlays: ${soccerLegs.length} soccer, ${mlsLegs.length} MLS, ${nbaLegs.length} NBA`);
-  console.log(`[Engine] Power Pick: ${powerPick ? `${powerPick.homeTeam} vs ${powerPick.awayTeam} (${powerPick.topConfidence.toFixed(1)}%)` : "none"}`);
-  const totalScored = allPreds.length;
-  const totalPassed = freePicks.length + proPicks.length;
-  const totalDiscarded = totalScored - totalPassed;
-  console.log(`[Titan XII] Threshold filter: Free=${freePicks.length} (64-67%) | Pro=${proPicks.length} (68%+) | Lifetime=${lifetimePicks.length} (70%+) | Discarded=${totalDiscarded}`);
-  try {
-    const existingPicks = await getPicksByDate(date2);
-    let cleared = 0;
-    let protected_ = 0;
-    for (const pick of existingPicks) {
-      const meta = pick.metadata || {};
-      const isManual = meta.source_model === "manual-admin-push" || meta.source === "admin-manual" || meta.bypass_gemini === true;
-      if (isManual) {
-        protected_++;
-        continue;
-      }
-      await deletePick(pick.id);
-      cleared++;
-    }
-    console.log(`[Engine] Cleared ${cleared} V3 picks for ${date2} | Protected ${protected_} manual picks`);
-  } catch (err) {
-    console.warn("[Engine] Failed to clear existing picks:", err);
-  }
-  let soccerCount = 0, nbaCount = 0, mlsCount = 0, powerCount = 0;
-  async function savePick(pred, overrideSport, overrideTier, isPower = false, highVolatility = false) {
-    try {
-      const autoOdds = (() => {
-        const c = pred.topConfidence;
-        if (!c || c <= 0) return "";
-        const vig = 0.05;
-        const ip = Math.min(Math.max(c / 100, 0.01), 0.99);
-        const vp = ip * (1 + vig);
-        if (vp >= 0.5) return String(Math.round(-(vp / (1 - vp)) * 100));
-        return "+" + String(Math.round((1 - vp) / vp * 100));
-      })();
-      await createPick({
-        date: date2,
-        sport: overrideSport || pred.sport,
-        tier: overrideTier || pred.tier,
-        homeTeam: pred.homeTeam,
-        awayTeam: pred.awayTeam,
-        league: pred.league,
-        prediction: pred.topPick,
-        confidence: pred.topConfidence,
-        odds: autoOdds,
-        fixtureId: String(pred.fixtureId),
-        isPowerPick: isPower,
-        metadata: { ...pred, isHighVolatility: highVolatility, volatilityLabel: highVolatility ? "High Volatility" : null }
-      });
-    } catch (err) {
-      console.error("[Engine] Failed to save pick:", err);
-    }
-  }
-  for (const pred of soccerLegs) {
-    const hv = isHighVol(pred);
-    await savePick(pred, "soccer", void 0, false, hv);
-    soccerCount++;
-    console.log(`[Engine] ${hv ? "\u26A0\uFE0F " : "\u2705"} Soccer leg: ${pred.homeTeam} vs ${pred.awayTeam} \u2014 ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)${hv ? " [HIGH VOLATILITY]" : ""}`);
-  }
-  for (const pred of nbaLegs) {
-    const hv = isHighVol(pred);
-    await savePick(pred, "nba", void 0, false, hv);
-    nbaCount++;
-    console.log(`[Engine] ${hv ? "\u26A0\uFE0F " : "\u2705"} NBA leg:    ${pred.homeTeam} vs ${pred.awayTeam} \u2014 ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)${hv ? " [HIGH VOLATILITY]" : ""}`);
-  }
-  if (mlsLegs.length > 0) {
-    for (const pred of mlsLegs) {
-      const hv = isHighVol(pred);
-      await savePick(pred, "mls", void 0, false, hv);
-      mlsCount++;
-      console.log(`[Engine] ${hv ? "\u26A0\uFE0F " : "\u2705"} MLS leg:    ${pred.homeTeam} vs ${pred.awayTeam} \u2014 ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)${hv ? " [HIGH VOLATILITY]" : ""}`);
-    }
-  } else {
-    console.log(`[Engine] \u2139\uFE0F  MLS tab: No MLS games on ${date2} \u2014 tab will show blank`);
-  }
-  let freeCount = 0;
-  for (const pred of freePicks) {
-    const alreadySaved = [...soccerLegs, ...nbaLegs, ...mlsLegs].some(
-      (p) => p.homeTeam === pred.homeTeam && p.awayTeam === pred.awayTeam
-    );
-    if (!alreadySaved) {
-      await savePick(pred, pred.sport, "free");
-      freeCount++;
-      console.log(`[Engine] \u{1F513} Free pick: ${pred.homeTeam} vs ${pred.awayTeam} \u2014 ${pred.topPick} (${pred.topConfidence.toFixed(1)}%) [dashboard only]`);
-    }
-  }
-  if (powerPick) {
-    const alreadySavedAsLeg = [...soccerLegs, ...nbaLegs, ...mlsLegs].some(
-      (p) => p.homeTeam === powerPick.homeTeam && p.awayTeam === powerPick.awayTeam
-    );
-    if (alreadySavedAsLeg) {
-      await savePick(powerPick, powerPick.sport, powerPick.tier, true);
-      powerCount++;
-      console.log(`[Engine] \u26A1 Power Pick (flagged): ${powerPick.homeTeam} vs ${powerPick.awayTeam} \u2014 ${powerPick.topPick} (${powerPick.topConfidence.toFixed(1)}%)`);
-    } else {
-      await savePick(powerPick, powerPick.sport, powerPick.tier, true);
-      powerCount++;
-      console.log(`[Engine] \u26A1 Power Pick: ${powerPick.homeTeam} vs ${powerPick.awayTeam} \u2014 ${powerPick.topPick} (${powerPick.topConfidence.toFixed(1)}%)`);
-    }
-  }
-  if (soccerLegs.length >= 2) {
-    const soccerOdds = soccerLegs.reduce((acc, p) => {
-      const odds = p.metadata?.homeOdds || p.metadata?.awayOdds || 1.85;
-      return acc * odds;
-    }, 1);
-    await saveParlays(date2, "soccer", soccerLegs.map((p) => ({
-      homeTeam: p.homeTeam,
-      awayTeam: p.awayTeam,
-      league: p.league,
-      pick: p.topPick,
-      confidence: p.topConfidence
-    })), soccerOdds.toFixed(2));
-  }
-  if (nbaLegs.length >= 2) {
-    const nbaOdds = nbaLegs.reduce((acc, p) => {
-      const odds = p.metadata?.homeOdds || p.metadata?.awayOdds || 1.9;
-      return acc * odds;
-    }, 1);
-    await saveParlays(date2, "nba", nbaLegs.map((p) => ({
-      homeTeam: p.homeTeam,
-      awayTeam: p.awayTeam,
-      league: p.league,
-      pick: p.topPick,
-      confidence: p.topConfidence
-    })), nbaOdds.toFixed(2));
-  }
-  if (mlsLegs.length >= 2) {
-    const mlsOdds = mlsLegs.reduce((acc, p) => {
-      const odds = p.metadata?.homeOdds || p.metadata?.awayOdds || 1.8;
-      return acc * odds;
-    }, 1);
-    await saveParlays(date2, "mls", mlsLegs.map((p) => ({
-      homeTeam: p.homeTeam,
-      awayTeam: p.awayTeam,
-      league: p.league,
-      pick: p.topPick,
-      confidence: p.topConfidence
-    })), mlsOdds.toFixed(2));
-  }
-  let ftpUploaded = false;
-  try {
-    const allSaved = [...soccerLegs, ...nbaLegs, ...mlsLegs, ...powerPick ? [powerPick] : []];
-    const { uploadPicksToFTP: uploadPicksToFTP2 } = await Promise.resolve().then(() => (init_upload(), upload_exports));
-    await uploadPicksToFTP2(date2, allSaved);
-    ftpUploaded = true;
-  } catch (err) {
-    console.warn("[Engine] FTP upload failed (non-critical):", err);
-  }
-  const total = soccerCount + nbaCount + mlsCount + powerCount + freeCount;
-  const MULTI_SPORT_SYNC_ACTIVE = true;
-  let multiSportSyncStatus = "FULL";
-  if (soccerCount === 0 && nbaCount === 0) {
-    multiSportSyncStatus = "EMPTY";
-    console.error("[Multi-Sport Sync] \u274C CRITICAL: Both Soccer AND Basketball picks are missing. Run is incomplete.");
-    try {
-      await createAlert("critical", `Multi-Sport Sync FAILED for ${date2}: 0 soccer picks, 0 NBA picks saved.`);
-    } catch (_) {
-    }
-  } else if (soccerCount === 0) {
-    multiSportSyncStatus = "PARTIAL_NBA_ONLY";
-    console.error(`[Multi-Sport Sync] \u26A0\uFE0F  PARTIAL: Basketball picks saved (${nbaCount}) but Soccer picks are MISSING (0/3). Dashboard will be incomplete.`);
-    try {
-      await createAlert("warning", `Multi-Sport Sync PARTIAL for ${date2}: ${nbaCount} NBA picks saved but 0 soccer picks. Retry needed.`);
-    } catch (_) {
-    }
-  } else if (nbaCount === 0) {
-    multiSportSyncStatus = "PARTIAL_SOCCER_ONLY";
-    console.error(`[Multi-Sport Sync] \u26A0\uFE0F  PARTIAL: Soccer picks saved (${soccerCount}) but Basketball picks are MISSING (0/3). Dashboard will be incomplete.`);
-    try {
-      await createAlert("warning", `Multi-Sport Sync PARTIAL for ${date2}: ${soccerCount} soccer picks saved but 0 NBA picks. Retry needed.`);
-    } catch (_) {
-    }
-  } else {
-    console.log(`[Multi-Sport Sync] \u2705 FULL SYNC: Soccer=${soccerCount}/3 + Basketball=${nbaCount}/3 \u2014 Both sports published to all tiers simultaneously.`);
-  }
-  console.log(`[Engine] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
-  console.log(`[Engine] COMPLETE: ${total} picks saved for ${date2}`);
-  console.log(`[Engine]   Soccer: ${soccerCount}/3 | NBA: ${nbaCount}/3 | MLS: ${mlsCount}/3 | Power: ${powerCount}/1 | Free: ${freeCount}/2`);
-  console.log(`[Engine]   Multi-Sport Sync: ${multiSportSyncStatus} (active=${MULTI_SPORT_SYNC_ACTIVE})`);
-  console.log(`[Engine] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-`);
-  return { total, soccer: soccerCount, nba: nbaCount, mls: mlsCount, powerPick: powerCount, ftpUploaded, multiSportSyncStatus };
-}
-async function registerRoutes(app) {
-  await initializeDatabase();
-  try {
-    const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-    const migPool = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-    await migPool.query(`
-      ALTER TABLE members
-        ADD COLUMN IF NOT EXISTS subscription_plan TEXT DEFAULT 'free',
-        ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT NULL,
-        ADD COLUMN IF NOT EXISTS tier_locked_until TIMESTAMPTZ DEFAULT NULL,
-        ADD COLUMN IF NOT EXISTS username TEXT DEFAULT NULL,
-        ADD COLUMN IF NOT EXISTS password_hash TEXT DEFAULT NULL;
-    `);
-    await migPool.end();
-    console.log("[Migration] members table columns ensured.");
-  } catch (migErr) {
-    console.warn("[Migration] members table migration warning:", migErr.message);
-  }
-  app.post("/api/admin/login", (req, res) => {
-    const { password } = req.body;
-    if (ADMIN_PASSWORDS.includes(password)) {
-      const token = generateToken();
-      activeTokens.add(token);
-      setTimeout(() => activeTokens.delete(token), 7 * 24 * 60 * 60 * 1e3);
-      return res.json({ token, success: true });
-    }
-    res.status(401).json({ error: "Invalid password" });
-  });
-  app.get("/api/admin/status", requireAuth, async (req, res) => {
-    try {
-      const [winloss, logs] = await Promise.all([
-        getWinLossSummary(),
-        getRunLogs(5)
-      ]);
-      res.json({ winloss, recentRuns: logs, schedulerActive: true, version: "V3 Titan XII" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/health", (req, res) => {
-    res.json({
-      status: "ok",
-      uptime: process.uptime(),
-      version: "V3 Titan XII",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      pickStructure: {
-        nba: "3 legs",
-        mls: "3 legs (blank if no games)",
-        soccer: "3 legs",
-        power: "1 pick (highest confidence \u226568%)"
-      }
-    });
-  });
-  app.get("/api/picks/nba", async (req, res) => {
-    try {
-      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-      const picks2 = await getPicksByDate(date2);
-      const nbaLegs = picks2.filter((p) => p.sport === "nba" && !p.isDisabled && p.status === "pending").sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0)).slice(0, 3);
-      res.json({
-        tab: "NBA",
-        date: date2,
-        legs: nbaLegs,
-        count: nbaLegs.length,
-        target: 3,
-        complete: nbaLegs.length === 3
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/picks/mls", async (req, res) => {
-    try {
-      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-      const picks2 = await getPicksByDate(date2);
-      const mlsLegs = picks2.filter((p) => p.sport === "mls" && !p.isDisabled && p.status === "pending").sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0)).slice(0, 3);
-      res.json({
-        tab: "MLS",
-        date: date2,
-        legs: mlsLegs,
-        count: mlsLegs.length,
-        target: 3,
-        complete: mlsLegs.length === 3,
-        noGames: mlsLegs.length === 0,
-        message: mlsLegs.length === 0 ? "No MLS games scheduled today" : void 0
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/picks/soccer", async (req, res) => {
-    try {
-      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-      const picks2 = await getPicksByDate(date2);
-      const soccerLegs = picks2.filter((p) => p.sport === "soccer" && !p.isDisabled && p.status === "pending").sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0)).slice(0, 3);
-      res.json({
-        tab: "Soccer",
-        date: date2,
-        legs: soccerLegs,
-        count: soccerLegs.length,
-        target: 3,
-        complete: soccerLegs.length === 3
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/picks/power", async (req, res) => {
-    try {
-      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-      const picks2 = await getPicksByDate(date2);
-      const powerPick = picks2.filter((p) => p.isPowerPick && !p.isDisabled && p.status === "pending").sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0] || null;
-      res.json({
-        tab: "Power Pick",
-        date: date2,
-        pick: powerPick,
-        confidence: powerPick?.confidence ?? null,
-        available: !!powerPick
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/picks/today", async (req, res) => {
-    try {
-      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-      const picks2 = await getPicksByDate(date2);
-      const active = picks2.filter((p) => !p.isDisabled && p.status === "pending");
-      const publicActive = active.filter((p) => (p.confidence ?? 0) >= 68 && p.tier !== "free");
-      const sportPicks = publicActive.filter((p) => !p.isPowerPick);
-      res.json({
-        date: date2,
-        nba: sportPicks.filter((p) => p.sport === "nba"),
-        // Hybrid: no limit
-        mls: sportPicks.filter((p) => p.sport === "mls"),
-        // Hybrid: no limit
-        soccer: sportPicks.filter((p) => p.sport === "soccer"),
-        // Hybrid: no limit
-        power: publicActive.filter((p) => p.isPowerPick).slice(0, 1),
-        total: publicActive.length
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/picks.json", async (req, res) => {
-    try {
-      let cfgLeg = function(prefix) {
-        return {
-          game: `${cfg[`${prefix}_home`] || ""} vs ${cfg[`${prefix}_away`] || ""}`,
-          match: `${cfg[`${prefix}_home`] || ""} vs ${cfg[`${prefix}_away`] || ""}`,
-          pick: cfg[`${prefix}_pick`] || "",
-          pick_type: cfg[`${prefix}_pick`] || "",
-          pick_label: cfg[`${prefix}_pick`] || "",
-          confidence: parseFloat(cfg[`${prefix}_conf`] || "0"),
-          probability: parseFloat((parseFloat(cfg[`${prefix}_conf`] || "0") / 100).toFixed(2)),
-          probability_display: `${cfg[`${prefix}_conf`] || "0"}%`,
-          confidence_pct: `${cfg[`${prefix}_conf`] || "0"}%`,
-          league: cfg[`${prefix}_league`] || "",
-          odds: cfg[`${prefix}_odds`] || "",
-          time: `${date2} \u2014 Today`,
-          time_display: `${date2} \u2014 Today`,
-          analysis: `Gold Standard V3 Titan XII \u2014 ${cfg[`${prefix}_pick`] || ""} at ${cfg[`${prefix}_conf`] || "0"}%.`,
-          reasoning: `Gold Standard V3 Titan XII \u2014 ${cfg[`${prefix}_pick`] || ""} at ${cfg[`${prefix}_conf`] || "0"}%.`,
-          home_team: cfg[`${prefix}_home`] || "",
-          away_team: cfg[`${prefix}_away`] || "",
-          tier: "pro",
-          sport: cfg[`${prefix}_sport`] || "soccer",
-          spread: cfg[`${prefix}_spread`] || "",
-          total: cfg[`${prefix}_total`] || "",
-          isHighVolatility: false
-        };
-      }, fmtLeg = function(p) {
-        if (p.home_team !== void 0) return p;
-        return {
-          game: `${p.homeTeam} vs ${p.awayTeam}`,
-          match: `${p.homeTeam} vs ${p.awayTeam}`,
-          pick: p.prediction || p.pick,
-          pick_type: p.prediction || p.pick,
-          pick_label: p.prediction || p.pick,
-          confidence: Math.round(p.confidence ?? 0),
-          probability: parseFloat(((p.confidence ?? 0) / 100).toFixed(2)),
-          probability_display: `${Math.round(p.confidence ?? 0)}%`,
-          confidence_pct: `${Math.round(p.confidence ?? 0)}%`,
-          league: p.league || "Unknown League",
-          odds: p.odds || "-110",
-          time: `${date2} \u2014 Today`,
-          time_display: `${date2} \u2014 Today`,
-          analysis: `Gold Standard V3 Titan XII \u2014 ${p.prediction || p.pick} at ${Math.round(p.confidence ?? 0)}%.`,
-          reasoning: `Gold Standard V3 Titan XII \u2014 ${p.prediction || p.pick} at ${Math.round(p.confidence ?? 0)}%.`,
-          home_team: p.homeTeam,
-          away_team: p.awayTeam,
-          tier: p.tier || "free",
-          sport: p.sport || "soccer",
-          isHighVolatility: p.metadata?.isHighVolatility ?? false,
-          volatilityLabel: p.metadata?.volatilityLabel ?? null,
-          momentum: p.momentum ?? null,
-          quality: p.quality ?? null,
-          mq_composite: p.mqComposite ?? p.mq_composite ?? null
-        };
-      }, combinedProb2 = function(legs) {
-        if (!legs.length) return "0%";
-        const c = legs.reduce((acc, p) => acc * ((p.confidence ?? 68) / 100), 1);
-        return `${(c * 100).toFixed(1)}%`;
-      };
-      const date2 = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-      const picks2 = await getPicksByDate(date2);
-      const active = picks2.filter((p) => !p.isDisabled);
-      const isManualPick = (p) => {
-        const meta = p.metadata || {};
-        return meta.source_model === "manual-admin-push" || meta.source === "admin-manual" || meta.bypass_gemini === true;
-      };
-      const manualActive = active.filter((p) => isManualPick(p));
-      const v3Active = active.filter((p) => !isManualPick(p) && (p.confidence ?? 0) >= 68);
-      const manualSorted = [...manualActive].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
-      const v3Sorted = [...v3Active].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
-      const publicActive = [...manualSorted, ...v3Sorted];
-      const sportOnly = publicActive.filter((p) => !p.isPowerPick);
-      const cfg = await getEngineConfig();
-      const nbaAdminEnabled = true;
-      const nbaPicks = sportOnly.filter((p) => p.sport === "nba");
-      const socAdminEnabled = true;
-      const soccerPicks = sportOnly.filter((p) => p.sport === "soccer");
-      const mlsAdminEnabled = true;
-      const mlsPicks = sportOnly.filter((p) => p.sport === "mls");
-      const ppAdminEnabled = true;
-      const dbPowerPick = publicActive.find((p) => p.isPowerPick) || [...publicActive].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
-      const powerPick = dbPowerPick;
-      const adminFeaturedGame = null;
-      const dbFeaturedPick = publicActive.find((p) => p.isFeatured);
-      const featuredMegaPick = dbFeaturedPick || powerPick;
-      const eaVisible = cfg["ea_visible"] !== "false";
-      const expertAnalysis = eaVisible && cfg["ea_body"] ? {
-        title: cfg["ea_title"] || `Gold Standard V3 Titan XII \u2014 ${(/* @__PURE__ */ new Date()).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "America/Moncton" })}`,
-        body: cfg["ea_body"],
-        visible: true,
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
-      } : null;
-      const now = (/* @__PURE__ */ new Date()).toISOString();
-      const dateDisplay = (/* @__PURE__ */ new Date()).toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        timeZone: "America/Moncton"
-      });
-      const parlayLegs = soccerPicks.map(fmtLeg);
-      const mlsLegs = mlsPicks.map(fmtLeg);
-      const nbaLegs = nbaPicks.map(fmtLeg);
-      const mlsNoSlate = mlsLegs.length === 0;
-      const payload = {
-        date: date2,
-        generated_at: now,
-        last_generated: now,
-        last_updated_display: dateDisplay,
-        // ── Tier Dashboard Mapping — NeonDB rows → tiers.pro / tiers.lifetime ──
-        // Pro: top 6 picks by confidence (68%+, soccer+nba+mls only)
-        // Lifetime: top 10 picks by confidence (includes the Pro 6)
-        // Both tiers read from the same publicActive NeonDB array — no schema changes
-        tiers: (() => {
-          const V3_SPORTS = ["soccer", "nba", "mls"];
-          const eligible = publicActive.filter((p) => V3_SPORTS.includes(p.sport)).sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
-          const proTier = eligible.slice(0, 6).map(fmtLeg);
-          const lifetimeTier = eligible.slice(0, 10).map(fmtLeg);
-          return {
-            pro: {
-              picks: proTier,
-              count: proTier.length,
-              quota: 6,
-              sport_breakdown: {
-                soccer: proTier.filter((p) => p.sport === "soccer").length,
-                nba: proTier.filter((p) => p.sport === "nba").length,
-                mls: proTier.filter((p) => p.sport === "mls").length
-              }
-            },
-            lifetime: {
-              picks: lifetimeTier,
-              count: lifetimeTier.length,
-              quota: 10,
-              sport_breakdown: {
-                soccer: lifetimeTier.filter((p) => p.sport === "soccer").length,
-                nba: lifetimeTier.filter((p) => p.sport === "nba").length,
-                mls: lifetimeTier.filter((p) => p.sport === "mls").length
-              }
-            },
-            // Legacy string labels preserved for backward compatibility
-            power_pick: "free",
-            soccer_picks: "free",
-            mls_parlay: "free",
-            nba_parlay: "free",
-            nba_picks: "free"
-          };
-        })(),
-        parlay: { legs: parlayLegs, legs_count: parlayLegs.length, combined_probability: combinedProb2(soccerPicks) },
-        three_leg_conservative: { legs: parlayLegs, legs_count: parlayLegs.length, combined_probability: combinedProb2(soccerPicks) },
-        soccer_picks: parlayLegs,
-        mls_parlay: { legs: mlsLegs, legs_count: mlsLegs.length, combined_probability: combinedProb2(mlsPicks), enabled: mlsAdminEnabled },
-        mls_no_slate: mlsNoSlate,
-        mls_next_slate_date: mlsNoSlate ? "Check back soon" : "",
-        nba_parlay: { legs: nbaLegs, legs_count: nbaLegs.length, combined_probability: combinedProb2(nbaPicks) },
-        corner_parlay: { legs: [], legs_count: 0, combined_probability: "0%" },
-        power_pick: powerPick ? {
-          game: `${powerPick.homeTeam} vs ${powerPick.awayTeam}`,
-          pick: powerPick.prediction || powerPick.pick,
-          league: powerPick.league || "Unknown",
-          probability: parseFloat(((powerPick.confidence ?? 0) / 100).toFixed(2)),
-          probability_display: `${Math.round(powerPick.confidence ?? 0)}%`,
-          confidence: Math.round(powerPick.confidence ?? 0),
-          confidence_pct: `${Math.round(powerPick.confidence ?? 0)}%`,
-          odds: powerPick.odds || "-110",
-          sport: powerPick.sport || "nba",
-          time: `${date2} \u2014 Today`,
-          analysis: powerPick.analysis || powerPick.metadata?.recommendation || `Gold Standard V3 Titan XII \u2014 Top pick at ${Math.round(powerPick.confidence ?? 0)}%.`,
-          enabled: ppAdminEnabled,
-          momentum: powerPick?.momentum ?? null,
-          quality: powerPick?.quality ?? null,
-          mq_composite: powerPick?.mqComposite ?? powerPick?.mq_composite ?? null
-        } : null,
-        featured_pick: featuredMegaPick ? {
-          game: `${featuredMegaPick.homeTeam} vs ${featuredMegaPick.awayTeam}`,
-          homeTeam: featuredMegaPick.homeTeam || "",
-          awayTeam: featuredMegaPick.awayTeam || "",
-          league: featuredMegaPick.league || "Unknown",
-          sport: featuredMegaPick.sport || "nba",
-          pick: featuredMegaPick.prediction || featuredMegaPick.pick,
-          pick_type: featuredMegaPick.prediction || featuredMegaPick.pick,
-          confidence: Math.round(featuredMegaPick.confidence ?? 0),
-          probability: parseFloat(((featuredMegaPick.confidence ?? 0) / 100).toFixed(2)),
-          confidence_pct: `${Math.round(featuredMegaPick.confidence ?? 0)}%`,
-          odds: featuredMegaPick.odds || "-110",
-          homeOdds: featuredMegaPick.homeOdds || featuredMegaPick.odds || "",
-          awayOdds: featuredMegaPick.awayOdds || "",
-          drawOdds: featuredMegaPick.drawOdds || "",
-          dateLabel: featuredMegaPick.dateLabel || "",
-          imageUrl: featuredMegaPick.imageUrl || "",
-          liveOnSite: !!featuredMegaPick.liveOnSite,
-          time_display: date2,
-          label: featuredMegaPick.isFeatured ? "FEATURED GAME" : "POWER PICK",
-          pick_label: featuredMegaPick.prediction || featuredMegaPick.pick,
-          reasoning: featuredMegaPick.metadata?.recommendation || `Gold Standard V3 Titan XII \u2014 Top pick at ${Math.round(featuredMegaPick.confidence ?? 0)}%.`,
-          game_time: featuredMegaPick.metadata?.gameTime || "",
-          hero_title: featuredMegaPick.isFeatured ? `FEATURED: ${featuredMegaPick.awayTeam?.toUpperCase()} vs ${featuredMegaPick.homeTeam?.toUpperCase()} \u2014 ${Math.round(featuredMegaPick.confidence ?? 0)}% CONFIDENCE` : "",
-          auto_generated: true,
-          tag: featuredMegaPick.isFeatured ? "FEATURED" : "POWER PICK",
-          disclaimer: "For entertainment purposes only.",
-          momentum: featuredMegaPick?.momentum ?? null,
-          quality: featuredMegaPick?.quality ?? null,
-          mq_composite: featuredMegaPick?.mqComposite ?? featuredMegaPick?.mq_composite ?? null
-        } : null,
-        featured_soccer: parlayLegs[0] ? {
-          match: parlayLegs[0].match || parlayLegs[0].game || "",
-          league: parlayLegs[0].league || "Soccer",
-          sport: "soccer",
-          pick: parlayLegs[0].pick || "",
-          confidence: Math.round(parlayLegs[0].confidence ?? 0),
-          confidence_display: `${Math.round(parlayLegs[0].confidence ?? 0)}%`,
-          reasoning: parlayLegs[0].reasoning || `Gold Standard V3 Titan XII \u2014 ${parlayLegs[0].pick} at ${Math.round(parlayLegs[0].confidence ?? 0)}%.`,
-          match_date: date2,
-          enabled: socAdminEnabled,
-          momentum: parlayLegs[0].momentum ?? null,
-          quality: parlayLegs[0].quality ?? null,
-          mq_composite: parlayLegs[0].mqComposite ?? parlayLegs[0].mq_composite ?? null
-        } : { match: "", league: "", sport: "soccer", pick: "", confidence: 0, confidence_display: "0%", reasoning: "", match_date: date2, enabled: socAdminEnabled, momentum: null, quality: null, mq_composite: null },
-        featured_mls: mlsLegs[0] ? {
-          match: mlsLegs[0].match || mlsLegs[0].game || "",
-          league: mlsLegs[0].league || "MLS",
-          sport: "mls",
-          pick: mlsLegs[0].pick || "",
-          confidence: Math.round(mlsLegs[0].confidence ?? 0),
-          confidence_display: `${Math.round(mlsLegs[0].confidence ?? 0)}%`,
-          reasoning: mlsNoSlate ? "No MLS games today." : mlsLegs[0].reasoning || `Gold Standard V3 Titan XII \u2014 ${mlsLegs[0].pick} at ${Math.round(mlsLegs[0].confidence ?? 0)}%.`,
-          match_date: date2,
-          enabled: mlsAdminEnabled
-        } : { match: "", league: "MLS", sport: "mls", pick: "", confidence: 0, confidence_display: "0%", reasoning: "No MLS games today.", match_date: date2, enabled: mlsAdminEnabled },
-        featured_nba: nbaLegs[0] ? {
-          match: nbaLegs[0].match || nbaLegs[0].game || "",
-          league: nbaLegs[0].league || "NBA",
-          sport: "nba",
-          pick: nbaLegs[0].pick || "",
-          confidence: Math.round(nbaLegs[0].confidence ?? 0),
-          confidence_display: `${Math.round(nbaLegs[0].confidence ?? 0)}%`,
-          reasoning: nbaLegs[0].reasoning || `Gold Standard V3 Titan XII \u2014 ${nbaLegs[0].pick} at ${Math.round(nbaLegs[0].confidence ?? 0)}%.`,
-          match_date: date2,
-          enabled: nbaAdminEnabled,
-          momentum: nbaLegs[0].momentum ?? null,
-          quality: nbaLegs[0].quality ?? null,
-          mq_composite: nbaLegs[0].mqComposite ?? nbaLegs[0].mq_composite ?? null
-        } : { match: "", league: "NBA", sport: "nba", pick: "", confidence: 0, confidence_display: "0%", reasoning: "", match_date: date2, enabled: nbaAdminEnabled, momentum: null, quality: null, mq_composite: null },
-        nba_picks: nbaLegs,
-        player_prop_picks: [],
-        free_tier_picks: active.filter((p) => p.tier === "free").slice(0, 3).map(fmtLeg),
-        results: { date_display: dateDisplay, entries: [] },
-        expert_analysis: expertAnalysis || {
-          title: `Gold Standard V3 Titan XII \u2014 ${dateDisplay}`,
-          body: `Today's picks were generated by the Gold Standard V3 Titan XII 12-factor AI engine. All picks passed the 68% confidence threshold.`,
-          visible: true,
-          updated_at: now
-        },
-        manual_lock: cfg["maintenance_mode"] === "true",
-        locked_sections: cfg["maintenance_mode"] === "true" ? ["all"] : [],
-        site_settings: {
-          alertEnabled: cfg["alert_enabled"] === "true",
-          alertText: cfg["alert_text"] || "",
-          alertType: cfg["alert_type"] || "info",
-          maintenanceMode: cfg["maintenance_mode"] === "true",
-          maintenanceMsg: cfg["maintenance_msg"] || "Site is under maintenance. Check back soon.",
-          engineLabel: cfg["engine_label"] || "Gold Standard V3 Titan XII",
-          footerDisclaimer: cfg["footer_disclaimer"] || "For entertainment purposes only. Please gamble responsibly.",
-          contactEmail: cfg["contact_email"] || "Glenoring@gmail.com",
-          twitterUrl: cfg["twitter_url"] || "",
-          instagramUrl: cfg["instagram_url"] || "",
-          discordUrl: cfg["discord_url"] || ""
-        },
-        vip_content: cfg["vip_override"] === "true" ? {
-          headline: cfg["vip_headline"] || "",
-          subheadline: cfg["vip_subheadline"] || "",
-          feature1: cfg["vip_feature1"] || "",
-          feature2: cfg["vip_feature2"] || "",
-          feature3: cfg["vip_feature3"] || "",
-          feature4: cfg["vip_feature4"] || "",
-          ctaText: cfg["vip_cta_text"] || "",
-          ctaLink: cfg["vip_cta_link"] || "",
-          badgeLabel: cfg["vip_badge_label"] || "",
-          imageUrl: cfg["vip_image_url"] || "",
-          overrideOn: true
-        } : null,
-        history_manual: (() => {
-          try {
-            return JSON.parse(cfg["history_entries"] || "[]");
-          } catch {
-            return [];
-          }
-        })(),
-        featured_games: publicActive.slice(0, 3).map((p, i) => ({
-          rank: i + 1,
-          game: `${p.homeTeam} vs ${p.awayTeam}`,
-          league: p.league || "Unknown",
-          pick: p.prediction || p.pick,
-          confidence: Math.round(p.confidence ?? 0),
-          confidence_pct: `${Math.round(p.confidence ?? 0)}%`,
-          reasoning: `Gold Standard V3 Titan XII \u2014 ${p.prediction} at ${Math.round(p.confidence ?? 0)}%.`,
-          time_display: date2,
-          sport: p.sport || "soccer",
-          auto_generated: true,
-          tag: i === 0 ? "TOP PICK" : i === 1 ? "VALUE PLAY" : "SAFE BET"
-        }))
-      };
-      res.setHeader("Content-Type", "application/json");
-      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-      res.json(payload);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/results", async (req, res) => {
-    try {
-      const results2 = await getResults(200);
-      const settled = results2.filter((r) => ["won", "lost", "void"].includes(r.result));
-      const summary = await getWinLossSummary();
-      res.json({
-        results: settled,
-        summary,
-        lastUpdated: (/* @__PURE__ */ new Date()).toISOString()
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/results/summary", async (req, res) => {
-    try {
-      const summary = await getWinLossSummary();
-      res.json(summary);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/picks", requireAuth, async (req, res) => {
-    try {
-      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
-      const picks2 = await getPicksByDate(date2);
-      res.json(picks2);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/picks-today", requireAuth, async (req, res) => {
-    try {
-      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
-      const picks2 = await getPicksByDate(today);
-      res.json({ picks: picks2, date: today, total: picks2.length });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/personal-picks", requireAuth, async (req, res) => {
-    try {
-      const dateFilter = req.query.date;
-      const db2 = getDb();
-      let query;
-      let params;
-      if (dateFilter) {
-        query = "SELECT * FROM picks WHERE is_personal = TRUE AND date = $1 ORDER BY confidence DESC";
-        params = [dateFilter];
-      } else {
-        query = "SELECT * FROM picks WHERE is_personal = TRUE ORDER BY date DESC, confidence DESC LIMIT 500";
-        params = [];
-      }
-      const result = await db2.$client.query(query, params);
-      res.json({ picks: result.rows, total: result.rows.length });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/picks", requireAuth, async (req, res) => {
-    try {
-      const pick = await createPick(req.body);
-      res.json(pick);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.put("/api/admin/picks/:id", requireAuth, async (req, res) => {
-    try {
-      const pick = await updatePick(parseInt(req.params.id), req.body);
-      res.json(pick);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.delete("/api/admin/picks/:id", requireAuth, async (req, res) => {
-    try {
-      await deletePick(parseInt(req.params.id));
-      res.json({ success: true });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/active-tier-picks", requireAuth, async (req, res) => {
-    try {
-      const date2 = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
-      const picks2 = await getPicksByDate(date2);
-      const byTier = {
-        free: picks2.filter((p) => p.tier === "free"),
-        vip: picks2.filter((p) => p.tier === "vip"),
-        pro: picks2.filter((p) => p.tier === "pro")
-      };
-      res.json(byTier);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/parlays", requireAuth, async (req, res) => {
-    try {
-      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
-      const parlays2 = await getParlaysByDate(date2);
-      res.json(parlays2);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/parlays", requireAuth, async (req, res) => {
-    try {
-      const { date: date2, type, legs, totalOdds } = req.body;
-      const parlay = await saveParlays(date2, type, legs, totalOdds);
-      res.json(parlay);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/parlay-override", requireAuth, async (req, res) => {
-    try {
-      const { date: date2, legs, totalOdds } = req.body;
-      const parlay = await saveParlays(date2 || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA"), "soccer", legs, totalOdds);
-      res.json({ success: true, parlay });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/nba-parlay-override", requireAuth, async (req, res) => {
-    try {
-      const { date: date2, legs, totalOdds } = req.body;
-      const parlay = await saveParlays(date2 || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA"), "nba", legs, totalOdds);
-      res.json({ success: true, parlay });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/mls-parlay-override", requireAuth, async (req, res) => {
-    try {
-      const { date: date2, legs, totalOdds } = req.body;
-      const parlay = await saveParlays(date2 || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA"), "mls", legs, totalOdds);
-      res.json({ success: true, parlay });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/results", requireAuth, async (req, res) => {
-    try {
-      const results2 = await getResults();
-      res.json(results2);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  const MANAGER_OVERRIDE_CODE = process.env.MANAGER_OVERRIDE_CODE || "PK-MANAGER-2026";
-  function requireManagerOverride(req, res, next) {
-    const override = req.headers["x-manager-override"] || req.body?.managerOverride;
-    if (!override || override !== MANAGER_OVERRIDE_CODE) {
-      console.warn(`[GUARDRAIL-3] READ-ONLY PROTECTION: Blocked write to Historical Records without Manager Override. IP: ${req.ip}`);
-      return res.status(403).json({
-        error: "READ-ONLY PROTECTION ACTIVE",
-        message: "Historical Records and Win/Loss pages are read-only. A Manager Override code is required to modify these records.",
-        guardrail: 3,
-        hint: "Include X-Manager-Override header with the override code to proceed."
-      });
-    }
-    console.log(`[GUARDRAIL-3] Manager Override accepted \u2014 write to Historical Records authorized`);
-    next();
-  }
-  app.post("/api/admin/results", requireAuth, requireManagerOverride, async (req, res) => {
-    try {
-      const result = await createResult(req.body);
-      res.json(result);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.put("/api/admin/results/:id", requireAuth, requireManagerOverride, async (req, res) => {
-    try {
-      const result = await updateResult(parseInt(req.params.id), req.body);
-      res.json(result);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/winloss", requireAuth, async (req, res) => {
-    try {
-      const summary = await getWinLossSummary();
-      res.json(summary);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/tier-results/:tier", requireAuth, async (req, res) => {
-    try {
-      const results2 = await getResults();
-      const tierResults = results2.filter((r) => r.tier === req.params.tier);
-      const wins = tierResults.filter((r) => r.result === "won").length;
-      const losses = tierResults.filter((r) => r.result === "lost").length;
-      const total = wins + losses;
-      res.json({
-        tier: req.params.tier,
-        wins,
-        losses,
-        total,
-        winRate: total > 0 ? Math.round(wins / total * 1e3) / 10 : 0,
-        results: tierResults
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/trigger", requireAuth, async (req, res) => {
-    try {
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3(DB_OPTS);
       const date2 = req.body.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-      res.json({ success: true, message: `Generation triggered for ${date2}`, date: date2 });
-      generateDailyPicks(date2).then(() => {
-        app._clearPicksCache?.();
-        app._pingSearchEngines?.();
-      }).catch((err) => console.error("[Admin] Manual trigger failed:", err));
+      const { summary, inserted } = await buildGoldTiersForDate(pool3, date2);
+      await pool3.end();
+      return res.json({ success: true, date: date2, summary, inserted, total: inserted.length });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      console.error("[GoldTiers] Write error:", err.message);
+      return res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/admin/engine-config", requireAuth, async (req, res) => {
+  app.post("/api/admin/gold-tiers/trigger", requireAuth2, async (req, res) => {
     try {
-      const config = await getEngineConfig();
-      res.json(config);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/engine-config", requireAuth, async (req, res) => {
-    try {
-      const { key, value } = req.body;
-      await setEngineConfig(key, value);
-      res.json({ success: true });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/run-logs", requireAuth, async (req, res) => {
-    try {
-      const logs = await getRunLogs(20);
-      res.json(logs);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/cache-status", requireAuth, async (req, res) => {
-    try {
-      const { getCacheStatus: getCacheStatus2 } = await Promise.resolve().then(() => (init_apiFootball(), apiFootball_exports));
-      res.json(getCacheStatus2());
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/clear-cache", requireAuth, async (req, res) => {
-    try {
-      const { clearApiCache: clearApiCache2 } = await Promise.resolve().then(() => (init_apiFootball(), apiFootball_exports));
-      clearApiCache2();
-      res.json({ success: true, message: "API cache cleared" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/seo-ping", requireAuth, async (req, res) => {
-    try {
-      const siteUrl = "https://soccernbaparlayking.vip";
-      const sitemapUrl = encodeURIComponent(`${siteUrl}/sitemap.xml`);
-      const results2 = [];
-      try {
-        const gRes = await fetch(`https://www.google.com/ping?sitemap=${sitemapUrl}`);
-        results2.push(`Google: ${gRes.status === 200 ? "OK" : gRes.status}`);
-      } catch {
-        results2.push("Google: unreachable");
-      }
-      try {
-        const bRes = await fetch(`https://www.bing.com/ping?sitemap=${sitemapUrl}`);
-        results2.push(`Bing: ${bRes.status === 200 ? "OK" : bRes.status}`);
-      } catch {
-        results2.push("Bing: unreachable");
-      }
-      res.json({ success: true, results: results2, message: results2.join(" | ") });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/members", requireAuth, async (req, res) => {
-    try {
-      const members2 = await getMembers();
-      res.json(members2);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/member/heartbeat", async (req, res) => {
-    try {
-      const { email, page } = req.body;
-      if (!email) return res.status(400).json({ error: "Email required" });
-      await recordHeartbeat(email, page);
-      res.json({ success: true });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/active-users", requireAuth, async (req, res) => {
-    try {
-      const users2 = await getActiveUsers(15);
-      res.json(users2);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/tiers-pricing", requireAuth, async (req, res) => {
-    try {
-      const pricing = await getTierPricing();
-      res.json(pricing);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/tiers-pricing", requireAuth, async (req, res) => {
-    try {
-      const { tier, price, label } = req.body;
-      await setTierPricing(tier, price, label);
-      res.json({ success: true });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/tier-pricing", requireAuth, async (req, res) => {
-    try {
-      const pricing = await getTierPricing();
-      res.json(pricing);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/tier-pricing", requireAuth, async (req, res) => {
-    try {
-      const { tier, price, label } = req.body;
-      await setTierPricing(tier, price, label);
-      res.json({ success: true });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/alerts", requireAuth, async (req, res) => {
-    try {
-      const alerts = await getAlerts();
-      res.json(alerts);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  let manualLock = false;
-  app.get("/api/admin/lock-status", requireAuth, (req, res) => {
-    res.json({ locked: manualLock });
-  });
-  app.post("/api/admin/lock-toggle", requireAuth, (req, res) => {
-    manualLock = !manualLock;
-    res.json({ locked: manualLock });
-  });
-  app.post("/api/admin/set-manual-lock", requireAuth, (req, res) => {
-    manualLock = req.body.locked ?? true;
-    res.json({ locked: manualLock });
-  });
-  app.get("/api/admin/audit-reports", requireAuth, async (req, res) => {
-    try {
-      const reports = await getAuditReports();
-      res.json(reports);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/audit-trigger", requireAuth, async (req, res) => {
-    res.json({ success: true, message: "Audit report generation queued" });
-  });
-  app.get("/api/bet-builder/games", async (req, res) => {
-    try {
-      const date2 = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-      const picks2 = await getPicksByDate(date2);
-      const freePicks = picks2.filter((p) => p.tier === "free" && !p.isDisabled);
-      res.json(freePicks);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/nba-props", async (req, res) => {
-    res.json({ props: [], message: "NBA props updated daily at 11 AM AST" });
-  });
-  app.post("/api/admin/re-engage", requireAuth, async (req, res) => {
-    res.json({ success: true, message: "Re-engagement notifications queued" });
-  });
-  app.get("/tier-guard.js", (_req, res) => {
-    const tierGuardPath = path2.join(process.cwd(), "server/templates/tier-guard.js");
-    if (fs2.existsSync(tierGuardPath)) {
-      res.setHeader("Content-Type", "application/javascript");
-      res.setHeader("Cache-Control", "public, max-age=300");
-      return res.sendFile(tierGuardPath);
-    }
-    res.status(404).send("// tier-guard.js not found");
-  });
-  app.post("/api/paypal/ipn", async (req, res) => {
-    res.status(200).send("OK");
-    try {
-      const params = new URLSearchParams(req.body);
-      const paymentStatus = params.get("payment_status");
-      const payerEmail = params.get("payer_email") || "";
-      const itemName = params.get("item_name") || "";
-      const txnType = params.get("txn_type") || "";
-      if (paymentStatus !== "Completed" && txnType !== "subscr_payment") return;
-      let tier = "free";
-      if (itemName.toLowerCase().includes("lifetime") || itemName.toLowerCase().includes("499")) {
-        tier = "lifetime";
-      } else if (itemName.toLowerCase().includes("vip") || itemName.toLowerCase().includes("14")) {
-        tier = "vip";
-      } else if (itemName.toLowerCase().includes("pro") || itemName.toLowerCase().includes("streamz")) {
-        tier = "pro";
-      }
-      const lifetimeDisabledUntil = /* @__PURE__ */ new Date("2026-03-20T04:00:00Z");
-      const now = /* @__PURE__ */ new Date();
-      if (tier === "lifetime" && now < lifetimeDisabledUntil) {
-        tier = "pro";
-        console.log(`[PayPal IPN] Lifetime tier not yet available \u2014 granting pro tier to ${payerEmail} until 2026-03-20`);
-      }
-      if (payerEmail && tier !== "free") {
-        await createOrUpdateMember(payerEmail, tier);
-        console.log(`[PayPal IPN] Tier '${tier}' granted to ${payerEmail}`);
-      } else if (payerEmail) {
-        await createOrUpdateMember(payerEmail, "free");
-        console.log(`[PayPal IPN] Free tier recorded for ${payerEmail}`);
-      }
-    } catch (err) {
-      console.error("[PayPal IPN] Error processing IPN:", err);
-    }
-  });
-  app.get("/api/member/tier", async (req, res) => {
-    const email = req.query.email;
-    if (!email) return res.json({ tier: "free" });
-    try {
-      const member = await getMemberByEmail(email);
-      if (member) {
-        return res.json({ tier: member.tier, token: member.token });
-      }
-      return res.json({ tier: "free" });
-    } catch {
-      return res.json({ tier: "free" });
-    }
-  });
-  const JWT_SECRET = process.env.SESSION_SECRET || "parlay-king-secret-2025";
-  app.post("/api/auth/register", async (req, res) => {
-    try {
-      const { email, username, password, plan } = req.body;
-      if (!email || !username || !password) {
-        return res.status(400).json({ error: "Email, username, and password are required." });
-      }
-      if (password.length < 6) {
-        return res.status(400).json({ error: "Password must be at least 6 characters." });
-      }
       const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      const existing = await pool2.query("SELECT id FROM members WHERE username = $1", [username]);
-      if (existing.rows.length > 0) {
-        await pool2.end();
-        return res.status(409).json({ error: "Username already taken. Please choose another." });
-      }
-      const passwordHash = await import_bcryptjs.default.hash(password, 10);
-      let tier = "free";
-      let expiresAt = null;
-      let tierLockedUntil = null;
-      let subscriptionPlan = plan || "free";
-      if (plan === "lifetime") {
-        tier = "lifetime";
-        expiresAt = null;
-        tierLockedUntil = null;
-      } else if (plan === "pro-monthly") {
-        tier = "pro";
-        expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1e3);
-        tierLockedUntil = expiresAt;
-      } else if (plan === "vip-monthly") {
-        tier = "vip";
-        expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1e3);
-        tierLockedUntil = expiresAt;
-      }
-      await pool2.query(
-        `INSERT INTO members (email, username, password_hash, tier, subscription_plan, expires_at, tier_locked_until, is_active, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW())
-         ON CONFLICT (email) DO UPDATE SET
-           username = EXCLUDED.username,
-           password_hash = EXCLUDED.password_hash,
-           tier = EXCLUDED.tier,
-           subscription_plan = EXCLUDED.subscription_plan,
-           expires_at = EXCLUDED.expires_at,
-           tier_locked_until = EXCLUDED.tier_locked_until,
-           is_active = true`,
-        [email, username, passwordHash, tier, subscriptionPlan, expiresAt, tierLockedUntil]
-      );
-      await pool2.end();
-      const token = import_jsonwebtoken.default.sign({ email, username, tier, expiresAt: expiresAt?.toISOString() || null }, JWT_SECRET, { expiresIn: "90d" });
-      return res.json({ success: true, token, tier, username, expiresAt: expiresAt?.toISOString() || null, subscriptionPlan });
+      const pool3 = new Pool3(DB_OPTS);
+      const date2 = req.body.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const { summary, inserted } = await buildGoldTiersForDate(pool3, date2);
+      await pool3.end();
+      return res.json({ success: true, date: date2, summary });
     } catch (err) {
-      console.error("[Auth Register]", err.message);
-      return res.status(500).json({ error: "Registration failed. Please try again." });
+      return res.status(500).json({ error: err.message });
     }
   });
-  app.post("/api/auth/login", async (req, res) => {
+  app.get("/api/picks/gold-tiers", requireAuth2, async (req, res) => {
     try {
-      const { username, password } = req.body;
-      if (!username || !password) {
-        return res.status(400).json({ error: "Username and password are required." });
-      }
       const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      const result = await pool2.query(
-        "SELECT * FROM members WHERE username = $1 AND is_active = true",
-        [username]
+      const pool3 = new Pool3(DB_OPTS);
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const { rows } = await pool3.query(
+        `SELECT * FROM gold_tiers WHERE date = $1 ORDER BY tier, sport_slot, confidence DESC`,
+        [date2]
       );
-      await pool2.end();
-      if (result.rows.length === 0) {
-        return res.status(401).json({ error: "Invalid username or password." });
-      }
-      const member = result.rows[0];
-      if (!member.password_hash) {
-        return res.status(401).json({ error: "Account not set up yet. Please complete registration." });
-      }
-      const valid = await import_bcryptjs.default.compare(password, member.password_hash);
-      if (!valid) {
-        return res.status(401).json({ error: "Invalid username or password." });
-      }
-      let activeTier = member.tier;
-      if (member.expires_at && new Date(member.expires_at) < /* @__PURE__ */ new Date() && member.tier !== "lifetime") {
-        activeTier = "free";
-        const pool22 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-        await pool22.query("UPDATE members SET tier = $1, tier_locked_until = NULL WHERE email = $2", ["free", member.email]);
-        await pool22.end();
-      }
-      const token = import_jsonwebtoken.default.sign(
-        { email: member.email, username: member.username, tier: activeTier, expiresAt: member.expires_at || null },
-        JWT_SECRET,
-        { expiresIn: "90d" }
-      );
+      await pool3.end();
+      const pro = rows.filter((p) => p.tier === "pro");
+      const lifetime = rows.filter((p) => p.tier === "lifetime");
       return res.json({
-        success: true,
-        token,
-        tier: activeTier,
-        username: member.username,
-        email: member.email,
-        expiresAt: member.expires_at || null,
-        tierLockedUntil: member.tier_locked_until || null,
-        subscriptionPlan: member.subscription_plan || null
+        date: date2,
+        pro: {
+          picks: pro,
+          total: pro.length,
+          nba: pro.filter((p) => p.sport === "nba").length,
+          soccer: pro.filter((p) => p.sport !== "nba").length,
+          config: HARDENED_TIER_CONFIG.pro
+        },
+        lifetime: {
+          picks: lifetime,
+          total: lifetime.length,
+          nba: lifetime.filter((p) => p.sport === "nba").length,
+          soccer: lifetime.filter((p) => p.sport !== "nba").length,
+          config: HARDENED_TIER_CONFIG.lifetime
+        }
       });
     } catch (err) {
-      console.error("[Auth Login]", err.message);
-      return res.status(500).json({ error: "Login failed. Please try again." });
+      return res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/admin/verify-connection", requireAuth, async (req, res) => {
+  app.get("/api/picks/pro", async (req, res) => {
     try {
-      const { getOddsApiStatus: getOddsApiStatus2 } = await Promise.resolve().then(() => (init_oddsApi(), oddsApi_exports));
-      const status = await getOddsApiStatus2();
-      res.json({
-        guardrail: 4,
-        status: "LIVE",
-        source: "the-odds-api.com",
-        budgetLedger: status.budgetLedger,
-        sampleGames: status.sampleGames,
-        cacheStatus: status.cacheStatus,
-        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      const member = verifyMemberToken(req);
+      if (!member) return res.status(401).json({ error: "Authentication required." });
+      if (!["pro", "lifetime", "admin"].includes(member.tier)) {
+        return res.status(403).json({ error: "Pro tier or higher required." });
+      }
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3(DB_OPTS);
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const { rows } = await pool3.query(
+        `SELECT * FROM gold_tiers
+         WHERE date = $1 AND tier = 'pro' AND v3_audit_passed = true
+         ORDER BY
+           CASE sport_slot
+             WHEN 'nba_1' THEN 1 WHEN 'nba_2' THEN 2 WHEN 'nba_3' THEN 3
+             WHEN 'soccer_1' THEN 4 WHEN 'soccer_2' THEN 5 WHEN 'soccer_3' THEN 6
+             ELSE 7
+           END, confidence DESC`,
+        [date2]
+      );
+      await pool3.end();
+      const cfg = HARDENED_TIER_CONFIG.pro;
+      const nba = rows.filter((p) => p.sport === "nba");
+      const soccer = rows.filter((p) => p.sport !== "nba");
+      return res.json({
+        tier: "pro",
+        date: date2,
+        picks: rows,
+        total: rows.length,
+        composition: { nba: nba.length, soccer: soccer.length, extra: 0 },
+        config: cfg,
+        v3_audit_passed: rows.every((p) => p.v3_audit_passed),
+        fallback_used: rows.some((p) => p.is_fallback),
+        fallback_picks: rows.filter((p) => p.is_fallback).map((p) => ({
+          match: `${p.home_team} vs ${p.away_team}`,
+          confidence: p.confidence,
+          floor: p.fallback_floor
+        }))
       });
     } catch (err) {
-      res.status(500).json({ error: err.message, status: "DISCONNECTED" });
+      return res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/admin/budget-status", requireAuth, async (req, res) => {
+  app.get("/api/picks/lifetime", async (req, res) => {
     try {
-      const { getBudgetLedger: getBudgetLedger2 } = await Promise.resolve().then(() => (init_oddsApi(), oddsApi_exports));
-      const ledger = getBudgetLedger2();
-      res.json({
-        guardrail: 2,
-        hardCeiling: 100,
-        used: ledger.used,
-        remaining: ledger.remaining,
-        cacheHits: ledger.cacheHits,
-        lastReset: ledger.lastReset,
-        status: ledger.remaining > 10 ? "OK" : ledger.remaining > 0 ? "WARNING" : "EXHAUSTED"
+      const member = verifyMemberToken(req);
+      if (!member) return res.status(401).json({ error: "Authentication required." });
+      if (!["lifetime", "admin"].includes(member.tier)) {
+        return res.status(403).json({ error: "Lifetime tier required." });
+      }
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3(DB_OPTS);
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const { rows } = await pool3.query(
+        `SELECT * FROM gold_tiers
+         WHERE date = $1 AND tier = 'lifetime' AND v3_audit_passed = true
+         ORDER BY
+           CASE sport_slot
+             WHEN 'nba_1' THEN 1 WHEN 'nba_2' THEN 2 WHEN 'nba_3' THEN 3
+             WHEN 'soccer_1' THEN 4 WHEN 'soccer_2' THEN 5 WHEN 'soccer_3' THEN 6 WHEN 'soccer_4' THEN 7
+             WHEN 'extra_1' THEN 8 WHEN 'extra_2' THEN 9 WHEN 'extra_3' THEN 10
+             ELSE 11
+           END, confidence DESC`,
+        [date2]
+      );
+      await pool3.end();
+      const cfg = HARDENED_TIER_CONFIG.lifetime;
+      const nba = rows.filter((p) => p.sport === "nba");
+      const soccer = rows.filter((p) => p.sport !== "nba" && !(p.sport_slot || "").startsWith("extra"));
+      const extra = rows.filter((p) => (p.sport_slot || "").startsWith("extra"));
+      return res.json({
+        tier: "lifetime",
+        date: date2,
+        picks: rows,
+        total: rows.length,
+        composition: { nba: nba.length, soccer: soccer.length, extra: extra.length },
+        config: cfg,
+        v3_audit_passed: rows.every((p) => p.v3_audit_passed),
+        fallback_used: rows.some((p) => p.is_fallback),
+        fallback_picks: rows.filter((p) => p.is_fallback).map((p) => ({
+          match: `${p.home_team} vs ${p.away_team}`,
+          confidence: p.confidence,
+          floor: p.fallback_floor
+        }))
       });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/admin/v3-games", requireAuth, async (req, res) => {
-    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
-    res.setHeader("Pragma", "no-cache");
+  app.get("/api/admin/gold-tiers", requireAuth2, async (req, res) => {
     try {
-      const { Pool: V3Pool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const pool2 = new V3Pool({ connectionString: process.env.DATABASE_URL });
-      const serverNow = /* @__PURE__ */ new Date();
-      const serverNowISO = serverNow.toISOString();
-      const today = serverNow.toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-      const in48h = new Date(serverNow.getTime() + 48 * 60 * 60 * 1e3).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-      const result = await pool2.query(`
-        SELECT id, date, sport, league, home_team, away_team, prediction, confidence,
-               odds, tier, is_power_pick, momentum, quality, mq_composite, metadata, is_disabled
-        FROM picks
-        WHERE date >= $1 AND date <= $2
-          AND confidence >= 68
-          AND is_disabled = FALSE
-        ORDER BY date ASC, confidence DESC
-      `, [today, in48h]);
-      await pool2.end();
-      const games = result.rows.map((r) => {
-        const metaTime = r.metadata?.commence_time || r.metadata?.commenceTime || r.metadata?.game_time || null;
-        const commenceTime = metaTime ? new Date(metaTime).toISOString() : r.date + "T17:00:00Z";
-        return {
-          id: String(r.id),
-          sportKey: r.sport === "nba" ? "basketball_nba" : "soccer_global",
-          sport: r.sport,
-          league: r.league || "",
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3(DB_OPTS);
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const tier = req.query.tier || "pro";
+      const { rows } = await pool3.query(
+        `SELECT * FROM gold_tiers WHERE date = $1 AND tier = $2 ORDER BY confidence DESC`,
+        [date2, tier]
+      );
+      await pool3.end();
+      return res.json(rows);
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/upcoming-games", requireAuth2, async (req, res) => {
+    try {
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3(DB_OPTS);
+      const hours = parseInt(req.query.hours || "48", 10);
+      let games = [];
+      try {
+        const { rows } = await pool3.query(
+          `SELECT * FROM pending_validator WHERE game_date >= NOW() AND game_date <= NOW() + INTERVAL '${hours} hours' ORDER BY game_date ASC LIMIT 50`
+        );
+        games = rows.map((r) => ({
+          id: r.id,
           homeTeam: r.home_team,
           awayTeam: r.away_team,
-          commenceTime,
+          league: r.league,
+          sport: r.sport,
+          date: r.game_date,
+          confidence: r.confidence,
+          fixtureId: r.fixture_id
+        }));
+      } catch (pvErr) {
+        const tomorrow = /* @__PURE__ */ new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const { rows } = await pool3.query(
+          `SELECT * FROM picks WHERE date = $1 ORDER BY confidence DESC LIMIT 30`,
+          [tomorrow.toLocaleDateString("en-CA")]
+        );
+        games = rows.map((r) => ({
+          id: r.id,
+          homeTeam: r.home_team,
+          awayTeam: r.away_team,
+          league: r.league,
+          sport: r.sport,
           date: r.date,
-          confidence: parseFloat(r.confidence) || 0,
-          bestPick: r.prediction || "N/A",
-          odds: r.odds || "",
-          tier: r.tier || "pro",
-          is_power_pick: r.is_power_pick || false,
-          momentum: r.momentum || null,
-          quality: r.quality || null,
-          mq_composite: r.mq_composite || null,
-          analysis: r.metadata?.analysis || "",
-          outcomes: [{ label: r.prediction, conf: parseFloat(r.confidence) || 0 }],
-          validated: true,
-          source: "neondb-v3"
-        };
-      }).filter((g) => {
-        const gameDate = g.commenceTime.substring(0, 10);
-        if (gameDate > today) return true;
-        if (gameDate === today) return true;
-        return false;
-      });
-      if (games.length === 0) {
-        return res.json({ success: true, games: [], total: 0, message: "No High-Probability Games Found", budget: { used: 0, remaining: 100, resetTime: today } });
+          confidence: r.confidence,
+          fixtureId: r.fixture_id
+        }));
       }
-      res.json({
-        success: true,
-        games,
-        total: games.length,
-        serverNow: serverNowISO,
-        // FIX 1: server ISO timestamp for client stale-game check
-        budget: { used: 0, remaining: 100, resetTime: today }
-      });
+      await pool3.end();
+      return res.json({ games, total: games.length, hours });
     } catch (err) {
-      console.error("[V3Games] DB error (no retry):", err.message);
-      res.status(500).json({ error: err.message, message: "DB fetch failed \u2014 no retry per Efficiency Veto" });
+      return res.status(500).json({ error: err.message });
     }
   });
-  app.post("/api/admin/v3-validate", requireAuth, async (req, res) => {
+  app.post("/api/admin/v2-audit", requireAuth2, async (req, res) => {
     try {
-      const { gameId } = req.body;
-      if (!gameId) return res.status(400).json({ error: "gameId required" });
-      const { getGlobalSoccerOdds: getGlobalSoccerOdds2, getNBAOdds: getNBAOdds2, getMLSOdds: getMLSOdds2 } = await Promise.resolve().then(() => (init_oddsApi(), oddsApi_exports));
-      const [soccerGames, nbaGames, mlsGames] = await Promise.all([
-        getGlobalSoccerOdds2().catch(() => []),
-        getNBAOdds2().catch(() => []),
-        getMLSOdds2().catch(() => [])
-      ]);
-      const g = [...soccerGames, ...nbaGames, ...mlsGames].find((x) => x.id === gameId);
-      if (!g) return res.status(404).json({ error: "Game not found in current API data" });
-      const sport = g.sport_key.startsWith("basketball") ? "nba" : g.sport_key === "soccer_usa_mls" ? "mls" : "soccer";
+      const { homeTeam, awayTeam, league, sport } = req.body;
+      if (!homeTeam || !awayTeam) return res.status(400).json({ error: "homeTeam and awayTeam required" });
+      const { runBatchPredictions: runBatchPredictions2 } = await Promise.resolve().then(() => (init_goldStandardV2(), goldStandardV2_exports));
       const fixture = {
-        fixtureId: parseInt(g.id.replace(/\D/g, "").slice(0, 8) || "0", 10),
-        homeTeam: g.home_team,
-        awayTeam: g.away_team,
-        league: g.sport_title,
-        sport,
-        homeOdds: g.home_odds ?? void 0,
-        drawOdds: g.draw_odds ?? void 0,
-        awayOdds: g.away_odds ?? void 0,
-        homeInjuries: 0,
-        awayInjuries: 0,
-        isNeutralVenue: false
-      };
-      const preds = await runBatchPredictionsV15([fixture]);
-      const pred = preds[0];
-      if (!pred) return res.status(422).json({ error: "Engine returned no prediction for this fixture" });
-      const conf = pred.topConfidence;
-      const outcomes = [];
-      const p = pred.predictions;
-      if (p.homeWin) outcomes.push({ label: `${g.home_team} Win`, conf: p.homeWin });
-      if (p.awayWin) outcomes.push({ label: `${g.away_team} Win`, conf: p.awayWin });
-      if (p.draw) outcomes.push({ label: "Draw", conf: p.draw });
-      if (p.homeOrDraw) outcomes.push({ label: `${g.home_team} Win or Draw`, conf: p.homeOrDraw });
-      if (p.awayOrDraw) outcomes.push({ label: `${g.away_team} Win or Draw`, conf: p.awayOrDraw });
-      if (p.over25) outcomes.push({ label: "Over 2.5 Goals", conf: p.over25 });
-      if (p.under25) outcomes.push({ label: "Under 2.5 Goals", conf: p.under25 });
-      if (p.btts) outcomes.push({ label: "Both Teams to Score", conf: p.btts });
-      res.json({
-        success: true,
-        game: {
-          id: g.id,
-          homeTeam: g.home_team,
-          awayTeam: g.away_team,
-          league: g.sport_title,
-          sport,
-          confidence: Math.round(conf * 10) / 10,
-          bestPick: pred.topPick,
-          outcomes: outcomes.sort((a, b) => b.conf - a.conf),
-          factors: pred.factors,
-          recommendation: pred.recommendation,
-          validated: true
-        }
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/feature-pick", requireAuth, async (req, res) => {
-    try {
-      const { matchup, pick, confidence } = req.body;
-      if (!matchup || !pick) return res.status(400).json({ error: "matchup and pick required" });
-      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
-      const { Pool: FeaturePool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const fPool = new FeaturePool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      await fPool.query("UPDATE picks SET is_featured = false WHERE date = $1", [today]);
-      await fPool.query(
-        "UPDATE picks SET is_featured = true WHERE date = $1 AND (home_team || ' vs ' || away_team = $2 OR prediction = $3) LIMIT 1",
-        [today, matchup, pick]
-      );
-      await fPool.end();
-      res.json({ success: true, message: `Featured: ${matchup} \u2014 ${pick} @ ${confidence}%` });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/push-pick", requireAuth, async (req, res) => {
-    try {
-      const { matchup, pick, confidence, sport, league } = req.body;
-      if (!matchup || !pick || !sport) return res.status(400).json({ error: "matchup, pick, sport required" });
-      const parts = matchup.split(" vs ");
-      const homeTeam = parts[0]?.trim() || matchup;
-      const awayTeam = parts[1]?.trim() || "";
-      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
-      const tier = confidence >= 68 ? "pro" : "free";
-      const isHighVolatility = confidence < 68;
-      await createPick({
+        fixtureId: `v2audit_${Date.now()}`,
         homeTeam,
         awayTeam,
-        league: league || sport.toUpperCase(),
-        sport,
-        prediction: pick,
-        confidence: Math.round(confidence * 10) / 10,
-        status: "pending",
-        date: today,
-        tier,
-        isPowerPick: false,
-        isFeatured: false,
-        metadata: { isHighVolatility, source: "v3-validator", pushedAt: (/* @__PURE__ */ new Date()).toISOString() }
-      });
-      res.json({ success: true, message: `Pushed to live: ${matchup} \u2014 ${pick} @ ${confidence}%` });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  let _picksCache = null;
-  function clearPicksCache() {
-    _picksCache = null;
-    _modulePicksCache = null;
-  }
-  app._clearPicksCache = clearPicksCache;
-  clearModulePicksCache._impl = clearPicksCache;
-  app._getPicksCache = () => _picksCache;
-  app._setPicksCache = (v) => {
-    _picksCache = v;
-  };
-  function pingSearchEngines() {
-    const sitemap = "https://soccernbaparlayking.vip/sitemap.xml";
-    fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(sitemap)}`).then(() => console.log("[Ping] Google sitemap ping sent")).catch(() => {
-    });
-    fetch(`https://www.bing.com/ping?sitemap=${encodeURIComponent(sitemap)}`).then(() => console.log("[Ping] Bing sitemap ping sent")).catch(() => {
-    });
-  }
-  app._pingSearchEngines = pingSearchEngines;
-  app.get("/api/admin/featured-game", requireAuth, async (req, res) => {
-    try {
-      const cfg = await getEngineConfig();
-      res.json({
-        homeTeam: cfg["fg_home"] || "",
-        awayTeam: cfg["fg_away"] || "",
-        league: cfg["fg_league"] || "",
-        sport: cfg["fg_sport"] || "soccer",
-        homeOdds: cfg["fg_home_odds"] || "",
-        awayOdds: cfg["fg_away_odds"] || "",
-        drawOdds: cfg["fg_draw_odds"] || "",
-        confidence: cfg["fg_confidence"] || "",
-        pick: cfg["fg_pick"] || "",
-        dateLabel: cfg["fg_date_label"] || "",
-        imageUrl: cfg["fg_image_url"] || "",
-        liveOnSite: cfg["fg_live"] === "true"
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/featured-game", requireAuth, async (req, res) => {
-    try {
-      const { homeTeam, awayTeam, league, sport, homeOdds, awayOdds, drawOdds, confidence, pick, dateLabel, imageUrl, liveOnSite } = req.body;
-      const conf = parseFloat(confidence) || 0;
-      const autoHomeOdds = homeOdds || confidenceToAmericanOdds(conf);
-      const autoAwayOdds = awayOdds || confidenceToAmericanOdds(Math.max(conf - 10, 45));
-      const autoDrawOdds = drawOdds || (sport === "soccer" ? "+280" : "");
-      await Promise.all([
-        setEngineConfig("fg_home", homeTeam || ""),
-        setEngineConfig("fg_away", awayTeam || ""),
-        setEngineConfig("fg_league", league || ""),
-        setEngineConfig("fg_sport", sport || "soccer"),
-        setEngineConfig("fg_home_odds", autoHomeOdds),
-        setEngineConfig("fg_away_odds", autoAwayOdds),
-        setEngineConfig("fg_draw_odds", autoDrawOdds),
-        setEngineConfig("fg_confidence", String(conf || "")),
-        setEngineConfig("fg_pick", pick || ""),
-        setEngineConfig("fg_date_label", dateLabel || ""),
-        setEngineConfig("fg_image_url", imageUrl || ""),
-        setEngineConfig("fg_live", liveOnSite ? "true" : "false")
-      ]);
-      clearPicksCache();
-      pingSearchEngines();
-      res.json({ success: true, message: liveOnSite ? "Featured game is LIVE on site" : "Featured game saved (not live)" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  function confidenceToAmericanOdds(confidence) {
-    if (!confidence || confidence <= 0) return "";
-    const vig = 0.05;
-    const impliedProb = Math.min(Math.max(confidence / 100, 0.01), 0.99);
-    const viggedProb = impliedProb * (1 + vig);
-    if (viggedProb >= 0.5) {
-      const odds = Math.round(-(viggedProb / (1 - viggedProb)) * 100);
-      return String(odds);
-    } else {
-      const odds = Math.round((1 - viggedProb) / viggedProb * 100);
-      return "+" + String(odds);
-    }
-  }
-  app.get("/api/admin/expert-analysis", requireAuth, async (req, res) => {
-    try {
-      const cfg = await getEngineConfig();
-      res.json({
-        title: cfg["ea_title"] || "",
-        body: cfg["ea_body"] || "",
-        visible: cfg["ea_visible"] !== "false"
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/expert-analysis", requireAuth, async (req, res) => {
-    try {
-      const { title, body, visible } = req.body;
-      await Promise.all([
-        setEngineConfig("ea_title", title || ""),
-        setEngineConfig("ea_body", body || ""),
-        setEngineConfig("ea_visible", visible !== false ? "true" : "false")
-      ]);
-      clearPicksCache();
-      pingSearchEngines();
-      res.json({ success: true, message: visible !== false ? "Expert analysis visible on site" : "Expert analysis hidden" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/parlay-nba", requireAuth, async (req, res) => {
-    try {
-      const cfg = await getEngineConfig();
-      const legs = [1, 2, 3].map((i) => ({
-        homeTeam: cfg[`nba_leg${i}_home`] || "",
-        awayTeam: cfg[`nba_leg${i}_away`] || "",
-        pick: cfg[`nba_leg${i}_pick`] || "",
-        spread: cfg[`nba_leg${i}_spread`] || "",
-        total: cfg[`nba_leg${i}_total`] || "",
-        odds: cfg[`nba_leg${i}_odds`] || "",
-        confidence: cfg[`nba_leg${i}_conf`] || ""
-      }));
-      res.json({ legs, enabled: cfg["nba_parlay_enabled"] !== "false" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/parlay-nba", requireAuth, async (req, res) => {
-    try {
-      const { legs, enabled } = req.body;
-      const saves = [];
-      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      for (const leg of (legs || []).slice(0, 10)) {
-        const conf = parseFloat(leg.confidence) || 75;
-        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
-        const homeTeam = (leg.homeTeam || "").trim();
-        const awayTeam = (leg.awayTeam || "").trim();
-        if (!homeTeam || !awayTeam) continue;
-        const fixtureId = `manual-nba-${homeTeam.replace(/\s+/g, "-").toLowerCase()}-${awayTeam.replace(/\s+/g, "-").toLowerCase()}-${today}`;
-        const meta = JSON.stringify({
-          source_model: "manual-admin-push",
-          source: "admin-manual",
-          bypass_gemini: true,
-          original_pick_label: leg.pick || "",
-          pushed_at: (/* @__PURE__ */ new Date()).toISOString(),
-          audit_log: { note: "Admin 3-Leg NBA Parlay form \u2014 manual push" }
-        });
-        await pool2.query(
-          `UPDATE picks SET is_disabled=TRUE, updated_at=NOW()
-           WHERE date=$1 AND home_team=$2 AND away_team=$3
-             AND metadata->>'source_model'='manual-admin-push'`,
-          [today, homeTeam, awayTeam]
-        );
-        await pool2.query(
-          `INSERT INTO picks
-             (date, sport, tier, home_team, away_team, league, prediction,
-              confidence, odds, fixture_id, status, is_power_pick, is_featured,
-              is_disabled, metadata, is_personal, momentum, quality, mq_composite,
-              created_at, updated_at)
-           VALUES ($1,'nba','free',$2,$3,$4,$5,$6,$7,$8,'active',
-                   FALSE,TRUE,FALSE,$9::jsonb,FALSE,8,7,7.5,NOW(),NOW())`,
-          [
-            today,
-            homeTeam,
-            awayTeam,
-            leg.league || "NBA",
-            leg.pick || `${homeTeam} Win`,
-            conf,
-            autoOdds,
-            fixtureId,
-            meta
-          ]
-        );
-      }
-      await pool2.end();
-      (legs || []).slice(0, 3).forEach((leg, i) => {
-        const n = i + 1;
-        const conf = parseFloat(leg.confidence) || 0;
-        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
-        saves.push(setEngineConfig(`nba_leg${n}_home`, leg.homeTeam || ""));
-        saves.push(setEngineConfig(`nba_leg${n}_away`, leg.awayTeam || ""));
-        saves.push(setEngineConfig(`nba_leg${n}_pick`, leg.pick || ""));
-        saves.push(setEngineConfig(`nba_leg${n}_spread`, leg.spread || ""));
-        saves.push(setEngineConfig(`nba_leg${n}_total`, leg.total || ""));
-        saves.push(setEngineConfig(`nba_leg${n}_odds`, autoOdds));
-        saves.push(setEngineConfig(`nba_leg${n}_conf`, String(conf || "")));
-      });
-      saves.push(setEngineConfig("nba_parlay_enabled", enabled !== false ? "true" : "false"));
-      await Promise.all(saves);
-      clearPicksCache();
-      pingSearchEngines();
-      res.json({ success: true, message: enabled !== false ? "NBA parlay saved to NeonDB and enabled on site" : "NBA parlay disabled" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/parlay-soccer", requireAuth, async (req, res) => {
-    try {
-      const cfg = await getEngineConfig();
-      const legs = [1, 2, 3].map((i) => ({
-        homeTeam: cfg[`soc_leg${i}_home`] || "",
-        awayTeam: cfg[`soc_leg${i}_away`] || "",
-        pick: cfg[`soc_leg${i}_pick`] || "",
-        odds: cfg[`soc_leg${i}_odds`] || "",
-        confidence: cfg[`soc_leg${i}_conf`] || "",
-        league: cfg[`soc_leg${i}_league`] || ""
-      }));
-      res.json({ legs, enabled: cfg["soc_parlay_enabled"] !== "false" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/parlay-soccer", requireAuth, async (req, res) => {
-    try {
-      const { legs, enabled } = req.body;
-      const saves = [];
-      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      for (const leg of (legs || []).slice(0, 10)) {
-        const conf = parseFloat(leg.confidence) || 75;
-        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
-        const homeTeam = (leg.homeTeam || "").trim();
-        const awayTeam = (leg.awayTeam || "").trim();
-        if (!homeTeam || !awayTeam) continue;
-        const fixtureId = `manual-soc-${homeTeam.replace(/\s+/g, "-").toLowerCase()}-${awayTeam.replace(/\s+/g, "-").toLowerCase()}-${today}`;
-        const meta = JSON.stringify({
-          source_model: "manual-admin-push",
-          source: "admin-manual",
-          bypass_gemini: true,
-          original_pick_label: leg.pick || "",
-          pushed_at: (/* @__PURE__ */ new Date()).toISOString(),
-          audit_log: { note: "Admin 3-Leg Soccer Parlay form \u2014 manual push" }
-        });
-        await pool2.query(
-          `UPDATE picks SET is_disabled=TRUE, updated_at=NOW()
-           WHERE date=$1 AND home_team=$2 AND away_team=$3
-             AND metadata->>'source_model'='manual-admin-push'`,
-          [today, homeTeam, awayTeam]
-        );
-        await pool2.query(
-          `INSERT INTO picks
-             (date, sport, tier, home_team, away_team, league, prediction,
-              confidence, odds, fixture_id, status, is_power_pick, is_featured,
-              is_disabled, metadata, is_personal, momentum, quality, mq_composite,
-              created_at, updated_at)
-           VALUES ($1,'soccer','free',$2,$3,$4,$5,$6,$7,$8,'active',
-                   FALSE,TRUE,FALSE,$9::jsonb,FALSE,8,7,7.5,NOW(),NOW())`,
-          [
-            today,
-            homeTeam,
-            awayTeam,
-            leg.league || "Soccer",
-            leg.pick || `${homeTeam} Win`,
-            conf,
-            autoOdds,
-            fixtureId,
-            meta
-          ]
-        );
-      }
-      await pool2.end();
-      (legs || []).slice(0, 3).forEach((leg, i) => {
-        const n = i + 1;
-        const conf = parseFloat(leg.confidence) || 0;
-        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
-        saves.push(setEngineConfig(`soc_leg${n}_home`, leg.homeTeam || ""));
-        saves.push(setEngineConfig(`soc_leg${n}_away`, leg.awayTeam || ""));
-        saves.push(setEngineConfig(`soc_leg${n}_pick`, leg.pick || ""));
-        saves.push(setEngineConfig(`soc_leg${n}_odds`, autoOdds));
-        saves.push(setEngineConfig(`soc_leg${n}_conf`, String(conf || "")));
-        saves.push(setEngineConfig(`soc_leg${n}_league`, leg.league || ""));
-      });
-      saves.push(setEngineConfig("soc_parlay_enabled", enabled !== false ? "true" : "false"));
-      await Promise.all(saves);
-      clearPicksCache();
-      pingSearchEngines();
-      res.json({ success: true, message: enabled !== false ? "Soccer parlay saved to NeonDB and enabled on site" : "Soccer parlay disabled" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/parlay-mls", requireAuth, async (req, res) => {
-    try {
-      const cfg = await getEngineConfig();
-      const legs = [1, 2, 3].map((i) => ({
-        homeTeam: cfg[`mls_leg${i}_home`] || "",
-        awayTeam: cfg[`mls_leg${i}_away`] || "",
-        pick: cfg[`mls_leg${i}_pick`] || "",
-        odds: cfg[`mls_leg${i}_odds`] || "",
-        confidence: cfg[`mls_leg${i}_conf`] || ""
-      }));
-      res.json({ legs, enabled: cfg["mls_parlay_enabled"] !== "false" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/parlay-mls", requireAuth, async (req, res) => {
-    try {
-      const { legs, enabled } = req.body;
-      const saves = [];
-      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      for (const leg of (legs || []).slice(0, 10)) {
-        const conf = parseFloat(leg.confidence) || 75;
-        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
-        const homeTeam = (leg.homeTeam || "").trim();
-        const awayTeam = (leg.awayTeam || "").trim();
-        if (!homeTeam || !awayTeam) continue;
-        const fixtureId = `manual-mls-${homeTeam.replace(/\s+/g, "-").toLowerCase()}-${awayTeam.replace(/\s+/g, "-").toLowerCase()}-${today}`;
-        const meta = JSON.stringify({
-          source_model: "manual-admin-push",
-          source: "admin-manual",
-          bypass_gemini: true,
-          original_pick_label: leg.pick || "",
-          pushed_at: (/* @__PURE__ */ new Date()).toISOString(),
-          audit_log: { note: "Admin 3-Leg MLS Parlay form \u2014 manual push" }
-        });
-        await pool2.query(
-          `UPDATE picks SET is_disabled=TRUE, updated_at=NOW()
-           WHERE date=$1 AND home_team=$2 AND away_team=$3
-             AND metadata->>'source_model'='manual-admin-push'`,
-          [today, homeTeam, awayTeam]
-        );
-        await pool2.query(
-          `INSERT INTO picks
-             (date, sport, tier, home_team, away_team, league, prediction,
-              confidence, odds, fixture_id, status, is_power_pick, is_featured,
-              is_disabled, metadata, is_personal, momentum, quality, mq_composite,
-              created_at, updated_at)
-           VALUES ($1,'mls','free',$2,$3,$4,$5,$6,$7,$8,'active',
-                   FALSE,TRUE,FALSE,$9::jsonb,FALSE,8,7,7.5,NOW(),NOW())`,
-          [
-            today,
-            homeTeam,
-            awayTeam,
-            leg.league || "MLS",
-            leg.pick || `${homeTeam} Win`,
-            conf,
-            autoOdds,
-            fixtureId,
-            meta
-          ]
-        );
-      }
-      await pool2.end();
-      (legs || []).slice(0, 3).forEach((leg, i) => {
-        const n = i + 1;
-        const conf = parseFloat(leg.confidence) || 0;
-        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
-        saves.push(setEngineConfig(`mls_leg${n}_home`, leg.homeTeam || ""));
-        saves.push(setEngineConfig(`mls_leg${n}_away`, leg.awayTeam || ""));
-        saves.push(setEngineConfig(`mls_leg${n}_pick`, leg.pick || ""));
-        saves.push(setEngineConfig(`mls_leg${n}_odds`, autoOdds));
-        saves.push(setEngineConfig(`mls_leg${n}_conf`, String(conf || "")));
-      });
-      saves.push(setEngineConfig("mls_parlay_enabled", enabled !== false ? "true" : "false"));
-      await Promise.all(saves);
-      clearPicksCache();
-      pingSearchEngines();
-      res.json({ success: true, message: enabled !== false ? "MLS parlay saved to NeonDB and enabled on site" : "MLS parlay disabled" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/power-pick-manual", requireAuth, async (req, res) => {
-    try {
-      const cfg = await getEngineConfig();
-      res.json({
-        homeTeam: cfg["pp_home"] || "",
-        awayTeam: cfg["pp_away"] || "",
-        league: cfg["pp_league"] || "",
-        sport: cfg["pp_sport"] || "nba",
-        pick: cfg["pp_pick"] || "",
-        confidence: cfg["pp_confidence"] || "",
-        odds: cfg["pp_odds"] || "",
-        analysis: cfg["pp_analysis"] || "",
-        enabled: cfg["pp_enabled"] !== "false"
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/power-pick-manual", requireAuth, async (req, res) => {
-    try {
-      const { homeTeam, awayTeam, league, sport, pick, confidence, odds, analysis, enabled } = req.body;
-      const conf = parseFloat(confidence) || 0;
-      const autoOdds = odds || confidenceToAmericanOdds(conf);
-      await Promise.all([
-        setEngineConfig("pp_home", homeTeam || ""),
-        setEngineConfig("pp_away", awayTeam || ""),
-        setEngineConfig("pp_league", league || ""),
-        setEngineConfig("pp_sport", sport || "nba"),
-        setEngineConfig("pp_pick", pick || ""),
-        setEngineConfig("pp_confidence", String(conf || "")),
-        setEngineConfig("pp_odds", autoOdds),
-        setEngineConfig("pp_analysis", analysis || ""),
-        setEngineConfig("pp_enabled", enabled !== false ? "true" : "false")
-      ]);
-      clearPicksCache();
-      pingSearchEngines();
-      res.json({ success: true, message: enabled !== false ? "Power Pick is LIVE on site" : "Power Pick disabled \u2014 placeholder shown" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/site-control", requireAuth, async (req, res) => {
-    try {
-      const cfg = await getEngineConfig();
-      res.json({
-        featuredGame: {
-          homeTeam: cfg["fg_home"] || "",
-          awayTeam: cfg["fg_away"] || "",
-          league: cfg["fg_league"] || "",
-          sport: cfg["fg_sport"] || "soccer",
-          homeOdds: cfg["fg_home_odds"] || "",
-          awayOdds: cfg["fg_away_odds"] || "",
-          drawOdds: cfg["fg_draw_odds"] || "",
-          confidence: cfg["fg_confidence"] || "",
-          pick: cfg["fg_pick"] || "",
-          liveOnSite: cfg["fg_live"] === "true"
-        },
-        expertAnalysis: {
-          title: cfg["ea_title"] || "",
-          body: cfg["ea_body"] || "",
-          visible: cfg["ea_visible"] !== "false"
-        },
-        parlayNba: {
-          legs: [1, 2, 3].map((i) => ({
-            homeTeam: cfg[`nba_leg${i}_home`] || "",
-            awayTeam: cfg[`nba_leg${i}_away`] || "",
-            pick: cfg[`nba_leg${i}_pick`] || "",
-            spread: cfg[`nba_leg${i}_spread`] || "",
-            total: cfg[`nba_leg${i}_total`] || "",
-            odds: cfg[`nba_leg${i}_odds`] || "",
-            confidence: cfg[`nba_leg${i}_conf`] || ""
-          })),
-          enabled: cfg["nba_parlay_enabled"] !== "false"
-        },
-        parlaySoccer: {
-          legs: [1, 2, 3].map((i) => ({
-            homeTeam: cfg[`soc_leg${i}_home`] || "",
-            awayTeam: cfg[`soc_leg${i}_away`] || "",
-            pick: cfg[`soc_leg${i}_pick`] || "",
-            odds: cfg[`soc_leg${i}_odds`] || "",
-            confidence: cfg[`soc_leg${i}_conf`] || "",
-            league: cfg[`soc_leg${i}_league`] || ""
-          })),
-          enabled: cfg["soc_parlay_enabled"] !== "false"
-        },
-        parlayMls: {
-          legs: [1, 2, 3].map((i) => ({
-            homeTeam: cfg[`mls_leg${i}_home`] || "",
-            awayTeam: cfg[`mls_leg${i}_away`] || "",
-            pick: cfg[`mls_leg${i}_pick`] || "",
-            odds: cfg[`mls_leg${i}_odds`] || "",
-            confidence: cfg[`mls_leg${i}_conf`] || ""
-          })),
-          enabled: cfg["mls_parlay_enabled"] !== "false"
-        },
-        powerPick: {
-          homeTeam: cfg["pp_home"] || "",
-          awayTeam: cfg["pp_away"] || "",
-          league: cfg["pp_league"] || "",
-          sport: cfg["pp_sport"] || "nba",
-          pick: cfg["pp_pick"] || "",
-          confidence: cfg["pp_confidence"] || "",
-          odds: cfg["pp_odds"] || "",
-          analysis: cfg["pp_analysis"] || "",
-          enabled: cfg["pp_enabled"] !== "false"
-        }
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/vip-content", requireAuth, async (req, res) => {
-    try {
-      const cfg = await getEngineConfig();
-      res.json({
-        headline: cfg["vip_headline"] || "",
-        subheadline: cfg["vip_subheadline"] || "",
-        feature1: cfg["vip_feature1"] || "",
-        feature2: cfg["vip_feature2"] || "",
-        feature3: cfg["vip_feature3"] || "",
-        feature4: cfg["vip_feature4"] || "",
-        ctaText: cfg["vip_cta_text"] || "",
-        ctaLink: cfg["vip_cta_link"] || "",
-        badgeLabel: cfg["vip_badge_label"] || "",
-        imageUrl: cfg["vip_image_url"] || "",
-        overrideOn: cfg["vip_override"] === "true"
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/vip-content", requireAuth, async (req, res) => {
-    try {
-      const {
-        headline,
-        subheadline,
-        feature1,
-        feature2,
-        feature3,
-        feature4,
-        ctaText,
-        ctaLink,
-        badgeLabel,
-        imageUrl,
-        overrideOn
-      } = req.body;
-      await Promise.all([
-        setEngineConfig("vip_headline", headline || ""),
-        setEngineConfig("vip_subheadline", subheadline || ""),
-        setEngineConfig("vip_feature1", feature1 || ""),
-        setEngineConfig("vip_feature2", feature2 || ""),
-        setEngineConfig("vip_feature3", feature3 || ""),
-        setEngineConfig("vip_feature4", feature4 || ""),
-        setEngineConfig("vip_cta_text", ctaText || ""),
-        setEngineConfig("vip_cta_link", ctaLink || ""),
-        setEngineConfig("vip_badge_label", badgeLabel || ""),
-        setEngineConfig("vip_image_url", imageUrl || ""),
-        setEngineConfig("vip_override", overrideOn ? "true" : "false")
-      ]);
-      clearPicksCache();
-      res.json({ success: true, message: overrideOn ? "VIP content override is LIVE" : "VIP content saved (override OFF \u2014 default shown)" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/history-entries", requireAuth, async (req, res) => {
-    try {
-      const cfg = await getEngineConfig();
-      const raw = cfg["history_entries"] || "[]";
-      let entries = [];
-      try {
-        entries = JSON.parse(raw);
-      } catch {
-        entries = [];
-      }
-      res.json({ entries });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/history-entries", requireAuth, async (req, res) => {
-    try {
-      const { entries } = req.body;
-      if (!Array.isArray(entries)) return res.status(400).json({ error: "entries must be an array" });
-      const clean = entries.map((e) => ({
-        id: e.id || `hist_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        date: e.date || "",
-        matchup: e.matchup || "",
-        pick: e.pick || "",
-        result: ["won", "lost", "void"].includes(e.result) ? e.result : "void",
-        odds: e.odds || "",
-        sport: e.sport || "soccer",
-        league: e.league || "",
-        notes: e.notes || ""
-      }));
-      await setEngineConfig("history_entries", JSON.stringify(clean));
-      clearPicksCache();
-      res.json({ success: true, count: clean.length, message: `${clean.length} history record(s) saved` });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.delete("/api/admin/history-entries/:id", requireAuth, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const cfg = await getEngineConfig();
-      let entries = [];
-      try {
-        entries = JSON.parse(cfg["history_entries"] || "[]");
-      } catch {
-        entries = [];
-      }
-      const filtered = entries.filter((e) => e.id !== id);
-      await setEngineConfig("history_entries", JSON.stringify(filtered));
-      clearPicksCache();
-      res.json({ success: true, message: `Entry ${id} deleted` });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/site-settings", requireAuth, async (req, res) => {
-    try {
-      const cfg = await getEngineConfig();
-      res.json({
-        alertEnabled: cfg["alert_enabled"] === "true",
-        alertText: cfg["alert_text"] || "",
-        alertType: cfg["alert_type"] || "info",
-        // info | warning | success | danger
-        maintenanceMode: cfg["maintenance_mode"] === "true",
-        maintenanceMsg: cfg["maintenance_msg"] || "Site is under maintenance. Check back soon.",
-        engineLabel: cfg["engine_label"] || "Gold Standard V3 Titan XII",
-        footerDisclaimer: cfg["footer_disclaimer"] || "For entertainment purposes only. Please gamble responsibly.",
-        contactEmail: cfg["contact_email"] || "Glenoring@gmail.com",
-        twitterUrl: cfg["twitter_url"] || "",
-        instagramUrl: cfg["instagram_url"] || "",
-        discordUrl: cfg["discord_url"] || ""
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/site-settings", requireAuth, async (req, res) => {
-    try {
-      const {
-        alertEnabled,
-        alertText,
-        alertType,
-        maintenanceMode,
-        maintenanceMsg,
-        engineLabel,
-        footerDisclaimer,
-        contactEmail,
-        twitterUrl,
-        instagramUrl,
-        discordUrl
-      } = req.body;
-      await Promise.all([
-        setEngineConfig("alert_enabled", alertEnabled ? "true" : "false"),
-        setEngineConfig("alert_text", alertText || ""),
-        setEngineConfig("alert_type", alertType || "info"),
-        setEngineConfig("maintenance_mode", maintenanceMode ? "true" : "false"),
-        setEngineConfig("maintenance_msg", maintenanceMsg || ""),
-        setEngineConfig("engine_label", engineLabel || "Gold Standard V3 Titan XII"),
-        setEngineConfig("footer_disclaimer", footerDisclaimer || ""),
-        setEngineConfig("contact_email", contactEmail || ""),
-        setEngineConfig("twitter_url", twitterUrl || ""),
-        setEngineConfig("instagram_url", instagramUrl || ""),
-        setEngineConfig("discord_url", discordUrl || "")
-      ]);
-      clearPicksCache();
-      res.json({ success: true, message: "Site settings saved and cache cleared" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/admin/api-budget", requireAuth, async (req, res) => {
-    try {
-      const { getBudgetStatus: getBudgetStatus2 } = await Promise.resolve().then(() => (init_oddsApi(), oddsApi_exports));
-      const status = getBudgetStatus2();
-      res.json({
-        ...status,
-        throttle_warning: status.used_today >= 80,
-        throttle_active: status.used_today >= 90,
-        manual_reserve: Math.max(0, 100 - status.used_today),
-        message: status.used_today >= 90 ? `\u26D4 AUTO TASKS PAUSED \u2014 ${status.used_today}/100 calls used. ${100 - status.used_today} manual calls remaining.` : status.used_today >= 80 ? `\u26A0\uFE0F WARNING \u2014 ${status.used_today}/100 calls used. Approaching auto-task limit (90).` : `\u2705 ${status.used_today}/100 calls used. ${90 - status.used_today} auto-task calls remaining.`
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/auth/me", async (req, res) => {
-    try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({ error: "Not authenticated." });
-      }
-      const token = authHeader.slice(7);
-      const decoded = import_jsonwebtoken.default.verify(token, JWT_SECRET);
-      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      const result = await pool2.query("SELECT tier, expires_at, tier_locked_until, subscription_plan FROM members WHERE email = $1", [decoded.email]);
-      await pool2.end();
-      const row = result.rows[0];
-      const activeTier = row ? row.tier : decoded.tier;
-      return res.json({
-        success: true,
-        email: decoded.email,
-        username: decoded.username,
-        tier: activeTier,
-        expiresAt: row?.expires_at || null,
-        tierLockedUntil: row?.tier_locked_until || null,
-        subscriptionPlan: row?.subscription_plan || null
-      });
-    } catch {
-      return res.status(401).json({ error: "Invalid or expired session. Please log in again." });
-    }
-  });
-  app.get("/api/member/dashboard", async (req, res) => {
-    try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({ error: "Not authenticated." });
-      }
-      const token = authHeader.slice(7);
-      const decoded = import_jsonwebtoken.default.verify(token, JWT_SECRET);
-      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      const result = await pool2.query("SELECT * FROM members WHERE email = $1", [decoded.email]);
-      await pool2.end();
-      if (result.rows.length === 0) return res.status(404).json({ error: "Member not found." });
-      const member = result.rows[0];
-      let activeTier = member.tier;
-      let daysRemaining = null;
-      let hoursRemaining = null;
-      let isExpired = false;
-      if (member.expires_at && member.tier !== "lifetime") {
-        const expiryMs = new Date(member.expires_at).getTime() - Date.now();
-        if (expiryMs <= 0) {
-          isExpired = true;
-          activeTier = "free";
-        } else {
-          daysRemaining = Math.floor(expiryMs / (1e3 * 60 * 60 * 24));
-          hoursRemaining = Math.floor(expiryMs % (1e3 * 60 * 60 * 24) / (1e3 * 60 * 60));
-        }
-      }
-      const V3_ALLOWED_SPORTS = ["soccer", "nba", "mls"];
-      const V3_PRO_QUOTA = 6;
-      const V3_LIFETIME_QUOTA = 10;
-      const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-      const tierFilter = activeTier === "lifetime" ? ["lifetime", "pro", "vip", "free"] : activeTier === "pro" ? ["pro", "vip", "free"] : activeTier === "vip" ? ["vip", "free"] : ["free"];
-      const pool22 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      const picksResult = await pool22.query(
-        `SELECT DISTINCT ON (home_team, away_team) * FROM picks
-         WHERE date = $1
-           AND tier = ANY($2)
-           AND is_disabled = false
-           AND sport = ANY($3)
-         ORDER BY home_team, away_team, confidence DESC`,
-        [today, tierFilter, V3_ALLOWED_SPORTS]
-      );
-      await pool22.end();
-      const allEligible = picksResult.rows.sort(
-        (a, b) => (parseFloat(b.confidence) || 0) - (parseFloat(a.confidence) || 0)
-      );
-      const tierQuota = activeTier === "lifetime" ? V3_LIFETIME_QUOTA : activeTier === "pro" ? V3_PRO_QUOTA : 20;
-      const tieredPicks = allEligible.slice(0, tierQuota);
-      return res.json({
-        success: true,
-        member: {
-          email: member.email,
-          username: member.username,
-          tier: activeTier,
-          subscriptionPlan: member.subscription_plan,
-          expiresAt: member.expires_at || null,
-          isLifetime: activeTier === "lifetime",
-          isExpired,
-          daysRemaining,
-          hoursRemaining,
-          tierLockedUntil: member.tier_locked_until || null,
-          canUpgrade: isExpired || activeTier === "free"
-        },
-        picks: tieredPicks,
-        picksDate: today,
-        // Distribution metadata (informational)
-        distribution: {
-          allowedSports: V3_ALLOWED_SPORTS,
-          quota: tierQuota,
-          totalEligible: allEligible.length,
-          returned: tieredPicks.length
-        }
-      });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/api/member/parlay-builder", async (req, res) => {
-    try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({ error: "Not authenticated." });
-      }
-      const token = authHeader.slice(7);
-      const decoded = import_jsonwebtoken.default.verify(token, JWT_SECRET);
-      const memberTier = decoded.tier || "free";
-      const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-      const tierFilter = memberTier === "lifetime" ? ["lifetime", "pro", "vip", "free"] : memberTier === "pro" ? ["pro", "vip", "free"] : memberTier === "vip" ? ["vip", "free"] : ["free"];
-      const PB_ALLOWED_SPORTS = ["soccer", "nba", "mls"];
-      const PB_PRO_QUOTA = 6;
-      const PB_LIFETIME_QUOTA = 10;
-      const parlayQuota = memberTier === "lifetime" ? PB_LIFETIME_QUOTA : memberTier === "pro" ? PB_PRO_QUOTA : 10;
-      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      const picksResult = await pool2.query(
-        `SELECT * FROM picks
-         WHERE date = $1
-           AND tier = ANY($2)
-           AND is_disabled = false
-           AND sport = ANY($3)
-         ORDER BY confidence DESC
-         LIMIT $4`,
-        [today, tierFilter, PB_ALLOWED_SPORTS, parlayQuota]
-      );
-      await pool2.end();
-      const sportsbooks = [
-        { name: "DraftKings", url: "https://sportsbook.draftkings.com", logo: "dk" },
-        { name: "FanDuel", url: "https://sportsbook.fanduel.com", logo: "fd" },
-        { name: "BetMGM", url: "https://sports.betmgm.com", logo: "mgm" },
-        { name: "Caesars", url: "https://sportsbook.caesars.com", logo: "czr" },
-        { name: "PointsBet", url: "https://pointsbet.com", logo: "pb" },
-        { name: "BetRivers", url: "https://betrivers.com", logo: "br" },
-        { name: "ESPN BET", url: "https://espnbet.com", logo: "espn" },
-        { name: "Bet365", url: "https://bet365.com", logo: "b365" }
-      ];
-      const legs = picksResult.rows.map((pick) => {
-        const searchQuery = encodeURIComponent(`${pick.home_team} vs ${pick.away_team}`);
-        return {
-          id: pick.id,
-          homeTeam: pick.home_team,
-          awayTeam: pick.away_team,
-          league: pick.league,
-          sport: pick.sport,
-          prediction: pick.prediction,
-          confidence: pick.confidence,
-          odds: pick.odds,
-          tier: pick.tier,
-          isPowerPick: pick.is_power_pick,
-          sportsbookLinks: sportsbooks.map((sb) => ({
-            name: sb.name,
-            url: `${sb.url}/search?q=${searchQuery}`,
-            logo: sb.logo
-          }))
-        };
-      });
-      return res.json({
-        success: true,
-        date: today,
-        memberTier,
-        legs,
-        sportsbooks,
-        totalLegs: legs.length
-      });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/auth/upgrade-check", async (req, res) => {
-    try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({ error: "Not authenticated." });
-      }
-      const token = authHeader.slice(7);
-      const decoded = import_jsonwebtoken.default.verify(token, JWT_SECRET);
-      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      const result = await pool2.query("SELECT tier, expires_at, tier_locked_until FROM members WHERE email = $1", [decoded.email]);
-      await pool2.end();
-      if (result.rows.length === 0) return res.status(404).json({ error: "Member not found." });
-      const member = result.rows[0];
-      const isLocked = member.tier_locked_until && new Date(member.tier_locked_until) > /* @__PURE__ */ new Date();
-      const isExpired = member.expires_at && new Date(member.expires_at) < /* @__PURE__ */ new Date();
-      const canUpgrade = !isLocked || isExpired || member.tier === "free";
-      return res.json({
-        success: true,
-        currentTier: member.tier,
-        canUpgrade,
-        isLocked: !!isLocked,
-        lockExpiresAt: member.tier_locked_until || null,
-        message: canUpgrade ? "You are eligible to upgrade your plan." : `Your current subscription is active until ${new Date(member.tier_locked_until).toLocaleDateString()}. You can upgrade once it expires.`
-      });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/members/:id/set-tier", requireAuth, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { tier, expiresAt, subscriptionPlan } = req.body;
-      if (!tier) return res.status(400).json({ error: "tier is required" });
-      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      const expiry = expiresAt ? new Date(expiresAt) : tier === "lifetime" ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1e3);
-      const lockUntil = tier === "lifetime" || tier === "free" ? null : expiry;
-      await pool2.query(
-        `UPDATE members SET tier = $1, subscription_plan = $2, expires_at = $3, tier_locked_until = $4 WHERE id = $5`,
-        [tier, subscriptionPlan || tier, expiry, lockUntil, id]
-      );
-      await pool2.end();
-      picksCache = null;
-      return res.json({ success: true, message: `Member #${id} updated to ${tier} tier.` });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  });
-  app.get("/test-payment", (req, res) => {
-    const key = req.query.key;
-    const plan = req.query.plan || "pro-monthly";
-    const OWNER_KEY = "ParlayKingOwner2026";
-    if (key !== OWNER_KEY) {
-      return res.status(403).send("Forbidden");
-    }
-    const validPlans = ["pro-monthly", "vip-monthly", "lifetime"];
-    const safePlan = validPlans.includes(plan) ? plan : "pro-monthly";
-    return res.redirect(`/register?plan=${safePlan}&payment=success&test=1`);
-  });
-  app.get("/api/admin/pending-validator", requireAuth, async (req, res) => {
-    try {
-      const { Pool: PVPool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const pvPool = new PVPool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      const TZ_AST = "America/Moncton";
-      const defaultDate = /* @__PURE__ */ new Date();
-      defaultDate.setDate(defaultDate.getDate() + 1);
-      const date2 = req.query.date || defaultDate.toLocaleDateString("en-CA", { timeZone: TZ_AST });
-      const sport = req.query.sport || "all";
-      const minConf = parseFloat(req.query.min_confidence || "0");
-      let query = `SELECT * FROM pending_validator WHERE date = $1`;
-      const params = [date2];
-      if (sport !== "all") {
-        query += ` AND sport = $${params.length + 1}`;
-        params.push(sport);
-      }
-      if (minConf > 0) {
-        query += ` AND confidence >= $${params.length + 1}`;
-        params.push(minConf);
-      }
-      query += ` ORDER BY confidence DESC`;
-      const result = await pvPool.query(query, params);
-      await pvPool.end();
-      return res.json({ success: true, date: date2, total: result.rows.length, games: result.rows });
-    } catch (err) {
-      if (err.message?.includes("does not exist")) {
-        return res.json({ success: true, date: req.query.date || "", total: 0, games: [], note: "pending_validator table not yet created \u2014 runs at 2 AM" });
-      }
-      return res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/pending-validator/sync", requireAuth, async (req, res) => {
-    try {
-      const { syncTomorrowGames: syncTomorrowGames2 } = await Promise.resolve().then(() => (init_tomorrowSync(), tomorrowSync_exports));
-      const result = await syncTomorrowGames2("admin-manual");
-      return res.json({ success: true, ...result });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/pending-validator/approve", requireAuth, async (req, res) => {
-    try {
-      const { id, tier = "pro" } = req.body;
-      if (!id) return res.status(400).json({ error: "id required" });
-      const { Pool: ApprovePool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const aPool = new ApprovePool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      const pvRow = await aPool.query(`SELECT * FROM pending_validator WHERE id = $1`, [id]);
-      if (!pvRow.rows.length) {
-        await aPool.end();
-        return res.status(404).json({ error: "Row not found" });
-      }
-      const g = pvRow.rows[0];
-      const pickResult = await aPool.query(`
-        INSERT INTO picks (date, sport, league, home_team, away_team, prediction, confidence, tier, status, is_power_pick, metadata, created_at, updated_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending',$9,$10,NOW(),NOW())
-        ON CONFLICT DO NOTHING RETURNING id
-      `, [
-        g.date,
-        g.sport,
-        g.league,
-        g.home_team,
-        g.away_team,
-        g.best_pick,
-        g.confidence,
-        tier,
-        g.confidence >= 72,
-        JSON.stringify({ source: "pending_validator", game_id: g.game_id, factors: g.factors, reasoning: g.reasoning })
-      ]);
-      await aPool.query(`UPDATE pending_validator SET approved = true, pushed_to_live = true, updated_at = NOW() WHERE id = $1`, [id]);
-      await aPool.end();
-      return res.json({ success: true, pickId: pickResult.rows[0]?.id, message: `Approved and pushed to ${tier} tier` });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  });
-  app.post("/api/admin/command", requireAuth, async (req, res) => {
-    try {
-      const { prompt } = req.body;
-      if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
-        return res.status(400).json({ error: "prompt is required", success: false });
-      }
-      const GEMINI_API_KEY3 = process.env.GEMINI_API_KEY || "";
-      if (!GEMINI_API_KEY3) {
-        return res.status(500).json({ error: "GEMINI_API_KEY not configured on server", success: false });
-      }
-      const lowerPrompt = prompt.toLowerCase().trim();
-      if (lowerPrompt.includes("test") && (lowerPrompt.includes("database") || lowerPrompt.includes("db") || lowerPrompt.includes("connection"))) {
-        const { Pool: TestPool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-        const testPool = new TestPool({
-          connectionString: process.env.DATABASE_URL,
-          ssl: process.env.DATABASE_URL?.includes("neon.tech") ? { rejectUnauthorized: false } : false,
-          max: 1,
-          connectionTimeoutMillis: 5e3
-        });
-        const testClient = await testPool.connect();
-        const testResult = await testClient.query(
-          "SELECT 1 AS connection_ok, NOW() AS server_time, current_database() AS db_name"
-        );
-        testClient.release();
-        await testPool.end();
-        const row = testResult.rows[0];
-        return res.json({
-          message: `\u2705 Database connection OK \u2014 Connected to "${row.db_name}" at ${new Date(row.server_time).toUTCString()}. SELECT 1 returned ${row.connection_ok}.`,
-          action: "db_test",
-          success: true
-        });
-      }
-      const { GoogleGenerativeAI: GoogleGenerativeAI2 } = await Promise.resolve().then(() => (init_dist(), dist_exports));
-      const genAI3 = new GoogleGenerativeAI2(GEMINI_API_KEY3);
-      const controlTools = {
-        functionDeclarations: [
-          {
-            name: "update_pick_status",
-            description: "Updates a pick status (win/loss/pending) in the picks table by pick ID.",
-            parameters: {
-              type: "OBJECT",
-              properties: {
-                pick_id: { type: "NUMBER", description: "The numeric ID of the pick to update" },
-                status: { type: "STRING", enum: ["win", "loss", "pending"], description: "New status for the pick" }
-              },
-              required: ["pick_id", "status"]
-            }
-          },
-          {
-            name: "publish_parlay",
-            description: "Publishes a 3-leg parlay to a specific member tier (pro or lifetime) in the parlays table.",
-            parameters: {
-              type: "OBJECT",
-              properties: {
-                tier: { type: "STRING", enum: ["pro", "lifetime"], description: "Target tier for the parlay" },
-                games: { type: "ARRAY", items: { type: "STRING" }, description: "Array of exactly 3 pick IDs or game identifiers" },
-                date: { type: "STRING", description: "Date for the parlay in YYYY-MM-DD format" }
-              },
-              required: ["tier", "games"]
-            }
-          },
-          {
-            name: "get_picks_summary",
-            description: "Returns a summary of picks for a given date (count, wins, losses, pending).",
-            parameters: {
-              type: "OBJECT",
-              properties: {
-                date: { type: "STRING", description: "Date in YYYY-MM-DD format. Use today if not specified." }
-              },
-              required: []
-            }
-          },
-          {
-            name: "disable_pick",
-            description: "Disables (hides) a pick from the live dashboard by setting is_disabled = true.",
-            parameters: {
-              type: "OBJECT",
-              properties: {
-                pick_id: { type: "NUMBER", description: "The numeric ID of the pick to disable" }
-              },
-              required: ["pick_id"]
-            }
-          }
-        ]
+        league: league || "Unknown",
+        sport: sport || "soccer",
+        homeOdds: void 0,
+        awayOdds: void 0,
+        drawOdds: void 0,
+        homeWinRate: void 0,
+        awayWinRate: void 0,
+        homeForm: void 0,
+        awayForm: void 0,
+        homeRank: void 0,
+        awayRank: void 0,
+        homeGoalsFor: void 0,
+        awayGoalsFor: void 0,
+        homeGoalsAgainst: void 0,
+        awayGoalsAgainst: void 0,
+        homeInjuries: 0,
+        awayInjuries: 0,
+        isNeutralVenue: false,
+        venueName: void 0,
+        headToHead: void 0
       };
-      const model = genAI3.getGenerativeModel({
-        model: "gemini-2.0-flash",
-        tools: [controlTools]
+      const results2 = runBatchPredictions2([fixture]);
+      const result = results2[0];
+      if (!result) return res.status(200).json({ confidence: 0, passed: false, factors: {} });
+      return res.json({
+        confidence: result.topConfidence,
+        pick: result.topPick,
+        passed: result.topConfidence >= 65,
+        tier: result.tier,
+        factors: result.factors || {}
       });
-      const chat = model.startChat();
-      const result = await chat.sendMessage(
-        `You are the AI Commander for the Parlay King admin dashboard. The user says: "${prompt}" Use the available functions to execute the request. If no function applies, respond with a helpful plain-text answer.`
-      );
-      const calls = result.response.functionCalls();
-      if (!calls || calls.length === 0) {
-        return res.json({ message: result.response.text(), action: "text_response", success: true });
-      }
-      const call = calls[0];
-      const args = call.args;
-      const { Pool: CmdPool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const cmdPool = new CmdPool({
-        connectionString: process.env.DATABASE_URL,
-        ssl: process.env.DATABASE_URL?.includes("neon.tech") ? { rejectUnauthorized: false } : false,
-        max: 2,
-        connectionTimeoutMillis: 5e3
-      });
-      const cmdClient = await cmdPool.connect();
-      try {
-        let responseMessage = "";
-        if (call.name === "update_pick_status") {
-          const { pick_id, status } = args;
-          const upd = await cmdClient.query(
-            "UPDATE picks SET status = $1 WHERE id = $2 RETURNING id, status, home_team, away_team",
-            [status, pick_id]
-          );
-          if (upd.rowCount === 0) {
-            responseMessage = `\u26A0\uFE0F No pick found with ID ${pick_id}. No changes made.`;
-          } else {
-            const r = upd.rows[0];
-            responseMessage = `\u2705 Pick #${pick_id} (${r.home_team} vs ${r.away_team}) updated to **${status.toUpperCase()}**.`;
-          }
-        } else if (call.name === "publish_parlay") {
-          const { tier, games, date: parlayDate } = args;
-          const pDate = parlayDate || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-          if (!games || games.length !== 3) {
-            responseMessage = `\u26A0\uFE0F A parlay requires exactly 3 games. Received ${games?.length || 0}.`;
-          } else {
-            await cmdClient.query(
-              "INSERT INTO parlays (tier, game_ids, date, created_at) VALUES ($1, $2, $3, NOW()) ON CONFLICT DO NOTHING",
-              [tier, JSON.stringify(games), pDate]
-            );
-            responseMessage = `\u2705 3-Leg **${tier.toUpperCase()}** parlay published for ${pDate} with games: ${games.join(", ")}.`;
-          }
-        } else if (call.name === "get_picks_summary") {
-          const summaryDate = args.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
-          const s = await cmdClient.query(
-            `SELECT COUNT(*) FILTER (WHERE status='win') AS wins,
-                    COUNT(*) FILTER (WHERE status='loss') AS losses,
-                    COUNT(*) FILTER (WHERE status='pending') AS pending,
-                    COUNT(*) AS total
-             FROM picks WHERE date = $1`,
-            [summaryDate]
-          );
-          const row = s.rows[0];
-          responseMessage = `\u{1F4CA} Picks for **${summaryDate}**: ${row.total} total \u2014 ${row.wins} wins, ${row.losses} losses, ${row.pending} pending.`;
-        } else if (call.name === "disable_pick") {
-          const { pick_id } = args;
-          const dis = await cmdClient.query(
-            "UPDATE picks SET is_disabled = true WHERE id = $1 RETURNING id, home_team, away_team",
-            [pick_id]
-          );
-          if (dis.rowCount === 0) {
-            responseMessage = `\u26A0\uFE0F No pick found with ID ${pick_id}.`;
-          } else {
-            const r = dis.rows[0];
-            responseMessage = `\u{1F6AB} Pick #${pick_id} (${r.home_team} vs ${r.away_team}) disabled and hidden from the live dashboard.`;
-          }
-        } else {
-          responseMessage = `\u26A0\uFE0F Unknown function: ${call.name}`;
-        }
-        return res.json({ message: responseMessage, action: call.name, args, success: true });
-      } finally {
-        cmdClient.release();
-        await cmdPool.end();
-      }
     } catch (err) {
-      console.error("[AI Commander] Error:", err.message);
-      return res.status(500).json({ error: `AI Commander error: ${err.message}`, success: false });
+      return res.status(500).json({ error: err.message });
     }
   });
-  app.get("/api/admin/members-full", requireAuth, async (req, res) => {
+  app.post("/api/admin/manual-publish", requireAuth2, async (req, res) => {
     try {
+      const { homeTeam, awayTeam, league, sport, confidence, tier, source } = req.body;
+      if (!homeTeam || !awayTeam || !tier) return res.status(400).json({ error: "homeTeam, awayTeam, and tier required" });
       const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
-      const pool2 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-      const result = await pool2.query(
-        `SELECT id, email, username, tier, subscription_plan, expires_at, tier_locked_until, is_active, last_active, created_at
-         FROM members ORDER BY created_at DESC`
+      const pool3 = new Pool3(DB_OPTS);
+      const date2 = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const validTiers = ["pro", "lifetime"];
+      if (!validTiers.includes(tier)) return res.status(400).json({ error: "tier must be pro or lifetime" });
+      await pool3.query(
+        `INSERT INTO gold_tiers (date, sport, tier, home_team, away_team, league, prediction, confidence, odds, fixture_id, is_power_pick, is_fallback, v3_audit_passed, sport_slot, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false, false, true, $11, $12)
+         ON CONFLICT (date, home_team, away_team, tier) DO UPDATE SET confidence=EXCLUDED.confidence, updated_at=now()`,
+        [date2, sport || "soccer", tier, homeTeam, awayTeam, league || "", `${homeTeam} Win`, confidence || 0, "", `manual_${Date.now()}`, `manual_1`, JSON.stringify({ source: source || "v2-validator", publishedAt: (/* @__PURE__ */ new Date()).toISOString() })]
       );
-      await pool2.end();
-      const now = /* @__PURE__ */ new Date();
-      const members2 = result.rows.map((m) => {
-        const isExpired = m.expires_at && new Date(m.expires_at) < now && m.tier !== "lifetime";
-        const isLocked = m.tier_locked_until && new Date(m.tier_locked_until) > now;
-        const daysLeft = m.expires_at && !isExpired ? Math.ceil((new Date(m.expires_at).getTime() - now.getTime()) / (1e3 * 60 * 60 * 24)) : null;
-        return { ...m, isExpired, isLocked, daysLeft };
-      });
-      return res.json({ success: true, members: members2, total: members2.length });
+      await pool3.query(
+        `INSERT INTO picks (date, sport, league, home_team, away_team, prediction, confidence, tier, status, is_power_pick, v3_audit_passed, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active', false, true, $9)
+         ON CONFLICT DO NOTHING`,
+        [date2, sport || "soccer", league || "", homeTeam, awayTeam, `${homeTeam} Win`, confidence || 0, tier, JSON.stringify({ source: source || "v2-validator", publishedAt: (/* @__PURE__ */ new Date()).toISOString() })]
+      );
+      await pool3.end();
+      return res.json({ success: true, message: `Published ${homeTeam} vs ${awayTeam} to ${tier} tier`, date: date2 });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
   });
 }
-var import_bcryptjs, import_jsonwebtoken, path2, fs2, ADMIN_PASSWORDS, activeTokens, CONFIDENCE_THRESHOLDS2, TIER_PICK_COUNTS, _modulePicksCache;
-var init_routes = __esm({
-  "server/routes.ts"() {
-    init_storage();
-    import_bcryptjs = __toESM(require_bcryptjs());
+var import_jsonwebtoken, JWT_SECRET, HARDENED_TIER_CONFIG;
+var init_goldTierRoutes = __esm({
+  "server/goldTierRoutes.ts"() {
     import_jsonwebtoken = __toESM(require_jsonwebtoken());
-    init_goldStandardV2();
-    init_geminiV3Engine();
-    path2 = __toESM(require("path"));
-    fs2 = __toESM(require("fs"));
-    ADMIN_PASSWORDS = ["Parlayking", "386Leblanc", "admin123"];
-    activeTokens = /* @__PURE__ */ new Set();
-    CONFIDENCE_THRESHOLDS2 = {
-      FREE_MIN: 64,
-      // Free tier: 64-67%
-      FREE_MAX: 67,
-      // Free tier ceiling
-      PRO_MIN: 68,
-      // Pro tier: 68%+
-      LIFETIME_MIN: 70,
-      // Lifetime tier: 70%+
-      POWER_PICK: 80
-      // Power Pick badge
+    JWT_SECRET = process.env.SESSION_SECRET || "parlay-king-secret-2025";
+    HARDENED_TIER_CONFIG = {
+      pro: {
+        totalPicks: 6,
+        nbaSlots: 3,
+        soccerSlots: 3,
+        extraSlots: 0,
+        primaryThresh: 68,
+        fallbackFloor: 65,
+        extraThresh: 68
+      },
+      lifetime: {
+        totalPicks: 10,
+        nbaSlots: 3,
+        soccerSlots: 4,
+        extraSlots: 3,
+        // remaining 3 slots: any sport >= 70%
+        primaryThresh: 70,
+        fallbackFloor: 67,
+        extraThresh: 70
+      }
     };
-    TIER_PICK_COUNTS = {
-      free: 2,
-      // 2 picks at 64-67%
-      pro: 6,
-      // 6 picks at 68%+
-      lifetime: 10
-      // 10 picks at 70%+
-    };
-    _modulePicksCache = null;
   }
 });
 
@@ -53514,7 +51066,7 @@ var require_scheduler = __commonJS({
         let lastCheck = process.hrtime();
         let lastExecution = this.timeMatcher.apply(/* @__PURE__ */ new Date());
         const matchTime = () => {
-          const delay = 1e3;
+          const delay2 = 1e3;
           const elapsedTime = process.hrtime(lastCheck);
           const elapsedMs = (elapsedTime[0] * 1e9 + elapsedTime[1]) / 1e6;
           const missedExecutions = Math.floor(elapsedMs / 1e3);
@@ -53528,7 +51080,7 @@ var require_scheduler = __commonJS({
             }
           }
           lastCheck = process.hrtime();
-          this.timeout = setTimeout(matchTime, delay);
+          this.timeout = setTimeout(matchTime, delay2);
         };
         matchTime();
       }
@@ -53926,7 +51478,7 @@ var require_scheduled_task = __commonJS({
 var require_background_scheduled_task = __commonJS({
   "node_modules/node-cron/src/background-scheduled-task/index.js"(exports2, module2) {
     var EventEmitter = require("events");
-    var path3 = require("path");
+    var path6 = require("path");
     var { fork } = require("child_process");
     var uuid2 = (init_esm_node(), __toCommonJS(esm_node_exports));
     var daemonPath = `${__dirname}/daemon.js`;
@@ -53961,7 +51513,7 @@ var require_background_scheduled_task = __commonJS({
         options.scheduled = true;
         this.forkProcess.send({
           type: "register",
-          path: path3.resolve(this.taskPath),
+          path: path6.resolve(this.taskPath),
           cron: this.cronExpression,
           options
         });
@@ -54292,9 +51844,846 @@ var init_resultsSettler = __esm({
   }
 });
 
+// server/services/tomorrowSync.ts
+var tomorrowSync_exports = {};
+__export(tomorrowSync_exports, {
+  syncTomorrowGames: () => syncTomorrowGames
+});
+function getPool() {
+  return new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+    max: 5,
+    idleTimeoutMillis: 1e4
+  });
+}
+async function ensureTable(pool3) {
+  await pool3.query(`
+    CREATE TABLE IF NOT EXISTS pending_validator (
+      id              SERIAL PRIMARY KEY,
+      game_id         TEXT NOT NULL UNIQUE,
+      date            TEXT NOT NULL,
+      sport           TEXT NOT NULL,
+      league          TEXT,
+      home_team       TEXT NOT NULL,
+      away_team       TEXT NOT NULL,
+      commence_time   TEXT,
+      home_odds       REAL,
+      away_odds       REAL,
+      draw_odds       REAL,
+      bookmaker       TEXT,
+      confidence      REAL NOT NULL DEFAULT 0,
+      best_pick       TEXT,
+      reasoning       TEXT,
+      factors         JSONB,
+      outcomes        JSONB,
+      status          TEXT NOT NULL DEFAULT 'pending',
+      approved        BOOLEAN NOT NULL DEFAULT false,
+      pushed_to_live  BOOLEAN NOT NULL DEFAULT false,
+      synced_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_pv_date   ON pending_validator (date);
+    CREATE INDEX IF NOT EXISTS idx_pv_sport  ON pending_validator (sport);
+    CREATE INDEX IF NOT EXISTS idx_pv_conf   ON pending_validator (confidence DESC);
+  `);
+}
+async function upsertValidatorRow(pool3, row) {
+  await pool3.query(`
+    INSERT INTO pending_validator
+      (game_id, date, sport, league, home_team, away_team, commence_time,
+       home_odds, away_odds, draw_odds, bookmaker,
+       confidence, best_pick, reasoning, factors, outcomes,
+       status, approved, pushed_to_live, synced_at, updated_at)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
+            'pending', false, false, NOW(), NOW())
+    ON CONFLICT (game_id) DO UPDATE SET
+      confidence     = EXCLUDED.confidence,
+      best_pick      = EXCLUDED.best_pick,
+      reasoning      = EXCLUDED.reasoning,
+      factors        = EXCLUDED.factors,
+      outcomes       = EXCLUDED.outcomes,
+      updated_at     = NOW()
+  `, [
+    row.game_id,
+    row.date,
+    row.sport,
+    row.league,
+    row.home_team,
+    row.away_team,
+    row.commence_time,
+    row.home_odds,
+    row.away_odds,
+    row.draw_odds,
+    row.bookmaker,
+    row.confidence,
+    row.best_pick,
+    row.reasoning,
+    JSON.stringify(row.factors),
+    JSON.stringify(row.outcomes)
+  ]);
+}
+async function fetchTomorrowOdds(sportKey, dateStr) {
+  const from = `${dateStr}T00:00:00Z`;
+  const to = `${dateStr}T23:59:59Z`;
+  const url = `${ODDS_API_BASE2}/sports/${sportKey}/odds/?apiKey=${ODDS_API_KEY2}&regions=us,eu&markets=h2h&dateFormat=iso&oddsFormat=decimal&commenceTimeFrom=${from}&commenceTimeTo=${to}`;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      console.warn(`[TomorrowSync] HTTP ${resp.status} for ${sportKey}`);
+      return [];
+    }
+    const raw = await resp.json();
+    return Array.isArray(raw) ? raw : [];
+  } catch (err) {
+    console.error(`[TomorrowSync] Fetch error for ${sportKey}:`, err.message);
+    return [];
+  }
+}
+function extractOdds(g) {
+  const preferred = ["draftkings", "fanduel", "betmgm", "betrivers", "unibet", "pinnacle", "bet365"];
+  const bk = g.bookmakers?.find((b) => preferred.includes(b.key)) || g.bookmakers?.[0];
+  if (!bk) return { homeOdds: null, awayOdds: null, drawOdds: null, bookmaker: "N/A" };
+  const h2h = bk.markets?.find((m) => m.key === "h2h");
+  let homeOdds = null, awayOdds = null, drawOdds = null;
+  for (const o of h2h?.outcomes || []) {
+    if (o.name === g.home_team) homeOdds = o.price;
+    else if (o.name === g.away_team) awayOdds = o.price;
+    else if (o.name === "Draw") drawOdds = o.price;
+  }
+  return { homeOdds, awayOdds, drawOdds, bookmaker: bk.title };
+}
+async function runGeminiAudit(games, sport, dateStr) {
+  if (!genAI2 || games.length === 0) {
+    return games.map((g) => {
+      const { homeOdds, awayOdds } = extractOdds(g);
+      const homeImpl = homeOdds ? 1 / homeOdds : 0.5;
+      const awayImpl = awayOdds ? 1 / awayOdds : 0.5;
+      const total = homeImpl + awayImpl;
+      const homeConf = homeImpl / total * 100;
+      const awayConf = awayImpl / total * 100;
+      const bestConf = Math.max(homeConf, awayConf);
+      const bestPick = homeConf >= awayConf ? `${g.home_team} Win` : `${g.away_team} Win`;
+      return {
+        game_id: g.id,
+        confidence_score: Math.round(bestConf * 10) / 10,
+        best_pick: bestPick,
+        v3_reasoning: `Deterministic fallback (no Gemini key) \u2014 implied odds: ${g.home_team} ${homeConf.toFixed(1)}% / ${g.away_team} ${awayConf.toFixed(1)}%`,
+        factors: {
+          f01_marketConsensus_home: Math.round(homeImpl / total * 100) / 100,
+          f01_marketConsensus_away: Math.round(awayImpl / total * 100) / 100,
+          gemini_model: 0
+        },
+        outcomes: [
+          { label: `${g.home_team} Win`, conf: Math.round(homeConf * 10) / 10 },
+          { label: `${g.away_team} Win`, conf: Math.round(awayConf * 10) / 10 }
+        ]
+      };
+    });
+  }
+  const model = genAI2.getGenerativeModel({ model: FLASH_MODEL2 });
+  const results2 = [];
+  const BATCH_SIZE = 10;
+  for (let i = 0; i < games.length; i += BATCH_SIZE) {
+    const batch = games.slice(i, i + BATCH_SIZE);
+    const gamesPayload = batch.map((g) => {
+      const { homeOdds, awayOdds, drawOdds } = extractOdds(g);
+      return {
+        id: g.id,
+        home_team: g.home_team,
+        away_team: g.away_team,
+        league: g.sport_title,
+        commence_time: g.commence_time,
+        home_odds: homeOdds,
+        away_odds: awayOdds,
+        draw_odds: drawOdds
+      };
+    });
+    const prompt = `You are the Gold Standard V3-15 Factor Audit Engine.
+Perform a V3-15 Factor Audit on these ${sport} games for ${dateStr}.
+Apply all 15 factors including:
+  F01 Market Consensus (from odds)
+  F02 Momentum
+  F03 Team Quality
+  F04 Head-to-Head History
+  F05 Market Steam
+  F06 Rest/Fatigue
+  F07 Injuries/Absences
+  F08 Travel Stress
+  F09 Referee Bias
+  F10 Environmental
+  F11 League Standing
+  F12 Venue Pressure
+  F13 Advanced Market Steam (multi-book)
+  F14 Altitude/Surface/Travel
+  F15 Referee Official Tendencies
+
+For each game return a confidence score (0-100) for the BEST pick only.
+Minimum threshold to be useful: 60%.
+
+Return ONLY a valid JSON array. No markdown, no explanation.
+Schema per item:
+{
+  "game_id": "<string>",
+  "confidence_score": <number 0-100>,
+  "best_pick": "<Home Team Win | Away Team Win | Draw | Over 2.5 | Under 2.5>",
+  "v3_reasoning": "<one sentence max>",
+  "f01_market": <0-1>,
+  "f02_momentum": <0-1>,
+  "f03_quality": <0-1>,
+  "f04_h2h": <0-1>,
+  "f05_steam": <0-1>,
+  "f06_rest": <0-1>,
+  "f07_injuries": <0-1>,
+  "f08_travel": <0-1>,
+  "f09_referee": <0-1>,
+  "f10_env": <0-1>,
+  "f11_standing": <0-1>,
+  "f12_venue": <0-1>,
+  "f13_adv_steam": <0-1>,
+  "f14_altitude": <0-1>,
+  "f15_official": <0-1>
+}
+
+Games: ${JSON.stringify(gamesPayload)}`;
+    try {
+      const result = await model.generateContent(prompt);
+      let text2 = result.response.text().trim();
+      text2 = text2.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
+      const parsed = JSON.parse(text2);
+      for (const item of parsed) {
+        const g = batch.find((x) => x.id === item.game_id);
+        if (!g) continue;
+        const { homeOdds, awayOdds, drawOdds } = extractOdds(g);
+        const outcomes = [];
+        const conf = item.confidence_score ?? 0;
+        outcomes.push({ label: item.best_pick || `${g.home_team} Win`, conf });
+        results2.push({
+          game_id: item.game_id,
+          confidence_score: Math.round(conf * 10) / 10,
+          best_pick: item.best_pick || `${g.home_team} Win`,
+          v3_reasoning: item.v3_reasoning || "",
+          factors: {
+            f01_marketConsensus: item.f01_market ?? 0.5,
+            f02_momentum: item.f02_momentum ?? 0.5,
+            f03_quality: item.f03_quality ?? 0.5,
+            f04_h2h: item.f04_h2h ?? 0.5,
+            f05_steam: item.f05_steam ?? 0.5,
+            f06_rest: item.f06_rest ?? 0.5,
+            f07_injuries: item.f07_injuries ?? 0.5,
+            f08_travel: item.f08_travel ?? 0.5,
+            f09_referee: item.f09_referee ?? 0.5,
+            f10_environmental: item.f10_env ?? 0.5,
+            f11_standing: item.f11_standing ?? 0.5,
+            f12_venue: item.f12_venue ?? 0.5,
+            f13_advSteam: item.f13_adv_steam ?? 0.5,
+            f14_altitude: item.f14_altitude ?? 0.5,
+            f15_official: item.f15_official ?? 0.5,
+            gemini_model: 1
+          },
+          outcomes
+        });
+      }
+    } catch (err) {
+      console.error(`[TomorrowSync] Gemini parse error for batch ${i}-${i + BATCH_SIZE}:`, err.message);
+      for (const g of batch) {
+        const { homeOdds, awayOdds } = extractOdds(g);
+        const homeImpl = homeOdds ? 1 / homeOdds : 0.5;
+        const awayImpl = awayOdds ? 1 / awayOdds : 0.5;
+        const total = homeImpl + awayImpl;
+        const homeConf = homeImpl / total * 100;
+        const awayConf = awayImpl / total * 100;
+        const bestConf = Math.max(homeConf, awayConf);
+        const bestPick = homeConf >= awayConf ? `${g.home_team} Win` : `${g.away_team} Win`;
+        results2.push({
+          game_id: g.id,
+          confidence_score: Math.round(bestConf * 10) / 10,
+          best_pick: bestPick,
+          v3_reasoning: `Fallback (Gemini parse error) \u2014 implied odds`,
+          factors: {
+            f01_marketConsensus: Math.round(homeImpl / total * 100) / 100,
+            gemini_model: 0
+          },
+          outcomes: [
+            { label: `${g.home_team} Win`, conf: Math.round(homeConf * 10) / 10 },
+            { label: `${g.away_team} Win`, conf: Math.round(awayConf * 10) / 10 }
+          ]
+        });
+      }
+    }
+  }
+  return results2;
+}
+async function syncTomorrowGames(triggeredBy = "scheduler") {
+  const tomorrowDate = /* @__PURE__ */ new Date();
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const dateStr = tomorrowDate.toLocaleDateString("en-CA", { timeZone: TZ });
+  console.log(`
+[TomorrowSync] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
+  console.log(`[TomorrowSync] V3-15 Nightly Pre-Audit \u2014 Target date: ${dateStr}`);
+  console.log(`[TomorrowSync] Triggered by: ${triggeredBy}`);
+  const result = {
+    date: dateStr,
+    sportsProcessed: 0,
+    gamesFound: 0,
+    gamesAudited: 0,
+    gamesSaved: 0,
+    errors: [],
+    budgetUsed: 0
+  };
+  const budgetBefore = getBudgetStatus();
+  if (budgetBefore.used_today >= 80) {
+    const msg = `[TomorrowSync] BUDGET GUARD: ${budgetBefore.used_today}/100 calls used \u2014 aborting sync to protect 1 AM daily run`;
+    console.warn(msg);
+    result.errors.push(msg);
+    return result;
+  }
+  const pool3 = getPool();
+  try {
+    await ensureTable(pool3);
+    console.log("[TomorrowSync] pending_validator table ready");
+    for (const { key, sport, label } of TOMORROW_SPORTS) {
+      const budget = getBudgetStatus();
+      if (budget.used_today >= 80) {
+        console.warn(`[TomorrowSync] Budget cap reached (${budget.used_today}/100) \u2014 stopping after ${result.sportsProcessed} sports`);
+        break;
+      }
+      console.log(`
+[TomorrowSync] Fetching ${label} (${key}) for ${dateStr}...`);
+      const rawGames = await fetchTomorrowOdds(key, dateStr);
+      result.sportsProcessed++;
+      if (rawGames.length === 0) {
+        console.log(`[TomorrowSync] No ${label} games found for ${dateStr} \u2014 skipping`);
+        continue;
+      }
+      console.log(`[TomorrowSync] Found ${rawGames.length} ${label} games \u2014 running V3-15 audit...`);
+      result.gamesFound += rawGames.length;
+      const auditResults = await runGeminiAudit(rawGames, sport, dateStr);
+      result.gamesAudited += auditResults.length;
+      for (const audit of auditResults) {
+        const g = rawGames.find((x) => x.id === audit.game_id);
+        if (!g) continue;
+        const { homeOdds, awayOdds, drawOdds, bookmaker } = extractOdds(g);
+        try {
+          await upsertValidatorRow(pool3, {
+            game_id: g.id,
+            date: dateStr,
+            sport,
+            league: g.sport_title,
+            home_team: g.home_team,
+            away_team: g.away_team,
+            commence_time: g.commence_time,
+            home_odds: homeOdds,
+            away_odds: awayOdds,
+            draw_odds: drawOdds,
+            bookmaker,
+            confidence: audit.confidence_score,
+            best_pick: audit.best_pick,
+            reasoning: audit.v3_reasoning,
+            factors: audit.factors,
+            outcomes: audit.outcomes
+          });
+          result.gamesSaved++;
+        } catch (err) {
+          result.errors.push(`Upsert error for ${g.home_team} vs ${g.away_team}: ${err.message}`);
+        }
+      }
+      console.log(`[TomorrowSync] ${label}: ${auditResults.length} audited, ${result.gamesSaved} saved`);
+    }
+    const budgetAfter = getBudgetStatus();
+    result.budgetUsed = budgetAfter.used_today - budgetBefore.used_today;
+    console.log(`
+[TomorrowSync] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
+    console.log(`[TomorrowSync] COMPLETE: ${result.gamesFound} found | ${result.gamesAudited} audited | ${result.gamesSaved} saved`);
+    console.log(`[TomorrowSync] API calls used: ${result.budgetUsed} | Total today: ${budgetAfter.used_today}/100`);
+    if (result.errors.length > 0) {
+      console.warn(`[TomorrowSync] ${result.errors.length} errors:`, result.errors);
+    }
+  } finally {
+    await pool3.end();
+  }
+  return result;
+}
+var TZ, ODDS_API_KEY2, ODDS_API_BASE2, GEMINI_API_KEY2, genAI2, FLASH_MODEL2, TOMORROW_SPORTS;
+var init_tomorrowSync = __esm({
+  "server/services/tomorrowSync.ts"() {
+    init_esm();
+    init_dist();
+    init_oddsApi();
+    TZ = "America/Moncton";
+    ODDS_API_KEY2 = process.env.ODDS_API_KEY || "e780bee8f11d6859d3d5a99ca8549fff";
+    ODDS_API_BASE2 = "https://api.the-odds-api.com/v4";
+    GEMINI_API_KEY2 = process.env.GEMINI_API_KEY || "";
+    genAI2 = GEMINI_API_KEY2 ? new GoogleGenerativeAI(GEMINI_API_KEY2) : null;
+    FLASH_MODEL2 = "gemini-2.0-flash";
+    TOMORROW_SPORTS = [
+      { key: "basketball_nba", sport: "nba", label: "NBA" },
+      { key: "soccer_usa_mls", sport: "mls", label: "MLS" },
+      { key: "soccer_uefa_champs_league", sport: "soccer", label: "UEFA Champions League" },
+      { key: "soccer_epl", sport: "soccer", label: "Premier League" },
+      { key: "soccer_spain_la_liga", sport: "soccer", label: "La Liga" },
+      { key: "soccer_italy_serie_a", sport: "soccer", label: "Serie A" },
+      { key: "soccer_germany_bundesliga", sport: "soccer", label: "Bundesliga" },
+      { key: "soccer_france_ligue_one", sport: "soccer", label: "Ligue 1" }
+    ];
+  }
+});
+
+// server/globalDataMonitor.ts
+function readState() {
+  try {
+    if (fs3.existsSync(STATE_FILE)) {
+      const raw = fs3.readFileSync(STATE_FILE, "utf8");
+      return { ...DEFAULT_STATE, ...JSON.parse(raw) };
+    }
+  } catch {
+  }
+  return { ...DEFAULT_STATE };
+}
+function writeState(state) {
+  try {
+    fs3.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), "utf8");
+  } catch (err) {
+    console.error("[GlobalMonitor] Failed to write state file:", err.message);
+  }
+}
+function todayStr() {
+  return (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+}
+async function runGlobalDataMonitor(runGenerationFn, isDailyRunCompleted) {
+  const today = todayStr();
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  let state = readState();
+  if (state.date !== today) {
+    console.log(`[GlobalMonitor] New day detected (${today}) \u2014 resetting state`);
+    state = {
+      ...DEFAULT_STATE,
+      date: today,
+      lastCheckAt: now
+    };
+    writeState(state);
+  }
+  state.lastCheckAt = now;
+  if (isDailyRunCompleted()) {
+    const picks2 = await getPicksByDate(today).catch(() => []);
+    state.picksLive = picks2.length;
+    writeState(state);
+    console.log(`[GlobalMonitor] Daily run complete \u2014 ${picks2.length} picks live. No action needed.`);
+    return;
+  }
+  if (state.killSwitchTriggered) {
+    if (!state.alertSent) {
+      const msg = `[GlobalMonitor] KILL-SWITCH ACTIVE for ${today}: ${MAX_ATTEMPTS} generation attempts failed to meet the 65% threshold. Manual intervention required.`;
+      console.error(msg);
+      await createAlert2("critical", msg).catch(() => {
+      });
+      state.alertSent = true;
+      writeState(state);
+    }
+    console.log(`[GlobalMonitor] Kill-switch active \u2014 no further attempts for ${today}.`);
+    return;
+  }
+  const budget = getBudgetStatus();
+  if (budget.used_today >= 90) {
+    console.warn(`[GlobalMonitor] THROTTLE GUARD: ${budget.used_today}/100 API calls used. Skipping monitor run.`);
+    writeState(state);
+    return;
+  }
+  const existingPicks = await getPicksByDate(today).catch(() => []);
+  state.picksLive = existingPicks.length;
+  if (existingPicks.length >= MIN_PICKS_THRESHOLD) {
+    console.log(`[GlobalMonitor] ${existingPicks.length} picks live for ${today} \u2014 threshold met. No action needed.`);
+    state.lastSuccessAt = now;
+    writeState(state);
+    return;
+  }
+  state.attemptCount += 1;
+  if (state.attemptCount > MAX_ATTEMPTS) {
+    state.killSwitchTriggered = true;
+    state.killSwitchAt = now;
+    const msg = `[GlobalMonitor] \u26D4 KILL-SWITCH TRIGGERED for ${today}: ${MAX_ATTEMPTS} generation attempts exhausted. Picks live: ${existingPicks.length}/${MIN_PICKS_THRESHOLD}. Hard floor: ${HARD_FLOOR_PCT}%. STOPPING \u2014 manual intervention required.`;
+    console.error(msg);
+    await createAlert2("critical", msg).catch(() => {
+    });
+    state.alertSent = true;
+    writeState(state);
+    return;
+  }
+  console.log(`[GlobalMonitor] Attempt ${state.attemptCount}/${MAX_ATTEMPTS}: ${existingPicks.length} picks live (need ${MIN_PICKS_THRESHOLD}) \u2014 triggering generation for ${today}`);
+  state.globalLeaguesScanned = ALL_GLOBAL_LEAGUES;
+  writeState(state);
+  try {
+    const success = await runGenerationFn(`global-monitor-attempt${state.attemptCount}`);
+    if (success) {
+      const freshPicks = await getPicksByDate(today).catch(() => []);
+      state.picksLive = freshPicks.length;
+      state.lastSuccessAt = now;
+      console.log(`[GlobalMonitor] Attempt ${state.attemptCount} SUCCEEDED \u2014 ${freshPicks.length} picks now live for ${today}`);
+      if (freshPicks.length < MIN_PICKS_THRESHOLD) {
+        const msg = `[GlobalMonitor] Attempt ${state.attemptCount}: generation ran but only ${freshPicks.length}/${MIN_PICKS_THRESHOLD} picks meet the ${HARD_FLOOR_PCT}% floor. ${MAX_ATTEMPTS - state.attemptCount} attempts remaining.`;
+        console.warn(msg);
+        if (state.attemptCount >= MAX_ATTEMPTS) {
+          state.killSwitchTriggered = true;
+          state.killSwitchAt = now;
+          await createAlert2("critical", `\u26D4 KILL-SWITCH: ${msg} STOPPING.`).catch(() => {
+          });
+          state.alertSent = true;
+        } else {
+          await createAlert2("warning", msg).catch(() => {
+          });
+        }
+      }
+    } else {
+      const msg = `[GlobalMonitor] Attempt ${state.attemptCount}/${MAX_ATTEMPTS} FAILED for ${today}. ${MAX_ATTEMPTS - state.attemptCount} attempts remaining.`;
+      console.error(msg);
+      if (state.attemptCount >= MAX_ATTEMPTS) {
+        state.killSwitchTriggered = true;
+        state.killSwitchAt = now;
+        await createAlert2("critical", `\u26D4 KILL-SWITCH: ${msg} STOPPING.`).catch(() => {
+        });
+        state.alertSent = true;
+      } else {
+        await createAlert2("warning", msg).catch(() => {
+        });
+      }
+    }
+  } catch (err) {
+    const msg = `[GlobalMonitor] Attempt ${state.attemptCount} threw error: ${err.message}`;
+    console.error(msg);
+    if (state.attemptCount >= MAX_ATTEMPTS) {
+      state.killSwitchTriggered = true;
+      state.killSwitchAt = now;
+      await createAlert2("critical", `\u26D4 KILL-SWITCH: ${msg} STOPPING.`).catch(() => {
+      });
+      state.alertSent = true;
+    }
+  }
+  writeState(state);
+}
+var fs3, path3, STATE_FILE, DEFAULT_STATE, MAX_ATTEMPTS, MIN_PICKS_THRESHOLD, HARD_FLOOR_PCT, GLOBAL_LEAGUE_COVERAGE, ALL_GLOBAL_LEAGUES;
+var init_globalDataMonitor = __esm({
+  "server/globalDataMonitor.ts"() {
+    fs3 = __toESM(require("fs"));
+    path3 = __toESM(require("path"));
+    init_storage();
+    init_oddsApi();
+    STATE_FILE = path3.join(process.cwd(), "last_update.json");
+    DEFAULT_STATE = {
+      date: "",
+      lastSuccessAt: null,
+      lastCheckAt: null,
+      attemptCount: 0,
+      killSwitchTriggered: false,
+      killSwitchAt: null,
+      picksLive: 0,
+      globalLeaguesScanned: [],
+      alertSent: false
+    };
+    MAX_ATTEMPTS = 3;
+    MIN_PICKS_THRESHOLD = 6;
+    HARD_FLOOR_PCT = 65;
+    GLOBAL_LEAGUE_COVERAGE = {
+      europe: [
+        "soccer_epl",
+        // English Premier League
+        "soccer_spain_la_liga",
+        // La Liga
+        "soccer_italy_serie_a",
+        // Serie A
+        "soccer_germany_bundesliga",
+        // Bundesliga
+        "soccer_france_ligue_one",
+        // Ligue 1
+        "soccer_netherlands_eredivisie",
+        // Eredivisie
+        "soccer_portugal_primeira_liga",
+        // Primeira Liga
+        "soccer_turkey_super_league",
+        // Süper Lig
+        "soccer_scotland_premiership",
+        // Scottish Premiership
+        "soccer_belgium_first_div",
+        // Belgian Pro League
+        "soccer_uefa_champs_league",
+        // UEFA Champions League
+        "soccer_uefa_europa_league"
+        // UEFA Europa League
+      ],
+      south_america: [
+        "soccer_brazil_campeonato",
+        // Brasileirão
+        "soccer_argentina_primera_division",
+        // Argentine Primera
+        "soccer_mexico_ligamx",
+        // Liga MX
+        "soccer_colombia_primera_a"
+        // Colombian Primera A
+      ],
+      asia_oceania: [
+        "soccer_japan_j_league",
+        // J1 League
+        "soccer_south_korea_kleague1",
+        // K League 1
+        "soccer_australia_aleague",
+        // A-League
+        "soccer_saudi_professional_league",
+        // Saudi Pro League
+        "soccer_china_superleague"
+        // Chinese Super League
+      ],
+      basketball: [
+        "basketball_nba",
+        // NBA
+        "basketball_euroleague",
+        // EuroLeague
+        "basketball_ncaab"
+        // NCAA Basketball
+      ]
+    };
+    ALL_GLOBAL_LEAGUES = [
+      ...GLOBAL_LEAGUE_COVERAGE.europe,
+      ...GLOBAL_LEAGUE_COVERAGE.south_america,
+      ...GLOBAL_LEAGUE_COVERAGE.asia_oceania,
+      ...GLOBAL_LEAGUE_COVERAGE.basketball
+    ];
+  }
+});
+
+// server/fixtureScraper.ts
+var fixtureScraper_exports = {};
+__export(fixtureScraper_exports, {
+  cacheAnalysisResult: () => cacheAnalysisResult,
+  getUpcomingFixtures: () => getUpcomingFixtures,
+  scrapeUpcomingFixtures: () => scrapeUpcomingFixtures
+});
+function formatDateESPN(date2) {
+  return date2.toISOString().slice(0, 10).replace(/-/g, "");
+}
+function getDatesToScrape() {
+  const dates = [];
+  const now = /* @__PURE__ */ new Date();
+  for (let i = 0; i <= 3; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + i);
+    dates.push(d);
+  }
+  return dates;
+}
+async function fetchESPN(url) {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; ParlayKingBot/1.0)",
+        "Accept": "application/json"
+      },
+      signal: AbortSignal.timeout(1e4)
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+async function scrapeNBA(dates) {
+  let saved = 0;
+  for (const date2 of dates) {
+    const dateStr = formatDateESPN(date2);
+    const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`;
+    const data = await fetchESPN(url);
+    if (!data?.events) continue;
+    for (const event of data.events) {
+      try {
+        const comp = event.competitions?.[0];
+        if (!comp) continue;
+        const teams = comp.competitors || [];
+        const home = teams.find((t) => t.homeAway === "home");
+        const away = teams.find((t) => t.homeAway === "away");
+        if (!home || !away) continue;
+        const homeTeam = home.team?.displayName || home.team?.name;
+        const awayTeam = away.team?.displayName || away.team?.name;
+        const gameDate = event.date ? new Date(event.date) : date2;
+        const status = comp.status?.type?.name?.toLowerCase() || "scheduled";
+        const client = await pool2.connect();
+        try {
+          await client.query(`
+            INSERT INTO upcoming_fixtures
+              (sport, league, home_team, away_team, game_date, game_time, game_datetime, source, external_id, status, raw_data)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+            ON CONFLICT (sport, home_team, away_team, game_date) DO UPDATE SET
+              status = EXCLUDED.status,
+              game_datetime = EXCLUDED.game_datetime,
+              raw_data = EXCLUDED.raw_data,
+              updated_at = NOW()
+          `, [
+            "nba",
+            "NBA",
+            homeTeam,
+            awayTeam,
+            gameDate.toISOString().slice(0, 10),
+            gameDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" }) + " ET",
+            gameDate.toISOString(),
+            "espn",
+            event.id,
+            status,
+            JSON.stringify({ espnId: event.id, name: event.name, shortName: event.shortName })
+          ]);
+          saved++;
+        } finally {
+          client.release();
+        }
+      } catch {
+      }
+    }
+    await delay(250);
+  }
+  return saved;
+}
+async function scrapeSoccer(dates) {
+  let saved = 0;
+  for (const league of ESPN_SOCCER_LEAGUES) {
+    for (const date2 of dates) {
+      const dateStr = formatDateESPN(date2);
+      const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.slug}/scoreboard?dates=${dateStr}`;
+      const data = await fetchESPN(url);
+      if (!data?.events) continue;
+      for (const event of data.events) {
+        try {
+          const comp = event.competitions?.[0];
+          if (!comp) continue;
+          const teams = comp.competitors || [];
+          const home = teams.find((t) => t.homeAway === "home");
+          const away = teams.find((t) => t.homeAway === "away");
+          if (!home || !away) continue;
+          const homeTeam = home.team?.displayName || home.team?.name;
+          const awayTeam = away.team?.displayName || away.team?.name;
+          const gameDate = event.date ? new Date(event.date) : date2;
+          const status = comp.status?.type?.name?.toLowerCase() || "scheduled";
+          const client = await pool2.connect();
+          try {
+            await client.query(`
+              INSERT INTO upcoming_fixtures
+                (sport, league, home_team, away_team, game_date, game_time, game_datetime, source, external_id, status, raw_data)
+              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+              ON CONFLICT (sport, home_team, away_team, game_date) DO UPDATE SET
+                status = EXCLUDED.status,
+                game_datetime = EXCLUDED.game_datetime,
+                raw_data = EXCLUDED.raw_data,
+                updated_at = NOW()
+            `, [
+              "soccer",
+              league.name,
+              homeTeam,
+              awayTeam,
+              gameDate.toISOString().slice(0, 10),
+              gameDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" }) + " ET",
+              gameDate.toISOString(),
+              "espn",
+              event.id,
+              status,
+              JSON.stringify({ espnId: event.id, league: league.name, slug: league.slug })
+            ]);
+            saved++;
+          } finally {
+            client.release();
+          }
+        } catch {
+        }
+      }
+    }
+    await delay(300);
+  }
+  return saved;
+}
+async function scrapeUpcomingFixtures() {
+  const dates = getDatesToScrape();
+  const dateStrs = dates.map((d) => d.toISOString().slice(0, 10));
+  console.log(`[FixtureScraper] Scraping fixtures for dates: ${dateStrs.join(", ")}`);
+  const [nbaCount, soccerCount] = await Promise.all([
+    scrapeNBA(dates),
+    scrapeSoccer(dates)
+  ]);
+  const total = nbaCount + soccerCount;
+  console.log(`[FixtureScraper] \u2705 Scraped ${total} fixtures (${nbaCount} NBA, ${soccerCount} Soccer) \u2014 0 API credits used`);
+  return { nba: nbaCount, soccer: soccerCount, total, dates: dateStrs };
+}
+async function cacheAnalysisResult(fixtureId, result) {
+  const client = await pool2.connect();
+  try {
+    await client.query(`
+      UPDATE upcoming_fixtures SET
+        analyzed = TRUE,
+        analysis_result = $1,
+        analysis_score = $2,
+        analysis_pass = $3,
+        analyzed_at = NOW(),
+        updated_at = NOW()
+      WHERE id = $4
+    `, [JSON.stringify(result), result.confidence, result.pass, fixtureId]);
+  } finally {
+    client.release();
+  }
+}
+async function getUpcomingFixtures(fromDate, toDate, sport) {
+  const client = await pool2.connect();
+  try {
+    const params = [fromDate, toDate];
+    let sportClause = "";
+    if (sport && sport !== "all") {
+      params.push(sport);
+      sportClause = `AND sport = $${params.length}`;
+    }
+    const result = await client.query(`
+      SELECT id, sport, league, home_team, away_team, game_date, game_time, game_datetime,
+             status, analyzed, analysis_result, analysis_score, analysis_pass, analyzed_at, source
+      FROM upcoming_fixtures
+      WHERE game_date BETWEEN $1 AND $2
+        AND status NOT IN ('final', 'post')
+        ${sportClause}
+      ORDER BY game_datetime ASC NULLS LAST, game_date ASC, sport ASC
+      LIMIT 200
+    `, params);
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
+var pool2, ESPN_SOCCER_LEAGUES, delay;
+var init_fixtureScraper = __esm({
+  "server/fixtureScraper.ts"() {
+    init_esm();
+    pool2 = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      max: 3
+    });
+    ESPN_SOCCER_LEAGUES = [
+      { slug: "eng.1", name: "English Premier League" },
+      { slug: "esp.1", name: "La Liga" },
+      { slug: "ger.1", name: "Bundesliga" },
+      { slug: "ita.1", name: "Serie A" },
+      { slug: "fra.1", name: "Ligue 1" },
+      { slug: "ned.1", name: "Eredivisie" },
+      { slug: "por.1", name: "Primeira Liga" },
+      { slug: "tur.1", name: "S\xFCper Lig" },
+      { slug: "uefa.champions", name: "UEFA Champions League" },
+      { slug: "uefa.europa", name: "UEFA Europa League" },
+      { slug: "usa.1", name: "MLS" },
+      { slug: "mex.1", name: "Liga MX" },
+      { slug: "bra.1", name: "Brasileir\xE3o" },
+      { slug: "arg.1", name: "Argentine Primera" },
+      { slug: "jpn.1", name: "J1 League" },
+      { slug: "kor.1", name: "K League 1" },
+      { slug: "aus.1", name: "A-League" }
+    ];
+    delay = (ms) => new Promise((r) => setTimeout(r, ms));
+  }
+});
+
 // server/scheduler.ts
 var scheduler_exports = {};
 __export(scheduler_exports, {
+  SYS_CONFIG: () => SYS_CONFIG,
+  V3_CONFIG: () => V3_CONFIG,
   runDailyGeneration: () => runDailyGeneration,
   startScheduler: () => startScheduler
 });
@@ -54327,11 +52716,11 @@ function startKeepAlive() {
   }, 5 * 60 * 1e3);
   console.log("[Scheduler] Keep-alive ping started (every 5 minutes)");
 }
-function todayStr() {
+function todayStr2() {
   return (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: TZ2 });
 }
 async function runDailyGeneration(triggeredBy = "scheduler") {
-  const today = todayStr();
+  const today = todayStr2();
   if (dailyRunCompleted && lastRunDate === today && triggeredBy === "scheduler") {
     console.log(`[Scheduler] Daily run already completed for ${today}, skipping`);
     return true;
@@ -54423,12 +52812,12 @@ function startScheduler() {
   startKeepAlive();
   import_node_cron.default.schedule("0 0 0 * * *", () => {
     dailyRunCompleted = false;
-    console.log(`[Scheduler] Midnight reset (America/Moncton) \u2014 daily flag cleared for ${todayStr()}`);
+    console.log(`[Scheduler] Midnight reset (America/Moncton) \u2014 daily flag cleared for ${todayStr2()}`);
   }, { timezone: TZ2 });
   import_node_cron.default.schedule("0 2 0 * * *", async () => {
     console.log("[Scheduler] 12:02 AM AST \u2014 Midnight archival");
     try {
-      await createAlert2("info", `Midnight archival completed for ${todayStr()}`);
+      await createAlert2("info", `Midnight archival completed for ${todayStr2()}`);
     } catch (err) {
       console.error("[Scheduler] Midnight archival error:", err);
     }
@@ -54482,7 +52871,7 @@ function startScheduler() {
       console.error("[Scheduler] 3:00 AM AST \u2014 FINAL FAILSAFE");
       const success = await runDailyGeneration("scheduler-failsafe");
       if (!success) {
-        await createAlert2("critical", `TOTAL FAILURE: All retry attempts failed for ${todayStr()}`);
+        await createAlert2("critical", `TOTAL FAILURE: All retry attempts failed for ${todayStr2()}`);
       }
     }
   }, { timezone: TZ2 });
@@ -54529,13 +52918,29 @@ function startScheduler() {
   import_node_cron.default.schedule("0 0 23 * * 0", async () => {
     console.log("[Scheduler] Sunday 11 PM AST \u2014 Weekly audit");
   }, { timezone: TZ2 });
+  import_node_cron.default.schedule("0 0 * * * *", async () => {
+    const nowHour = parseInt(
+      (/* @__PURE__ */ new Date()).toLocaleString("en-US", { timeZone: TZ2, hour: "numeric", hour12: false }),
+      10
+    );
+    if (nowHour < 1 || nowHour > 23) return;
+    console.log(`[Scheduler] Hourly global data monitor check (hour=${nowHour} AST)`);
+    await runGlobalDataMonitor(
+      (triggeredBy) => runDailyGeneration(triggeredBy),
+      () => dailyRunCompleted
+    ).catch((err) => console.error("[Scheduler] Global monitor error:", err.message));
+  }, { timezone: TZ2 });
   console.log("[Scheduler] All cron jobs registered");
   console.log("[Scheduler] Timezone: America/Moncton (AST UTC-4 / ADT UTC-3)");
   console.log("[Scheduler] Primary generation: 1:00 AM AST with 4-layer retry cascade");
+  console.log("[Scheduler] 60-min global data monitor: active (3-attempt kill-switch, last_update.json state)");
+  console.log("[Scheduler] Global leagues: 23 leagues across Europe, South America, Asia, Oceania");
+  console.log("[Scheduler] Hard floor: 65% minimum confidence on all 3-leg tab picks");
+  console.log("[Scheduler] V3-15 factor audit: 8/15 factors required for every pick");
   console.log("[Scheduler] Google/Bing ping: after every pick update");
   setTimeout(async () => {
     try {
-      const today = todayStr();
+      const today = todayStr2();
       const nowHour = parseInt(
         (/* @__PURE__ */ new Date()).toLocaleString("en-US", { timeZone: TZ2, hour: "numeric", hour12: false }),
         10
@@ -54548,9 +52953,27 @@ function startScheduler() {
           const success = await runDailyGeneration("startup-catchup");
           if (success) {
             console.log(`[Scheduler] Startup catch-up SUCCEEDED for ${today}`);
+            dailyRunCompleted = true;
+            lastRunDate = today;
           } else {
-            console.error(`[Scheduler] Startup catch-up FAILED for ${today}`);
-            await createAlert2("critical", `Startup catch-up failed for ${today} \u2014 picks may be missing`);
+            const picksAfter = await getPicksByDate(today);
+            if (picksAfter.length > 0) {
+              console.log(`[Scheduler] Startup catch-up: ${picksAfter.length} picks now exist \u2014 marking complete`);
+              dailyRunCompleted = true;
+              lastRunDate = today;
+            } else {
+              console.warn(`[Scheduler] Startup catch-up: 0 picks generated for ${today} \u2014 no qualifying games at this time. ESPN fallback was used. Will retry at next 1AM cron.`);
+              try {
+                const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+                const pool3 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+                const existing = await pool3.query(`SELECT id FROM system_alerts WHERE message LIKE $1 AND created_at > NOW() - INTERVAL '2 hours' LIMIT 1`, [`%catch-up%${today}%`]);
+                await pool3.end();
+                if (existing.rowCount === 0) {
+                  await createAlert2("warning", `Startup catch-up: 0 picks for ${today} via ESPN fallback \u2014 no qualifying games above 65% threshold. Paid APIs offline. Renew at dashboard.api-football.com`);
+                }
+              } catch (_) {
+              }
+            }
           }
         } else {
           console.log(`[Scheduler] Startup check: ${existingPicks.length} picks already exist for ${today} \u2014 no catch-up needed`);
@@ -54565,7 +52988,7 @@ function startScheduler() {
     }
   }, 15e3);
 }
-var import_node_cron, TZ2, schedulerStarted, keepAliveInterval, dailyRunCompleted, lastRunDate;
+var import_node_cron, fs4, path4, TZ2, V3_CONFIG, SYS_CONFIG, schedulerStarted, keepAliveInterval, dailyRunCompleted, lastRunDate;
 var init_scheduler = __esm({
   "server/scheduler.ts"() {
     import_node_cron = __toESM(require_node_cron());
@@ -54575,11 +52998,4007 @@ var init_scheduler = __esm({
     init_resultsSettler();
     init_oddsApi();
     init_tomorrowSync();
+    init_globalDataMonitor();
+    fs4 = __toESM(require("fs"));
+    path4 = __toESM(require("path"));
     TZ2 = "America/Moncton";
+    V3_CONFIG = {};
+    try {
+      const configPath = path4.join(process.cwd(), "v3_config.json");
+      if (fs4.existsSync(configPath)) {
+        V3_CONFIG = JSON.parse(fs4.readFileSync(configPath, "utf8"));
+        console.log("[V3-Config] \u2705 Persistent memory loaded from v3_config.json");
+        console.log(`[V3-Config] Thresholds: Pro=${V3_CONFIG.confidence_thresholds?.pro_min}% | Floor=${V3_CONFIG.confidence_thresholds?.leg_hard_floor}% | Budget=${V3_CONFIG.api_budget?.auto_ceiling}/${V3_CONFIG.api_budget?.daily_ceiling}`);
+      } else {
+        console.warn("[V3-Config] \u26A0\uFE0F  v3_config.json not found \u2014 using hardcoded defaults");
+      }
+    } catch (e) {
+      console.error("[V3-Config] Failed to load v3_config.json:", e.message);
+    }
+    SYS_CONFIG = {
+      thresholds: { MIN_THRESHOLD: 0.65, HIGH_VAL_THRESHOLD: 0.68 },
+      api_sources: {},
+      fail_safe_rules: {},
+      data_source_health: { check_interval_minutes: 60, alert_on_suspended: true, alert_on_quota_exhausted: true, dashboard_indicator: true }
+    };
+    try {
+      const sysPath = path4.join(process.cwd(), "system_config.json");
+      if (fs4.existsSync(sysPath)) {
+        SYS_CONFIG = JSON.parse(fs4.readFileSync(sysPath, "utf8"));
+        const t = SYS_CONFIG.thresholds;
+        console.log("[SysConfig] \u2705 Safety Valve config loaded from system_config.json");
+        console.log(`[SysConfig] MIN_THRESHOLD=${t?.MIN_THRESHOLD} | HIGH_VAL_THRESHOLD=${t?.HIGH_VAL_THRESHOLD} | LIFETIME=${t?.LIFETIME_THRESHOLD}`);
+        console.log("[SysConfig] NO pick will be published below " + (t?.MIN_THRESHOLD * 100).toFixed(0) + "% \u2014 ABSOLUTE RULE");
+      } else {
+        console.warn("[SysConfig] \u26A0\uFE0F  system_config.json not found \u2014 using hardcoded Safety Valve defaults (MIN=0.65, HIGH_VAL=0.68)");
+      }
+    } catch (e) {
+      console.error("[SysConfig] Failed to load system_config.json:", e.message);
+    }
     schedulerStarted = false;
     keepAliveInterval = null;
     dailyRunCompleted = false;
     lastRunDate = "";
+    import_node_cron.default.schedule("0 0 0,6,12,18 * * *", async () => {
+      console.log("[FixtureScraper] \u23F0 Starting scheduled fixture scrape (free ESPN API)...");
+      try {
+        const { scrapeUpcomingFixtures: scrapeUpcomingFixtures2 } = await Promise.resolve().then(() => (init_fixtureScraper(), fixtureScraper_exports));
+        const result = await scrapeUpcomingFixtures2();
+        console.log(`[FixtureScraper] \u2705 Scheduled scrape complete: ${result.total} fixtures (${result.nba} NBA, ${result.soccer} Soccer) \u2014 0 API credits`);
+      } catch (err) {
+        console.error("[FixtureScraper] Scheduled scrape failed:", err.message);
+      }
+    }, { timezone: TZ2 });
+  }
+});
+
+// server/v2Validator.ts
+var v2Validator_exports = {};
+__export(v2Validator_exports, {
+  VALIDATOR_THRESHOLDS: () => VALIDATOR_THRESHOLDS,
+  getValidatorMode: () => getValidatorMode,
+  is_valid: () => is_valid,
+  runDryRun: () => runDryRun,
+  setValidatorMode: () => setValidatorMode
+});
+function getValidatorMode() {
+  return _validatorMode;
+}
+function setValidatorMode(mode) {
+  const prev = _validatorMode;
+  _validatorMode = mode;
+  if (mode === "shadow" && prev !== "shadow") {
+    _shadowStartedAt = /* @__PURE__ */ new Date();
+    _shadowLogCount = 0;
+    console.log(`[V2Validator] Switched to SHADOW MODE at ${_shadowStartedAt.toISOString()}`);
+  } else if (mode === "active" && prev !== "active") {
+    console.log(`[V2Validator] Switched to ACTIVE MODE \u2014 validator is now BLOCKING low-quality picks`);
+  }
+}
+function runV3FactorAudit(factors) {
+  if (!factors) return { passed: 0, score: 0, classGap: 0, injuryGap: 0, valueGap: 0, bookmakerImplied: 50 };
+  const f01 = (factors.f01_marketConsensus_home ?? 0.44) !== 0.44 && (factors.f01_marketConsensus_home ?? 0.3) !== 0.3;
+  const f02 = (factors.f02_momentum_home ?? 0.5) !== 0.5 || (factors.f02_momentum_away ?? 0.5) !== 0.5;
+  const f03 = (factors.f03_quality_home ?? 0.5) !== 0.5 || (factors.f03_quality_away ?? 0.5) !== 0.5;
+  const f04 = (factors.f04_h2h_home ?? 0.5) !== 0.5 || (factors.f04_h2h_away ?? 0.5) !== 0.5;
+  const f05 = (factors.f05_steam_home ?? 0.5) !== 0.5 || (factors.f05_steam_away ?? 0.5) !== 0.5;
+  const f06 = (factors.f06_rest_home ?? 0.5) !== 0.5 || (factors.f06_rest_away ?? 0.5) !== 0.5;
+  const f07 = (factors.f07_injuries_home ?? 0.9) !== 0.9 || (factors.f07_injuries_away ?? 0.9) !== 0.9;
+  const f08 = (factors.f08_travel ?? 0.5) !== 0.5;
+  const f09 = (factors.f09_referee ?? 0.5) !== 0.5;
+  const f10 = (factors.f10_environment ?? 0.5) !== 0.5;
+  const f11 = (factors.f11_standing_home ?? 0.5) !== 0.5 || (factors.f11_standing_away ?? 0.5) !== 0.5;
+  const f12 = (factors.f12_venue ?? 0.5) !== 0.5;
+  const f13 = factors.f13_steam_home !== void 0 && factors.f13_steam_home !== 0.5;
+  const f14 = factors.f14_altitude !== void 0 && factors.f14_altitude !== 0.5;
+  const f15 = factors.f15_referee_boost !== void 0 && factors.f15_referee_boost !== 0.5;
+  const allFlags = [f01, f02, f03, f04, f05, f06, f07, f08, f09, f10, f11, f12, f13, f14, f15];
+  const passed = allFlags.filter(Boolean).length;
+  const weights = [10, 8, 10, 7, 8, 6, 10, 5, 5, 5, 8, 5, 4, 4, 5];
+  let score = 0;
+  const factorValues = [
+    Math.abs((factors.f01_marketConsensus_home ?? 0.5) - 0.5) * 2,
+    Math.abs((factors.f02_momentum_home ?? 0.5) - (factors.f02_momentum_away ?? 0.5)),
+    Math.abs((factors.f03_quality_home ?? 0.5) - (factors.f03_quality_away ?? 0.5)),
+    Math.abs((factors.f04_h2h_home ?? 0.5) - (factors.f04_h2h_away ?? 0.5)),
+    Math.abs((factors.f05_steam_home ?? 0.5) - (factors.f05_steam_away ?? 0.5)),
+    Math.abs((factors.f06_rest_home ?? 0.5) - (factors.f06_rest_away ?? 0.5)),
+    Math.abs((factors.f07_injuries_home ?? 0.9) - (factors.f07_injuries_away ?? 0.9)),
+    Math.abs((factors.f08_travel ?? 0.5) - 0.5) * 2,
+    Math.abs((factors.f09_referee ?? 0.5) - 0.5) * 2,
+    Math.abs((factors.f10_environment ?? 0.5) - 0.5) * 2,
+    Math.abs((factors.f11_standing_home ?? 0.5) - (factors.f11_standing_away ?? 0.5)),
+    Math.abs((factors.f12_venue ?? 0.5) - 0.5) * 2,
+    Math.abs((factors.f13_steam_home ?? 0.5) - 0.5) * 2,
+    Math.abs((factors.f14_altitude ?? 0.5) - 0.5) * 2,
+    Math.abs((factors.f15_referee_boost ?? 0.5) - 0.5) * 2
+  ];
+  for (let i = 0; i < 15; i++) {
+    score += Math.min(factorValues[i], 1) * weights[i];
+  }
+  const classGap = Math.abs((factors.f03_quality_home ?? 0.5) - (factors.f03_quality_away ?? 0.5));
+  const injuryGap = Math.abs((factors.f07_injuries_home ?? 0.9) - (factors.f07_injuries_away ?? 0.9));
+  const bookmakerImplied = (factors.f01_marketConsensus_home ?? 0.5) * 100;
+  return { passed, score: Math.round(score), classGap, injuryGap, valueGap: 0, bookmakerImplied };
+}
+function is_valid(input) {
+  const { homeTeam, awayTeam, confidence, pickType, forcePublish = false, factors } = input;
+  const matchup = `${homeTeam} vs ${awayTeam}`;
+  const mode = _validatorMode;
+  const blockedBy = [];
+  const isFeatured = pickType === "featured" || pickType === "power" || pickType === "gold";
+  const threshold = isFeatured ? VALIDATOR_THRESHOLDS.FEATURED_MIN : VALIDATOR_THRESHOLDS.TAB_MIN;
+  const confidenceGate = confidence >= threshold;
+  if (!confidenceGate) {
+    blockedBy.push(`Confidence ${confidence}% < ${threshold}% threshold (${isFeatured ? "featured" : "tab"} pick)`);
+  }
+  const audit = runV3FactorAudit(factors);
+  const v3AuditGate = audit.passed >= VALIDATOR_THRESHOLDS.V3_FACTORS_MIN;
+  if (!v3AuditGate) {
+    blockedBy.push(`V3-15 Audit: only ${audit.passed}/15 factors have real data (need ${VALIDATOR_THRESHOLDS.V3_FACTORS_MIN})`);
+  }
+  const hasClassGap = audit.classGap > VALIDATOR_THRESHOLDS.CLASS_GAP_MIN;
+  const hasInjuryAdvantage = audit.injuryGap > VALIDATOR_THRESHOLDS.INJURY_GAP_MIN || ((factors?.f07_injuries_home ?? 0.9) !== 0.9 || (factors?.f07_injuries_away ?? 0.9) !== 0.9);
+  const safetyGate = hasClassGap && hasInjuryAdvantage;
+  if (!safetyGate) {
+    if (!hasClassGap) blockedBy.push(`Safety: No Class Gap (F03 gap=${audit.classGap.toFixed(3)} < ${VALIDATOR_THRESHOLDS.CLASS_GAP_MIN})`);
+    if (!hasInjuryAdvantage) blockedBy.push(`Safety: No Injury Advantage (F07 gap=${audit.injuryGap.toFixed(3)} < ${VALIDATOR_THRESHOLDS.INJURY_GAP_MIN})`);
+  }
+  const valueGap = confidence - audit.bookmakerImplied;
+  const valueGate = valueGap >= VALIDATOR_THRESHOLDS.VALUE_EDGE_MIN;
+  if (!valueGate) {
+    blockedBy.push(`Value: V3=${confidence}% vs Bookmaker=${audit.bookmakerImplied.toFixed(1)}% \u2014 gap=${valueGap.toFixed(1)}% < ${VALIDATOR_THRESHOLDS.VALUE_EDGE_MIN}% required`);
+  }
+  const allGatesPass = confidenceGate && v3AuditGate && safetyGate && valueGate;
+  const v3VerifiedBadge = allGatesPass;
+  if (forcePublish) {
+    const msg = `[V2Validator] \u26A1 FORCE PUBLISH by Admin Master Key: ${matchup} @ ${confidence}% (${blockedBy.length} gates bypassed: ${blockedBy.join("; ") || "none"})`;
+    console.log(msg);
+    createAlert2("info", msg).catch(() => {
+    });
+    return {
+      isValid: true,
+      score: audit.score,
+      factorsPassed: audit.passed,
+      factorsTotal: 15,
+      confidenceGate,
+      v3AuditGate,
+      safetyGate,
+      valueGate,
+      valueGap,
+      classGap: audit.classGap,
+      injuryGap: audit.injuryGap,
+      threshold,
+      blockedBy,
+      forcePublished: true,
+      shadowLogged: false,
+      mode,
+      details: `FORCE PUBLISHED by Admin Master Key. ${blockedBy.length} gates bypassed.`,
+      v3VerifiedBadge: false
+      // Force publish does not earn the V3 Verified badge
+    };
+  }
+  if (mode === "shadow") {
+    _shadowLogCount++;
+    if (blockedBy.length > 0) {
+      const msg = `[V2Validator] [SHADOW] Would BLOCK: ${matchup} @ ${confidence}% | Blocked by: ${blockedBy.join(" | ")} | V3 Score: ${audit.score}/100 | Factors: ${audit.passed}/15`;
+      console.warn(msg);
+      if (_shadowLogCount % 10 === 0) {
+        createAlert2("info", `Shadow Mode: ${_shadowLogCount} picks logged. Last: ${msg}`).catch(() => {
+        });
+      }
+    } else {
+      console.log(`[V2Validator] [SHADOW] Would PASS: ${matchup} @ ${confidence}% | V3 Score: ${audit.score}/100 | Factors: ${audit.passed}/15 | Value Gap: +${valueGap.toFixed(1)}%`);
+    }
+    return {
+      isValid: true,
+      // Shadow mode never blocks
+      score: audit.score,
+      factorsPassed: audit.passed,
+      factorsTotal: 15,
+      confidenceGate,
+      v3AuditGate,
+      safetyGate,
+      valueGate,
+      valueGap,
+      classGap: audit.classGap,
+      injuryGap: audit.injuryGap,
+      threshold,
+      blockedBy,
+      forcePublished: false,
+      shadowLogged: true,
+      mode: "shadow",
+      details: blockedBy.length > 0 ? `SHADOW: Would block \u2014 ${blockedBy.join("; ")}` : `SHADOW: Would pass \u2014 V3 Score ${audit.score}/100, ${audit.passed}/15 factors, +${valueGap.toFixed(1)}% value gap`,
+      v3VerifiedBadge
+    };
+  }
+  const isValid = allGatesPass;
+  if (!isValid) {
+    console.warn(`[V2Validator] [ACTIVE] BLOCKED: ${matchup} @ ${confidence}% | ${blockedBy.join(" | ")}`);
+  } else {
+    console.log(`[V2Validator] [ACTIVE] PASSED: ${matchup} @ ${confidence}% \u2705 V3 Score: ${audit.score}/100 | Factors: ${audit.passed}/15 | Value Gap: +${valueGap.toFixed(1)}%`);
+  }
+  return {
+    isValid,
+    score: audit.score,
+    factorsPassed: audit.passed,
+    factorsTotal: 15,
+    confidenceGate,
+    v3AuditGate,
+    safetyGate,
+    valueGate,
+    valueGap,
+    classGap: audit.classGap,
+    injuryGap: audit.injuryGap,
+    threshold,
+    blockedBy,
+    forcePublished: false,
+    shadowLogged: false,
+    mode: "active",
+    details: isValid ? `VALID \u2014 V3 Score ${audit.score}/100, ${audit.passed}/15 factors, +${valueGap.toFixed(1)}% value gap` : `BLOCKED \u2014 ${blockedBy.join("; ")}`,
+    v3VerifiedBadge
+  };
+}
+function runDryRun(picks2) {
+  const discrepancies = [];
+  let wouldPass = 0;
+  let wouldBlock = 0;
+  console.log(`
+[V2Validator] \u2550\u2550\u2550 DRY RUN SIMULATION \u2014 ${picks2.length} picks \u2550\u2550\u2550`);
+  for (const pick of picks2) {
+    const savedMode = _validatorMode;
+    _validatorMode = "active";
+    const result = is_valid(pick);
+    _validatorMode = savedMode;
+    if (result.isValid) {
+      wouldPass++;
+      console.log(`[DryRun] \u2705 PASS | ${pick.homeTeam} vs ${pick.awayTeam} @ ${pick.confidence}% | Score: ${result.score}/100 | Factors: ${result.factorsPassed}/15 | Gap: +${result.valueGap.toFixed(1)}%`);
+    } else {
+      wouldBlock++;
+      discrepancies.push({
+        pick: `${pick.homeTeam} vs ${pick.awayTeam}`,
+        confidence: pick.confidence,
+        blockedBy: result.blockedBy,
+        score: result.score,
+        factorsPassed: result.factorsPassed
+      });
+      console.warn(`[DryRun] \u274C BLOCK | ${pick.homeTeam} vs ${pick.awayTeam} @ ${pick.confidence}% | ${result.blockedBy.join(" | ")}`);
+    }
+  }
+  const summary = `Dry Run: ${picks2.length} picks | ${wouldPass} would PASS | ${wouldBlock} would BLOCK (${discrepancies.length} discrepancies)`;
+  console.log(`
+[V2Validator] \u2550\u2550\u2550 DRY RUN COMPLETE \u2550\u2550\u2550`);
+  console.log(`[V2Validator] ${summary}`);
+  if (discrepancies.length > 0) {
+    console.log(`[V2Validator] Discrepancies (picks that would now be blocked):`);
+    discrepancies.forEach((d, i) => {
+      console.log(`  ${i + 1}. ${d.pick} @ ${d.confidence}% \u2014 ${d.blockedBy.join("; ")}`);
+    });
+  }
+  console.log(`[V2Validator] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+`);
+  return { total: picks2.length, wouldPass, wouldBlock, discrepancies, summary };
+}
+var _validatorMode, _shadowStartedAt, _shadowLogCount, VALIDATOR_THRESHOLDS;
+var init_v2Validator = __esm({
+  "server/v2Validator.ts"() {
+    init_storage();
+    _validatorMode = "shadow";
+    _shadowStartedAt = null;
+    _shadowLogCount = 0;
+    VALIDATOR_THRESHOLDS = {
+      FEATURED_MIN: 68,
+      // Power Pick / Gold Tier / Featured — must be ≥68%
+      TAB_MIN: 65,
+      // 3-Leg NBA / Soccer / MLS tab picks — must be ≥65%
+      VALUE_EDGE_MIN: 5,
+      // V3 confidence must exceed bookmaker implied by ≥5%
+      V3_FACTORS_MIN: 8,
+      // At least 8 of 15 V3-15 factors must have real data
+      CLASS_GAP_MIN: 0.05,
+      // F03 quality gap threshold
+      INJURY_GAP_MIN: 0.02
+      // F07 injury gap threshold
+    };
+  }
+});
+
+// server/routes.ts
+var routes_exports = {};
+__export(routes_exports, {
+  clearModulePicksCache: () => clearModulePicksCache,
+  generateDailyPicks: () => generateDailyPicks,
+  registerRoutes: () => registerRoutes
+});
+function generateToken() {
+  return Buffer.from(`${Date.now()}-${Math.random()}`).toString("base64");
+}
+function requireAuth(req, res, next) {
+  const token = req.headers["x-admin-token"] || req.query.token;
+  if (!token || !activeTokens.has(token)) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  next();
+}
+function passesV3_15FactorAudit(p) {
+  const f = p.factors;
+  if (!f) return false;
+  const f01 = f.f01_marketConsensus_home !== 0.44 && f.f01_marketConsensus_home !== 0.3;
+  const f02 = f.f02_momentum_home !== 0.5 || f.f02_momentum_away !== 0.5;
+  const f03 = f.f03_quality_home !== 0.5 || f.f03_quality_away !== 0.5;
+  const f04 = f.f04_h2h_home !== 0.5 || f.f04_h2h_away !== 0.5;
+  const f05 = f.f05_steam_home !== 0.5 || f.f05_steam_away !== 0.5;
+  const f06 = f.f06_rest_home !== 0.5 || f.f06_rest_away !== 0.5;
+  const f07 = f.f07_injuries_home !== 0.9 || f.f07_injuries_away !== 0.9;
+  const f08 = f.f08_travel !== 0.5;
+  const f09 = f.f09_referee !== 0.5;
+  const f10 = f.f10_environment !== 0.5;
+  const f11 = f.f11_standing_home !== 0.5 || f.f11_standing_away !== 0.5;
+  const f12 = f.f12_venue !== 0.5;
+  const f13 = f.f13_steam_home !== void 0 && f.f13_steam_home !== 0.5;
+  const f14 = f.f14_altitude !== void 0 && f.f14_altitude !== 0.5;
+  const f15 = f.f15_referee_boost !== void 0 && f.f15_referee_boost !== 0.5;
+  const passed = [f01, f02, f03, f04, f05, f06, f07, f08, f09, f10, f11, f12, f13, f14, f15].filter(Boolean).length;
+  const AUDIT_PASS_THRESHOLD = 8;
+  if (passed < AUDIT_PASS_THRESHOLD) {
+    console.log(`[V3-15 Audit] REJECTED: ${p.homeTeam} vs ${p.awayTeam} \u2014 only ${passed}/15 factors have real data (need ${AUDIT_PASS_THRESHOLD})`);
+    return false;
+  }
+  return true;
+}
+function selectBestLegs(predictions, count, minConfidence = CONFIDENCE_THRESHOLDS2.PRO_MIN, maxConfidence = 100) {
+  const effectiveMin = Math.max(minConfidence, CONFIDENCE_THRESHOLDS2.LEG_HARD_FLOOR);
+  function hasMinDataQuality(p) {
+    return passesV3_15FactorAudit(p);
+  }
+  function hasSafetyAnchors(p) {
+    const f = p.factors;
+    if (!f) return false;
+    const homeQuality = f.f03_quality_home ?? 0.5;
+    const awayQuality = f.f03_quality_away ?? 0.5;
+    const classGap = Math.abs(homeQuality - awayQuality);
+    const hasClassGap = classGap > 0.05;
+    const homeInjury = f.f07_injuries_home ?? 0.9;
+    const awayInjury = f.f07_injuries_away ?? 0.9;
+    const injuryGap = Math.abs(homeInjury - awayInjury);
+    const hasInjuryAdvantage = injuryGap > 0.02 || (homeInjury !== 0.9 || awayInjury !== 0.9);
+    return hasClassGap && hasInjuryAdvantage;
+  }
+  function calcValueGap(p) {
+    const f = p.factors;
+    if (!f) return 0;
+    const bookmakerImplied = (f.f01_marketConsensus_home ?? 0.5) * 100;
+    const v3Confidence = p.topConfidence;
+    const valueGap = v3Confidence - bookmakerImplied;
+    return valueGap;
+  }
+  const VALUE_EDGE_MINIMUM = 5;
+  const safeAndValued = predictions.filter((p) => p.topConfidence >= effectiveMin && p.topConfidence <= maxConfidence).filter((p) => !p.topPick.toLowerCase().includes("draw")).filter((p) => hasMinDataQuality(p)).filter((p) => hasSafetyAnchors(p)).filter((p) => calcValueGap(p) >= VALUE_EDGE_MINIMUM).sort((a, b) => {
+    const aGap = calcValueGap(a);
+    const bGap = calcValueGap(b);
+    if (Math.abs(bGap - aGap) > 0.5) return bGap - aGap;
+    return b.topConfidence - a.topConfidence;
+  });
+  const fallbackSafe = safeAndValued.length < count ? predictions.filter((p) => p.topConfidence >= effectiveMin && p.topConfidence <= maxConfidence).filter((p) => !p.topPick.toLowerCase().includes("draw")).filter((p) => hasMinDataQuality(p)).filter((p) => hasSafetyAnchors(p)).filter((p) => !safeAndValued.find((sv) => sv.homeTeam === p.homeTeam && sv.awayTeam === p.awayTeam)).sort((a, b) => b.topConfidence - a.topConfidence) : [];
+  const combined = [...safeAndValued, ...fallbackSafe];
+  if (safeAndValued.length < count && fallbackSafe.length > 0) {
+    console.log(`[Value Filter] Only ${safeAndValued.length}/${count} picks met the 5% value edge \u2014 supplementing with ${Math.min(fallbackSafe.length, count - safeAndValued.length)} safety-only picks`);
+  }
+  const seen = /* @__PURE__ */ new Set();
+  const unique = [];
+  for (const p of combined) {
+    const key = `${p.homeTeam}|${p.awayTeam}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(p);
+    }
+  }
+  const selected = unique.slice(0, count);
+  for (const p of selected) {
+    const gap = calcValueGap(p);
+    const isValuePick = gap >= VALUE_EDGE_MINIMUM;
+    console.log(`[Value Filter] ${isValuePick ? "\u2705 VALUE" : "\u26A0\uFE0F  SAFETY"} | ${p.homeTeam} vs ${p.awayTeam} | V3=${p.topConfidence.toFixed(1)}% | Implied=${((p.factors?.f01_marketConsensus_home ?? 0.5) * 100).toFixed(1)}% | Gap=${gap.toFixed(1)}%`);
+  }
+  return selected;
+}
+function clearModulePicksCache() {
+  _modulePicksCache = null;
+}
+async function generateDailyPicks(date2) {
+  console.log(`
+[Engine] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
+  console.log(`[Engine] Gold Standard V3 Titan XII \u2014 Generating picks`);
+  console.log(`[Engine] Date: ${date2} | Timezone: America/Moncton`);
+  console.log(`[Engine] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
+  let soccerFixtures = [];
+  let nbaFixtures = [];
+  try {
+    const { fetchSoccerFixtures: fetchSoccerFixtures2, fetchNBAFixtures: fetchNBAFixtures2 } = await Promise.resolve().then(() => (init_apiFootball(), apiFootball_exports));
+    [soccerFixtures, nbaFixtures] = await Promise.all([
+      fetchSoccerFixtures2(date2).catch(async (err) => {
+        if (err.name === "ApiSuspendedError") {
+          const msg = `\u274C API-Football SUSPENDED: ${err.message.substring(0, 120)}`;
+          console.error("[Engine] CRITICAL:", msg);
+          try {
+            await createAlert("critical", `FAIL-SAFE TRIGGERED: API-Football key suspended \u2014 falling back to The Odds API for soccer. Action required: renew API-Football subscription at dashboard.api-football.com`);
+          } catch (_) {
+          }
+        } else {
+          console.error("[Engine] CRITICAL: Soccer API fetch failed:", err.message);
+        }
+        return [];
+      }),
+      fetchNBAFixtures2(date2).catch(async (err) => {
+        if (err.name === "ApiSuspendedError") {
+          const msg = `\u274C API-Basketball SUSPENDED: ${err.message.substring(0, 120)}`;
+          console.error("[Engine] CRITICAL:", msg);
+          try {
+            await createAlert("critical", `FAIL-SAFE TRIGGERED: API-Basketball key suspended \u2014 falling back to The Odds API for NBA. Action required: renew API-Basketball subscription at dashboard.api-football.com`);
+          } catch (_) {
+          }
+        } else {
+          console.error("[Engine] CRITICAL: NBA API fetch failed:", err.message);
+        }
+        return [];
+      })
+    ]);
+  } catch (err) {
+    console.error("[Engine] CRITICAL: API fetch completely failed:", err);
+  }
+  console.log(`[Engine] LIVE API data: ${soccerFixtures.length} soccer fixtures, ${nbaFixtures.length} NBA fixtures`);
+  if (soccerFixtures.length === 0) {
+    console.error("[Engine] WARNING: No live soccer fixtures returned by API-Football for", date2);
+  }
+  if (nbaFixtures.length === 0) {
+    console.error("[Engine] WARNING: No live NBA fixtures returned by API-Basketball for", date2);
+  }
+  let espnActivated = false;
+  if (soccerFixtures.length === 0 && nbaFixtures.length === 0) {
+    console.log("[Engine] \u{1F6A8} TIER-3 ACTIVATED: Both primary APIs returned 0 fixtures. Switching to ESPN Free Scraper...");
+    try {
+      const { fetchEspnFixtures: fetchEspnFixtures2, convertEspnToV3Format: convertEspnToV3Format2, loadPermanentCache: loadPermanentCache2 } = await Promise.resolve().then(() => (init_espnScraper(), espnScraper_exports));
+      let espnResult = await fetchEspnFixtures2(date2);
+      if (espnResult.totalCount === 0) {
+        console.log("[Engine] ESPN returned 0 fixtures for", date2, "\u2014 trying permanent_fixtures.json cache...");
+        const cached = loadPermanentCache2();
+        if (cached && cached.fixtures.length > 0) {
+          espnResult = { ...cached, cached: true };
+          console.log(`[Engine] \u{1F4C2} Loaded ${cached.fixtures.length} fixtures from permanent_fixtures.json (last updated: ${cached.lastUpdated})`);
+        }
+      }
+      if (espnResult.totalCount > 0) {
+        espnActivated = true;
+        console.log(`[Engine] \u2705 ESPN Scraper: ${espnResult.totalCount} fixtures loaded (cached: ${espnResult.cached})`);
+        for (const [league, count] of Object.entries(espnResult.leagueBreakdown)) {
+          console.log(`[Engine]   ${league}: ${count} games`);
+        }
+        for (const espnFix of espnResult.fixtures) {
+          const v3Fixture = convertEspnToV3Format2(espnFix);
+          const fd = {
+            fixtureId: parseInt(espnFix.id.replace(/\D/g, "").slice(0, 8) || "0", 10),
+            homeTeam: espnFix.homeTeam,
+            awayTeam: espnFix.awayTeam,
+            league: espnFix.league,
+            sport: espnFix.sport === "nba" ? "nba" : espnFix.league === "MLS" ? "mls" : "soccer",
+            homeOdds: void 0,
+            awayOdds: void 0,
+            drawOdds: void 0,
+            homeWinRate: void 0,
+            awayWinRate: void 0,
+            homeForm: void 0,
+            awayForm: void 0,
+            homeRank: void 0,
+            awayRank: void 0,
+            homeGoalsFor: void 0,
+            awayGoalsFor: void 0,
+            homeGoalsAgainst: void 0,
+            awayGoalsAgainst: void 0,
+            homeInjuries: 0,
+            awayInjuries: 0,
+            isNeutralVenue: false,
+            venueName: espnFix.venue,
+            headToHead: void 0
+          };
+          if (espnFix.sport === "nba") {
+            nbaFixtures.push(fd);
+          } else if (espnFix.league === "MLS") {
+            soccerFixtures.push({ ...fd, sport: "mls" });
+          } else {
+            soccerFixtures.push(fd);
+          }
+        }
+        console.log(`[Engine] ESPN fixtures injected: ${soccerFixtures.length} soccer/MLS, ${nbaFixtures.length} NBA`);
+        try {
+          await createAlert("warning", `\u{1F6A8} ESPN Emergency Scraper activated for ${date2}: ${espnResult.totalCount} fixtures loaded (${espnResult.cached ? "from cache" : "live"}). Primary APIs are offline. Action required: renew API-Football and/or The Odds API.`);
+        } catch (_) {
+        }
+      } else {
+        console.error("[Engine] CRITICAL: ESPN scraper also returned 0 fixtures. All data sources exhausted.");
+        try {
+          await createAlert("critical", `\u274C ALL DATA SOURCES EXHAUSTED for ${date2}: API-Football suspended, Odds API quota hit, ESPN returned 0 fixtures, permanent cache empty. Site will show 0 picks.`);
+        } catch (_) {
+        }
+      }
+    } catch (espnErr) {
+      console.error("[Engine] ESPN scraper error:", espnErr.message);
+    }
+  } else if (soccerFixtures.length === 0 || nbaFixtures.length === 0) {
+    console.log("[Engine] Partial API failure detected. Attempting ESPN supplemental fetch...");
+    try {
+      const { fetchEspnFixtures: fetchEspnFixtures2, convertEspnToV3Format: convertEspnToV3Format2 } = await Promise.resolve().then(() => (init_espnScraper(), espnScraper_exports));
+      const espnResult = await fetchEspnFixtures2(date2);
+      if (espnResult.totalCount > 0) {
+        espnActivated = true;
+        for (const espnFix of espnResult.fixtures) {
+          const fd = {
+            fixtureId: parseInt(espnFix.id.replace(/\D/g, "").slice(0, 8) || "0", 10),
+            homeTeam: espnFix.homeTeam,
+            awayTeam: espnFix.awayTeam,
+            league: espnFix.league,
+            sport: espnFix.sport === "nba" ? "nba" : espnFix.league === "MLS" ? "mls" : "soccer",
+            homeOdds: void 0,
+            awayOdds: void 0,
+            drawOdds: void 0,
+            homeWinRate: void 0,
+            awayWinRate: void 0,
+            homeForm: void 0,
+            awayForm: void 0,
+            homeRank: void 0,
+            awayRank: void 0,
+            homeGoalsFor: void 0,
+            awayGoalsFor: void 0,
+            homeGoalsAgainst: void 0,
+            awayGoalsAgainst: void 0,
+            homeInjuries: 0,
+            awayInjuries: 0,
+            isNeutralVenue: false,
+            venueName: espnFix.venue,
+            headToHead: void 0
+          };
+          if (espnFix.sport === "nba" && nbaFixtures.length === 0) nbaFixtures.push(fd);
+          else if (espnFix.sport !== "nba" && soccerFixtures.length === 0) soccerFixtures.push(fd);
+        }
+        console.log(`[Engine] ESPN supplemental: ${soccerFixtures.length} soccer/MLS, ${nbaFixtures.length} NBA`);
+      }
+    } catch (_) {
+    }
+  }
+  if (espnActivated) {
+    console.log("[Engine] ESPN MODE: Injecting synthetic odds for fixtures without live odds...");
+    let injected = 0;
+    for (const fx of soccerFixtures) {
+      if (!fx.homeOdds) {
+        fx.homeOdds = 1.75;
+        fx.drawOdds = 3.5;
+        fx.awayOdds = 2.4;
+        fx.syntheticOdds = true;
+        injected++;
+      }
+    }
+    for (const fx of nbaFixtures) {
+      if (!fx.homeOdds) {
+        fx.homeOdds = 1.75;
+        fx.awayOdds = 2.2;
+        if (!fx.homeWinRate) {
+          fx.homeWinRate = 0.6;
+          fx.awayWinRate = 0.45;
+        }
+        fx.syntheticOdds = true;
+        injected++;
+      }
+    }
+    console.log(`[Engine] ESPN MODE: Injected synthetic odds into ${injected} fixtures`);
+  }
+  const mlsFixtures = soccerFixtures.filter((f) => f.sport === "mls");
+  const pureSOccer = soccerFixtures.filter((f) => f.sport === "soccer");
+  console.log(`[Engine] Fixtures loaded: ${pureSOccer.length} soccer, ${mlsFixtures.length} MLS, ${nbaFixtures.length} NBA`);
+  const soccerPreds = runBatchPredictions(pureSOccer);
+  const mlsPreds = runBatchPredictions(mlsFixtures);
+  const nbaPreds = runBatchPredictions(nbaFixtures);
+  console.log(`[Engine] Predictions: ${soccerPreds.length} soccer, ${mlsPreds.length} MLS, ${nbaPreds.length} NBA`);
+  const allPreds = [...soccerPreds, ...mlsPreds, ...nbaPreds];
+  const freePicks = selectBestLegs(
+    allPreds,
+    TIER_PICK_COUNTS.free,
+    CONFIDENCE_THRESHOLDS2.FREE_MIN,
+    CONFIDENCE_THRESHOLDS2.FREE_MAX
+  );
+  const proPicks = selectBestLegs(
+    allPreds,
+    TIER_PICK_COUNTS.pro,
+    CONFIDENCE_THRESHOLDS2.PRO_MIN,
+    100
+  );
+  const lifetimePicks = selectBestLegs(
+    allPreds,
+    TIER_PICK_COUNTS.lifetime,
+    CONFIDENCE_THRESHOLDS2.LIFETIME_MIN,
+    100
+  );
+  const HARD_FLOOR = 65;
+  const HARD_FLOOR_LABEL = "High Volatility";
+  const highVolatilityLegs = /* @__PURE__ */ new Set();
+  function markHighVolatility(pred) {
+    highVolatilityLegs.add(`${pred.homeTeam}|${pred.awayTeam}`);
+  }
+  function isHighVol(pred) {
+    return highVolatilityLegs.has(`${pred.homeTeam}|${pred.awayTeam}`);
+  }
+  let soccerLegs = selectBestLegs(soccerPreds, 3, CONFIDENCE_THRESHOLDS2.PRO_MIN);
+  let mlsLegs = selectBestLegs(mlsPreds, 3, CONFIDENCE_THRESHOLDS2.PRO_MIN);
+  let nbaLegs = selectBestLegs(nbaPreds, 3, CONFIDENCE_THRESHOLDS2.PRO_MIN);
+  console.log(`[Waterfall] Step 1 \u2014 68%+ legs: Soccer=${soccerLegs.length}/3, NBA=${nbaLegs.length}/3, MLS=${mlsLegs.length}/3`);
+  if (soccerLegs.length < 3 || nbaLegs.length < 3) {
+    console.log(`[Waterfall] Step 2 \u2014 DIVERSITY CHECK: Scanning global leagues...`);
+    try {
+      const { getGlobalSoccerOdds: getGlobalSoccerOdds2, getGlobalBasketballOdds: getGlobalBasketballOdds2 } = await Promise.resolve().then(() => (init_oddsApi(), oddsApi_exports));
+      const { convertOddsGameToFixture } = await Promise.resolve().then(() => (init_oddsApi(), oddsApi_exports)).then((m) => m).catch(() => ({ convertOddsGameToFixture: null }));
+      if (soccerLegs.length < 3) {
+        const globalSoccerGames = await getGlobalSoccerOdds2();
+        if (globalSoccerGames.length > 0) {
+          const globalFixtures = globalSoccerGames.map((g) => ({
+            fixtureId: parseInt(g.id.replace(/\D/g, "").slice(0, 8) || "0", 10),
+            homeTeam: g.home_team,
+            awayTeam: g.away_team,
+            league: g.sport_title,
+            sport: "soccer",
+            homeOdds: g.home_odds ?? void 0,
+            awayOdds: g.away_odds ?? void 0,
+            drawOdds: g.draw_odds ?? void 0,
+            homeWinRate: void 0,
+            awayWinRate: void 0,
+            homeForm: void 0,
+            awayForm: void 0,
+            homeRank: void 0,
+            awayRank: void 0,
+            homeGoalsFor: void 0,
+            awayGoalsFor: void 0,
+            homeGoalsAgainst: void 0,
+            awayGoalsAgainst: void 0,
+            homeInjuries: 0,
+            awayInjuries: 0,
+            isNeutralVenue: false,
+            venueName: void 0,
+            headToHead: void 0
+          }));
+          const globalPreds = runBatchPredictions(globalFixtures);
+          const globalLegs = selectBestLegs(globalPreds, 3 - soccerLegs.length, CONFIDENCE_THRESHOLDS2.PRO_MIN);
+          if (globalLegs.length > 0) {
+            soccerLegs = [...soccerLegs, ...globalLegs];
+            console.log(`[Waterfall] Diversity: Found ${globalLegs.length} additional soccer legs from global leagues`);
+          }
+        }
+      }
+      if (nbaLegs.length < 3) {
+        const globalBball = await getGlobalBasketballOdds2();
+        if (globalBball.length > 0) {
+          const bballFixtures = globalBball.map((g) => ({
+            fixtureId: parseInt(g.id.replace(/\D/g, "").slice(0, 8) || "0", 10),
+            homeTeam: g.home_team,
+            awayTeam: g.away_team,
+            league: g.sport_title,
+            sport: "nba",
+            homeOdds: g.home_odds ?? void 0,
+            awayOdds: g.away_odds ?? void 0,
+            homeWinRate: void 0,
+            awayWinRate: void 0,
+            homeForm: void 0,
+            awayForm: void 0,
+            homeRank: void 0,
+            awayRank: void 0,
+            homeGoalsFor: void 0,
+            awayGoalsFor: void 0,
+            homeGoalsAgainst: void 0,
+            awayGoalsAgainst: void 0,
+            homeInjuries: 0,
+            awayInjuries: 0,
+            isNeutralVenue: false,
+            venueName: void 0,
+            headToHead: void 0
+          }));
+          const bballPreds = runBatchPredictions(bballFixtures);
+          const bballLegs = selectBestLegs(bballPreds, 3 - nbaLegs.length, CONFIDENCE_THRESHOLDS2.PRO_MIN);
+          if (bballLegs.length > 0) {
+            nbaLegs = [...nbaLegs, ...bballLegs];
+            console.log(`[Waterfall] Diversity: Found ${bballLegs.length} additional NBA/basketball legs`);
+          }
+        }
+      }
+    } catch (divErr) {
+      console.error(`[Waterfall] Diversity check error:`, divErr.message);
+    }
+  }
+  console.log(`[Waterfall] After Step 2: Soccer=${soccerLegs.length}/3, NBA=${nbaLegs.length}/3, MLS=${mlsLegs.length}/3`);
+  if (soccerLegs.length < 3) {
+    const needed = 3 - soccerLegs.length;
+    const alreadySelected = new Set(soccerLegs.map((p) => `${p.homeTeam}|${p.awayTeam}`));
+    let fallbackPool = soccerPreds.filter((p) => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
+    if (fallbackPool.length === 0) {
+      fallbackPool = allPreds.filter((p) => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
+      console.log(`[Waterfall] Soccer fallback: using global allPreds pool (${fallbackPool.length} candidates)`);
+    }
+    const fallbackLegs = selectBestLegs(fallbackPool, needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS2.PRO_MIN - 0.01);
+    for (const leg of fallbackLegs) {
+      markHighVolatility(leg);
+      soccerLegs.push(leg);
+      console.log(`[Waterfall] \u26A0\uFE0F  Soccer FALLBACK (High Volatility): ${leg.homeTeam} vs ${leg.awayTeam} @ ${leg.topConfidence.toFixed(1)}%`);
+    }
+    if (soccerLegs.length < 3) {
+      console.error(`[Waterfall] CRITICAL: Only ${soccerLegs.length}/3 soccer legs available even at 65% floor. No picks below 65% are permitted.`);
+    }
+  }
+  if (nbaLegs.length < 3) {
+    const needed = 3 - nbaLegs.length;
+    const alreadySelected = new Set(nbaLegs.map((p) => `${p.homeTeam}|${p.awayTeam}`));
+    let fallbackPool = nbaPreds.filter((p) => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
+    if (fallbackPool.length === 0) {
+      fallbackPool = allPreds.filter((p) => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
+      console.log(`[Waterfall] NBA fallback: using global allPreds pool (${fallbackPool.length} candidates)`);
+    }
+    const fallbackLegs = selectBestLegs(fallbackPool, needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS2.PRO_MIN - 0.01);
+    for (const leg of fallbackLegs) {
+      markHighVolatility(leg);
+      nbaLegs.push(leg);
+      console.log(`[Waterfall] \u26A0\uFE0F  NBA FALLBACK (High Volatility): ${leg.homeTeam} vs ${leg.awayTeam} @ ${leg.topConfidence.toFixed(1)}%`);
+    }
+    if (nbaLegs.length < 3) {
+      console.error(`[Waterfall] CRITICAL: Only ${nbaLegs.length}/3 NBA legs available even at 65% floor. No picks below 65% are permitted.`);
+    }
+  }
+  if (mlsLegs.length < 2) {
+    const needed = 2 - mlsLegs.length;
+    const alreadySelected = new Set(mlsLegs.map((p) => `${p.homeTeam}|${p.awayTeam}`));
+    let fallbackPool = mlsPreds.filter((p) => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
+    if (fallbackPool.length === 0) {
+      fallbackPool = allPreds.filter((p) => !alreadySelected.has(`${p.homeTeam}|${p.awayTeam}`));
+    }
+    const fallbackLegs = selectBestLegs(fallbackPool, needed, HARD_FLOOR, CONFIDENCE_THRESHOLDS2.PRO_MIN - 0.01);
+    for (const leg of fallbackLegs) {
+      markHighVolatility(leg);
+      mlsLegs.push(leg);
+      console.log(`[Waterfall] \u26A0\uFE0F  MLS FALLBACK (High Volatility): ${leg.homeTeam} vs ${leg.awayTeam} @ ${leg.topConfidence.toFixed(1)}%`);
+    }
+  }
+  console.log(`[Waterfall] Final: Soccer=${soccerLegs.length}/3, NBA=${nbaLegs.length}/3, MLS=${mlsLegs.length}/2, HighVol=${highVolatilityLegs.size}`);
+  const powerCandidates = [...soccerLegs, ...nbaLegs, ...mlsLegs].filter((p) => p.topConfidence >= CONFIDENCE_THRESHOLDS2.PRO_MIN).filter((p) => !p.topPick.toLowerCase().includes("draw")).sort((a, b) => b.topConfidence - a.topConfidence);
+  const powerPickFallback = [...soccerLegs, ...nbaLegs, ...mlsLegs].filter((p) => p.topConfidence >= HARD_FLOOR).filter((p) => !p.topPick.toLowerCase().includes("draw")).sort((a, b) => b.topConfidence - a.topConfidence)[0] || null;
+  const powerPick = powerCandidates[0] || powerPickFallback;
+  console.log(`[Engine] Tiered picks: ${freePicks.length} Free (64-67%), ${proPicks.length} Pro (68%+), ${lifetimePicks.length} Lifetime (70%+)`);
+  console.log(`[Engine] Sport parlays: ${soccerLegs.length} soccer, ${mlsLegs.length} MLS, ${nbaLegs.length} NBA`);
+  console.log(`[Engine] Power Pick: ${powerPick ? `${powerPick.homeTeam} vs ${powerPick.awayTeam} (${powerPick.topConfidence.toFixed(1)}%)` : "none"}`);
+  const totalScored = allPreds.length;
+  const totalPassed = freePicks.length + proPicks.length;
+  const totalDiscarded = totalScored - totalPassed;
+  console.log(`[Titan XII] Threshold filter: Free=${freePicks.length} (64-67%) | Pro=${proPicks.length} (68%+) | Lifetime=${lifetimePicks.length} (70%+) | Discarded=${totalDiscarded}`);
+  try {
+    const existingPicks = await getPicksByDate(date2);
+    let cleared = 0;
+    let protected_ = 0;
+    for (const pick of existingPicks) {
+      const meta = pick.metadata || {};
+      const isManual = meta.source_model === "manual-admin-push" || meta.source === "admin-manual" || meta.bypass_gemini === true;
+      if (isManual) {
+        protected_++;
+        continue;
+      }
+      await deletePick(pick.id);
+      cleared++;
+    }
+    console.log(`[Engine] Cleared ${cleared} V3 picks for ${date2} | Protected ${protected_} manual picks`);
+  } catch (err) {
+    console.warn("[Engine] Failed to clear existing picks:", err);
+  }
+  let soccerCount = 0, nbaCount = 0, mlsCount = 0, powerCount = 0;
+  async function savePick(pred, overrideSport, overrideTier, isPower = false, highVolatility = false) {
+    try {
+      const autoOdds = (() => {
+        const c = pred.topConfidence;
+        if (!c || c <= 0) return "";
+        const vig = 0.05;
+        const ip = Math.min(Math.max(c / 100, 0.01), 0.99);
+        const vp = ip * (1 + vig);
+        if (vp >= 0.5) return String(Math.round(-(vp / (1 - vp)) * 100));
+        return "+" + String(Math.round((1 - vp) / vp * 100));
+      })();
+      await createPick({
+        date: date2,
+        sport: overrideSport || pred.sport,
+        tier: overrideTier || pred.tier,
+        homeTeam: pred.homeTeam,
+        awayTeam: pred.awayTeam,
+        league: pred.league,
+        prediction: pred.topPick,
+        confidence: pred.topConfidence,
+        odds: autoOdds,
+        fixtureId: String(pred.fixtureId),
+        isPowerPick: isPower,
+        v3AuditPassed: pred.topConfidence >= 65,
+        // V3-15 gate: all picks >= 65% pass audit
+        metadata: { ...pred, isHighVolatility: highVolatility, volatilityLabel: highVolatility ? "High Volatility" : null }
+      });
+    } catch (err) {
+      console.error("[Engine] Failed to save pick:", err);
+    }
+  }
+  for (const pred of soccerLegs) {
+    const hv = isHighVol(pred);
+    await savePick(pred, "soccer", void 0, false, hv);
+    soccerCount++;
+    console.log(`[Engine] ${hv ? "\u26A0\uFE0F " : "\u2705"} Soccer leg: ${pred.homeTeam} vs ${pred.awayTeam} \u2014 ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)${hv ? " [HIGH VOLATILITY]" : ""}`);
+  }
+  for (const pred of nbaLegs) {
+    const hv = isHighVol(pred);
+    await savePick(pred, "nba", void 0, false, hv);
+    nbaCount++;
+    console.log(`[Engine] ${hv ? "\u26A0\uFE0F " : "\u2705"} NBA leg:    ${pred.homeTeam} vs ${pred.awayTeam} \u2014 ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)${hv ? " [HIGH VOLATILITY]" : ""}`);
+  }
+  if (mlsLegs.length > 0) {
+    for (const pred of mlsLegs) {
+      const hv = isHighVol(pred);
+      await savePick(pred, "mls", void 0, false, hv);
+      mlsCount++;
+      console.log(`[Engine] ${hv ? "\u26A0\uFE0F " : "\u2705"} MLS leg:    ${pred.homeTeam} vs ${pred.awayTeam} \u2014 ${pred.topPick} (${pred.topConfidence.toFixed(1)}%)${hv ? " [HIGH VOLATILITY]" : ""}`);
+    }
+  } else {
+    console.log(`[Engine] \u2139\uFE0F  MLS tab: No MLS games on ${date2} \u2014 tab will show blank`);
+  }
+  let freeCount = 0;
+  for (const pred of freePicks) {
+    const alreadySaved = [...soccerLegs, ...nbaLegs, ...mlsLegs].some(
+      (p) => p.homeTeam === pred.homeTeam && p.awayTeam === pred.awayTeam
+    );
+    if (!alreadySaved) {
+      await savePick(pred, pred.sport, "free");
+      freeCount++;
+      console.log(`[Engine] \u{1F513} Free pick: ${pred.homeTeam} vs ${pred.awayTeam} \u2014 ${pred.topPick} (${pred.topConfidence.toFixed(1)}%) [dashboard only]`);
+    }
+  }
+  if (powerPick) {
+    const alreadySavedAsLeg = [...soccerLegs, ...nbaLegs, ...mlsLegs].some(
+      (p) => p.homeTeam === powerPick.homeTeam && p.awayTeam === powerPick.awayTeam
+    );
+    if (alreadySavedAsLeg) {
+      await savePick(powerPick, powerPick.sport, powerPick.tier, true);
+      powerCount++;
+      console.log(`[Engine] \u26A1 Power Pick (flagged): ${powerPick.homeTeam} vs ${powerPick.awayTeam} \u2014 ${powerPick.topPick} (${powerPick.topConfidence.toFixed(1)}%)`);
+    } else {
+      await savePick(powerPick, powerPick.sport, powerPick.tier, true);
+      powerCount++;
+      console.log(`[Engine] \u26A1 Power Pick: ${powerPick.homeTeam} vs ${powerPick.awayTeam} \u2014 ${powerPick.topPick} (${powerPick.topConfidence.toFixed(1)}%)`);
+    }
+  }
+  if (soccerLegs.length >= 2) {
+    const soccerOdds = soccerLegs.reduce((acc, p) => {
+      const odds = p.metadata?.homeOdds || p.metadata?.awayOdds || 1.85;
+      return acc * odds;
+    }, 1);
+    await saveParlays(date2, "soccer", soccerLegs.map((p) => ({
+      homeTeam: p.homeTeam,
+      awayTeam: p.awayTeam,
+      league: p.league,
+      pick: p.topPick,
+      confidence: p.topConfidence
+    })), soccerOdds.toFixed(2));
+  }
+  if (nbaLegs.length >= 2) {
+    const nbaOdds = nbaLegs.reduce((acc, p) => {
+      const odds = p.metadata?.homeOdds || p.metadata?.awayOdds || 1.9;
+      return acc * odds;
+    }, 1);
+    await saveParlays(date2, "nba", nbaLegs.map((p) => ({
+      homeTeam: p.homeTeam,
+      awayTeam: p.awayTeam,
+      league: p.league,
+      pick: p.topPick,
+      confidence: p.topConfidence
+    })), nbaOdds.toFixed(2));
+  }
+  if (mlsLegs.length >= 2) {
+    const mlsOdds = mlsLegs.reduce((acc, p) => {
+      const odds = p.metadata?.homeOdds || p.metadata?.awayOdds || 1.8;
+      return acc * odds;
+    }, 1);
+    await saveParlays(date2, "mls", mlsLegs.map((p) => ({
+      homeTeam: p.homeTeam,
+      awayTeam: p.awayTeam,
+      league: p.league,
+      pick: p.topPick,
+      confidence: p.topConfidence
+    })), mlsOdds.toFixed(2));
+  }
+  let ftpUploaded = false;
+  try {
+    const allSaved = [...soccerLegs, ...nbaLegs, ...mlsLegs, ...powerPick ? [powerPick] : []];
+    const { uploadPicksToFTP: uploadPicksToFTP2 } = await Promise.resolve().then(() => (init_upload(), upload_exports));
+    await uploadPicksToFTP2(date2, allSaved);
+    ftpUploaded = true;
+  } catch (err) {
+    console.warn("[Engine] FTP upload failed (non-critical):", err);
+  }
+  const total = soccerCount + nbaCount + mlsCount + powerCount + freeCount;
+  const MULTI_SPORT_SYNC_ACTIVE = true;
+  let multiSportSyncStatus = "FULL";
+  if (soccerCount === 0 && nbaCount === 0) {
+    multiSportSyncStatus = "EMPTY";
+    console.error("[Multi-Sport Sync] \u274C CRITICAL: Both Soccer AND Basketball picks are missing. Run is incomplete.");
+    try {
+      await createAlert("critical", `Multi-Sport Sync FAILED for ${date2}: 0 soccer picks, 0 NBA picks saved.`);
+    } catch (_) {
+    }
+  } else if (soccerCount === 0) {
+    multiSportSyncStatus = "PARTIAL_NBA_ONLY";
+    console.error(`[Multi-Sport Sync] \u26A0\uFE0F  PARTIAL: Basketball picks saved (${nbaCount}) but Soccer picks are MISSING (0/3). Dashboard will be incomplete.`);
+    try {
+      await createAlert("warning", `Multi-Sport Sync PARTIAL for ${date2}: ${nbaCount} NBA picks saved but 0 soccer picks. Retry needed.`);
+    } catch (_) {
+    }
+  } else if (nbaCount === 0) {
+    multiSportSyncStatus = "PARTIAL_SOCCER_ONLY";
+    console.error(`[Multi-Sport Sync] \u26A0\uFE0F  PARTIAL: Soccer picks saved (${soccerCount}) but Basketball picks are MISSING (0/3). Dashboard will be incomplete.`);
+    try {
+      await createAlert("warning", `Multi-Sport Sync PARTIAL for ${date2}: ${soccerCount} soccer picks saved but 0 NBA picks. Retry needed.`);
+    } catch (_) {
+    }
+  } else {
+    console.log(`[Multi-Sport Sync] \u2705 FULL SYNC: Soccer=${soccerCount}/3 + Basketball=${nbaCount}/3 \u2014 Both sports published to all tiers simultaneously.`);
+  }
+  console.log(`[Engine] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
+  console.log(`[Engine] COMPLETE: ${total} picks saved for ${date2}`);
+  console.log(`[Engine]   Soccer: ${soccerCount}/3 | NBA: ${nbaCount}/3 | MLS: ${mlsCount}/3 | Power: ${powerCount}/1 | Free: ${freeCount}/2`);
+  console.log(`[Engine]   Multi-Sport Sync: ${multiSportSyncStatus} (active=${MULTI_SPORT_SYNC_ACTIVE})`);
+  console.log(`[Engine] \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+`);
+  try {
+    const { registerGoldTierRoutes: registerGoldTierRoutes2, HARDENED_TIER_CONFIG: HARDENED_TIER_CONFIG2 } = await Promise.resolve().then(() => (init_goldTierRoutes(), goldTierRoutes_exports));
+    const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+    const gtPool = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    const { rows: allPicks } = await gtPool.query(
+      `SELECT * FROM picks WHERE date = $1 AND is_disabled = false AND v3_audit_passed = true AND sport IN ('soccer','nba','mls') ORDER BY confidence DESC`,
+      [date2]
+    );
+    await gtPool.query(`DELETE FROM gold_tiers WHERE date = $1`, [date2]);
+    const nbaPicks = allPicks.filter((p) => p.sport === "nba");
+    const soccerPicks = allPicks.filter((p) => p.sport === "soccer" || p.sport === "mls");
+    for (const [tierName, cfg] of Object.entries(HARDENED_TIER_CONFIG2)) {
+      const { primaryThresh, fallbackFloor, nbaSlots, soccerSlots, extraSlots, extraThresh } = cfg;
+      let nbaSelected = nbaPicks.filter((p) => p.confidence >= primaryThresh).slice(0, nbaSlots);
+      if (nbaSelected.length < nbaSlots) {
+        const needed = nbaSlots - nbaSelected.length;
+        const ids = new Set(nbaSelected.map((p) => p.id));
+        nbaSelected = [...nbaSelected, ...nbaPicks.filter((p) => p.confidence >= fallbackFloor && p.confidence < primaryThresh && !ids.has(p.id)).slice(0, needed)];
+      }
+      let soccerSelected = soccerPicks.filter((p) => p.confidence >= primaryThresh).slice(0, soccerSlots);
+      if (soccerSelected.length < soccerSlots) {
+        const needed = soccerSlots - soccerSelected.length;
+        const ids = new Set(soccerSelected.map((p) => p.id));
+        soccerSelected = [...soccerSelected, ...soccerPicks.filter((p) => p.confidence >= fallbackFloor && p.confidence < primaryThresh && !ids.has(p.id)).slice(0, needed)];
+      }
+      const alreadyIds = new Set([...nbaSelected, ...soccerSelected].map((p) => p.id));
+      const extraSelected = extraSlots > 0 ? allPicks.filter((p) => p.confidence >= extraThresh && !alreadyIds.has(p.id)).slice(0, extraSlots) : [];
+      const allSelected = [...nbaSelected, ...soccerSelected, ...extraSelected];
+      for (const p of allSelected) {
+        const nbaIdx = nbaSelected.indexOf(p);
+        const soccerIdx = soccerSelected.indexOf(p);
+        const extraIdx = extraSelected.indexOf(p);
+        const sportSlot = nbaIdx >= 0 ? `nba_${nbaIdx + 1}` : soccerIdx >= 0 ? `soccer_${soccerIdx + 1}` : `extra_${extraIdx + 1}`;
+        const isFallback = p.confidence < primaryThresh;
+        await gtPool.query(
+          `INSERT INTO gold_tiers (date,sport,tier,home_team,away_team,league,prediction,confidence,odds,fixture_id,is_power_pick,is_fallback,fallback_floor,v3_audit_passed,sport_slot,metadata) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,true,$14,$15) ON CONFLICT (date,home_team,away_team,tier) DO UPDATE SET confidence=EXCLUDED.confidence,prediction=EXCLUDED.prediction,is_fallback=EXCLUDED.is_fallback,sport_slot=EXCLUDED.sport_slot,updated_at=now()`,
+          [date2, p.sport, tierName, p.home_team, p.away_team, p.league || "", p.prediction, p.confidence, p.odds || "", p.fixture_id, p.is_power_pick || false, isFallback, isFallback ? fallbackFloor : null, sportSlot, p.metadata || null]
+        );
+      }
+      console.log(`[GoldTiers] Auto-write ${tierName.toUpperCase()}: ${allSelected.length}/${cfg.totalPicks} picks | NBA=${nbaSelected.length}/${nbaSlots} Soccer=${soccerSelected.length}/${soccerSlots} Extra=${extraSelected.length}/${extraSlots}`);
+    }
+    await gtPool.end();
+  } catch (gtErr) {
+    console.error("[GoldTiers] Auto-write failed (non-fatal):", gtErr.message);
+  }
+  return { total, soccer: soccerCount, nba: nbaCount, mls: mlsCount, powerPick: powerCount, ftpUploaded, multiSportSyncStatus };
+}
+async function registerRoutes(app) {
+  await initializeDatabase();
+  try {
+    const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+    const migPool = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    await migPool.query(`
+      ALTER TABLE members
+        ADD COLUMN IF NOT EXISTS subscription_plan TEXT DEFAULT 'free',
+        ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT NULL,
+        ADD COLUMN IF NOT EXISTS tier_locked_until TIMESTAMPTZ DEFAULT NULL,
+        ADD COLUMN IF NOT EXISTS username TEXT DEFAULT NULL,
+        ADD COLUMN IF NOT EXISTS password_hash TEXT DEFAULT NULL;
+    `);
+    await migPool.end();
+    console.log("[Migration] members table columns ensured.");
+  } catch (migErr) {
+    console.warn("[Migration] members table migration warning:", migErr.message);
+  }
+  app.post("/api/admin/login", (req, res) => {
+    const { password } = req.body;
+    if (ADMIN_PASSWORDS.includes(password)) {
+      const token = generateToken();
+      activeTokens.add(token);
+      setTimeout(() => activeTokens.delete(token), 7 * 24 * 60 * 60 * 1e3);
+      return res.json({ token, success: true });
+    }
+    res.status(401).json({ error: "Invalid password" });
+  });
+  app.get("/api/admin/status", requireAuth, async (req, res) => {
+    try {
+      const [winloss, logs] = await Promise.all([
+        getWinLossSummary(),
+        getRunLogs(5)
+      ]);
+      res.json({ winloss, recentRuns: logs, schedulerActive: true, version: "V3 Titan XII" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/health", (req, res) => {
+    res.json({
+      status: "ok",
+      uptime: process.uptime(),
+      version: "V3 Titan XII",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      pickStructure: {
+        nba: "3 legs",
+        mls: "3 legs (blank if no games)",
+        soccer: "3 legs",
+        power: "1 pick (highest confidence \u226568%)"
+      }
+    });
+  });
+  app.get("/api/admin/data-source-health", requireAuth, async (req, res) => {
+    try {
+      const { getBudgetStatus: getBudgetStatus2 } = await Promise.resolve().then(() => (init_oddsApi(), oddsApi_exports));
+      const budget = getBudgetStatus2();
+      let sysConfig = {};
+      try {
+        const { SYS_CONFIG: SYS_CONFIG2 } = await Promise.resolve().then(() => (init_scheduler(), scheduler_exports));
+        sysConfig = SYS_CONFIG2;
+      } catch (_) {
+      }
+      let lastUpdate = {};
+      try {
+        const fs6 = await import("fs");
+        const path6 = await import("path");
+        const luPath = path6.join(process.cwd(), "last_update.json");
+        if (fs6.existsSync(luPath)) lastUpdate = JSON.parse(fs6.readFileSync(luPath, "utf8"));
+      } catch (_) {
+      }
+      const oddsApiQuotaHit = budget.used_today >= budget.ceiling;
+      const oddsApiDegraded = budget.used_today >= budget.auto_ceiling;
+      res.json({
+        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+        sources: {
+          api_football: {
+            name: "API-Football (Primary Soccer)",
+            url: "v3.football.api-sports.io",
+            status: "unknown",
+            // Checked live only on generation run to save credits
+            note: "Status verified at each generation run. Check Railway logs for SUSPENDED alerts.",
+            action_required: "If suspended: renew at dashboard.api-football.com"
+          },
+          api_basketball: {
+            name: "API-Basketball (Primary NBA)",
+            url: "v1.basketball.api-sports.io",
+            status: "unknown",
+            note: "Same key as API-Football. Status verified at each generation run.",
+            action_required: "If suspended: renew at dashboard.api-football.com"
+          },
+          odds_api: {
+            name: "The Odds API (Fallback)",
+            url: "api.the-odds-api.com",
+            status: oddsApiQuotaHit ? "red" : oddsApiDegraded ? "yellow" : "green",
+            used_today: budget.used_today,
+            ceiling: budget.ceiling,
+            auto_ceiling: budget.auto_ceiling,
+            remaining: budget.remaining,
+            throttle_active: budget.throttle_active,
+            note: oddsApiQuotaHit ? "QUOTA EXHAUSTED \u2014 All calls blocked until next billing cycle. Renew at the-odds-api.com" : oddsApiDegraded ? "AUTO CEILING HIT (90/100) \u2014 10 calls reserved for manual dashboard actions" : "Active \u2014 " + budget.remaining + " calls remaining today"
+          },
+          espn_scraper: {
+            name: "ESPN Free API (Last Resort)",
+            url: "site.api.espn.com",
+            status: "green",
+            // ESPN free API has no key requirement
+            note: "No API key required. Always available as last resort."
+          }
+        },
+        system_config: {
+          loaded: Object.keys(sysConfig).length > 0,
+          min_threshold: sysConfig.thresholds?.MIN_THRESHOLD ?? 0.65,
+          high_val_threshold: sysConfig.thresholds?.HIGH_VAL_THRESHOLD ?? 0.68,
+          no_dark_policy: sysConfig.fail_safe_rules?.no_dark_policy ?? "active"
+        },
+        last_run: {
+          date: lastUpdate.date,
+          picks_live: lastUpdate.picksLive,
+          kill_switch: lastUpdate.killSwitchTriggered,
+          attempt_count: lastUpdate.attemptCount
+        }
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/scraper-test", requireAuth, async (req, res) => {
+    try {
+      const date2 = req.body?.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      console.log(`[ScraperTest] Admin triggered ESPN scraper test for ${date2}`);
+      const { fetchEspnFixtures: fetchEspnFixtures2, getCooldownStatus: getCooldownStatus2 } = await Promise.resolve().then(() => (init_espnScraper(), espnScraper_exports));
+      const result = await fetchEspnFixtures2(date2);
+      const cooldowns = getCooldownStatus2();
+      res.json({
+        success: true,
+        source: "espn-free-scraper",
+        date: date2,
+        totalFixtures: result.totalCount,
+        leagueBreakdown: result.leagueBreakdown,
+        cached: result.cached,
+        sampleFixtures: result.fixtures.slice(0, 10).map((f) => ({
+          id: f.id,
+          homeTeam: f.homeTeam,
+          awayTeam: f.awayTeam,
+          league: f.league,
+          sport: f.sport,
+          date: f.dateLocal,
+          status: f.status
+        })),
+        cooldowns,
+        message: result.totalCount > 0 ? `\u2705 ESPN Emergency Scraper is ACTIVE \u2014 ${result.totalCount} fixtures available for ${date2}` : `\u26A0\uFE0F ESPN returned 0 fixtures for ${date2} (no games scheduled or ESPN API unreachable)`
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+  app.get("/api/picks/nba", async (req, res) => {
+    try {
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const picks2 = await getPicksByDate(date2);
+      const nbaLegs = picks2.filter((p) => p.sport === "nba" && !p.isDisabled && p.status === "pending").sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0)).slice(0, 3);
+      res.json({
+        tab: "NBA",
+        date: date2,
+        legs: nbaLegs,
+        count: nbaLegs.length,
+        target: 3,
+        complete: nbaLegs.length === 3
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/picks/mls", async (req, res) => {
+    try {
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const picks2 = await getPicksByDate(date2);
+      const mlsLegs = picks2.filter((p) => p.sport === "mls" && !p.isDisabled && p.status === "pending").sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0)).slice(0, 3);
+      res.json({
+        tab: "MLS",
+        date: date2,
+        legs: mlsLegs,
+        count: mlsLegs.length,
+        target: 3,
+        complete: mlsLegs.length === 3,
+        noGames: mlsLegs.length === 0,
+        message: mlsLegs.length === 0 ? "No MLS games scheduled today" : void 0
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/picks/soccer", async (req, res) => {
+    try {
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const picks2 = await getPicksByDate(date2);
+      const soccerLegs = picks2.filter((p) => p.sport === "soccer" && !p.isDisabled && p.status === "pending").sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0)).slice(0, 3);
+      res.json({
+        tab: "Soccer",
+        date: date2,
+        legs: soccerLegs,
+        count: soccerLegs.length,
+        target: 3,
+        complete: soccerLegs.length === 3
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/picks/power", async (req, res) => {
+    try {
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const picks2 = await getPicksByDate(date2);
+      const powerPick = picks2.filter((p) => p.isPowerPick && !p.isDisabled && p.status === "pending").sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0] || null;
+      res.json({
+        tab: "Power Pick",
+        date: date2,
+        pick: powerPick,
+        confidence: powerPick?.confidence ?? null,
+        available: !!powerPick
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/picks/today", async (req, res) => {
+    try {
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const picks2 = await getPicksByDate(date2);
+      const active = picks2.filter((p) => !p.isDisabled && p.status === "pending");
+      const publicActive = active.filter((p) => (p.confidence ?? 0) >= 68 && p.tier !== "free");
+      const sportPicks = publicActive.filter((p) => !p.isPowerPick);
+      res.json({
+        date: date2,
+        nba: sportPicks.filter((p) => p.sport === "nba"),
+        // Hybrid: no limit
+        mls: sportPicks.filter((p) => p.sport === "mls"),
+        // Hybrid: no limit
+        soccer: sportPicks.filter((p) => p.sport === "soccer"),
+        // Hybrid: no limit
+        power: publicActive.filter((p) => p.isPowerPick).slice(0, 1),
+        total: publicActive.length
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/picks.json", async (req, res) => {
+    try {
+      let cfgLeg = function(prefix) {
+        return {
+          game: `${cfg[`${prefix}_home`] || ""} vs ${cfg[`${prefix}_away`] || ""}`,
+          match: `${cfg[`${prefix}_home`] || ""} vs ${cfg[`${prefix}_away`] || ""}`,
+          pick: cfg[`${prefix}_pick`] || "",
+          pick_type: cfg[`${prefix}_pick`] || "",
+          pick_label: cfg[`${prefix}_pick`] || "",
+          confidence: parseFloat(cfg[`${prefix}_conf`] || "0"),
+          probability: parseFloat((parseFloat(cfg[`${prefix}_conf`] || "0") / 100).toFixed(2)),
+          probability_display: `${cfg[`${prefix}_conf`] || "0"}%`,
+          confidence_pct: `${cfg[`${prefix}_conf`] || "0"}%`,
+          league: cfg[`${prefix}_league`] || "",
+          odds: cfg[`${prefix}_odds`] || "",
+          time: `${date2} \u2014 Today`,
+          time_display: `${date2} \u2014 Today`,
+          analysis: `Gold Standard V3 Titan XII \u2014 ${cfg[`${prefix}_pick`] || ""} at ${cfg[`${prefix}_conf`] || "0"}%.`,
+          reasoning: `Gold Standard V3 Titan XII \u2014 ${cfg[`${prefix}_pick`] || ""} at ${cfg[`${prefix}_conf`] || "0"}%.`,
+          home_team: cfg[`${prefix}_home`] || "",
+          away_team: cfg[`${prefix}_away`] || "",
+          tier: "pro",
+          sport: cfg[`${prefix}_sport`] || "soccer",
+          spread: cfg[`${prefix}_spread`] || "",
+          total: cfg[`${prefix}_total`] || "",
+          isHighVolatility: false
+        };
+      }, fmtLeg = function(p) {
+        if (p.home_team !== void 0) return p;
+        return {
+          game: `${p.homeTeam} vs ${p.awayTeam}`,
+          match: `${p.homeTeam} vs ${p.awayTeam}`,
+          pick: p.prediction || p.pick,
+          pick_type: p.prediction || p.pick,
+          pick_label: p.prediction || p.pick,
+          confidence: Math.round(p.confidence ?? 0),
+          probability: parseFloat(((p.confidence ?? 0) / 100).toFixed(2)),
+          probability_display: `${Math.round(p.confidence ?? 0)}%`,
+          confidence_pct: `${Math.round(p.confidence ?? 0)}%`,
+          league: p.league || "Unknown League",
+          odds: p.odds || "-110",
+          time: `${date2} \u2014 Today`,
+          time_display: `${date2} \u2014 Today`,
+          analysis: `Gold Standard V3 Titan XII \u2014 ${p.prediction || p.pick} at ${Math.round(p.confidence ?? 0)}%.`,
+          reasoning: `Gold Standard V3 Titan XII \u2014 ${p.prediction || p.pick} at ${Math.round(p.confidence ?? 0)}%.`,
+          home_team: p.homeTeam,
+          away_team: p.awayTeam,
+          tier: p.tier || "free",
+          sport: p.sport || "soccer",
+          isHighVolatility: p.metadata?.isHighVolatility ?? false,
+          volatilityLabel: p.metadata?.volatilityLabel ?? null,
+          momentum: p.momentum ?? null,
+          quality: p.quality ?? null,
+          mq_composite: p.mqComposite ?? p.mq_composite ?? null
+        };
+      }, combinedProb2 = function(legs) {
+        if (!legs.length) return "0%";
+        const c = legs.reduce((acc, p) => acc * ((p.confidence ?? 68) / 100), 1);
+        return `${(c * 100).toFixed(1)}%`;
+      };
+      const date2 = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const picks2 = await getPicksByDate(date2);
+      const active = picks2.filter((p) => !p.isDisabled);
+      const isManualPick = (p) => {
+        const meta = p.metadata || {};
+        return meta.source_model === "manual-admin-push" || meta.source === "admin-manual" || meta.bypass_gemini === true;
+      };
+      const manualActive = active.filter((p) => isManualPick(p));
+      const v3Active = active.filter((p) => !isManualPick(p) && (p.confidence ?? 0) >= 68);
+      const manualSorted = [...manualActive].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+      const v3Sorted = [...v3Active].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+      const publicActive = [...manualSorted, ...v3Sorted];
+      const sportOnly = publicActive;
+      const cfg = await getEngineConfig();
+      const nbaAdminEnabled = true;
+      const nbaPicks = sportOnly.filter((p) => p.sport === "nba");
+      const socAdminEnabled = true;
+      const soccerPicks = sportOnly.filter((p) => p.sport === "soccer");
+      const mlsAdminEnabled = true;
+      const mlsPicks = sportOnly.filter((p) => p.sport === "mls");
+      const ppAdminEnabled = true;
+      const dbPowerPick = publicActive.find((p) => p.isPowerPick) || [...publicActive].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
+      const powerPick = dbPowerPick;
+      const adminFeaturedGame = null;
+      const dbFeaturedPick = publicActive.find((p) => p.isFeatured);
+      const featuredMegaPick = dbFeaturedPick || powerPick;
+      const eaVisible = cfg["ea_visible"] !== "false";
+      const expertAnalysis = eaVisible && cfg["ea_body"] ? {
+        title: cfg["ea_title"] || `Gold Standard V3 Titan XII \u2014 ${(/* @__PURE__ */ new Date()).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "America/Moncton" })}`,
+        body: cfg["ea_body"],
+        visible: true,
+        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+      } : null;
+      const now = (/* @__PURE__ */ new Date()).toISOString();
+      const dateDisplay = (/* @__PURE__ */ new Date()).toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "America/Moncton"
+      });
+      const parlayLegs = soccerPicks.map(fmtLeg);
+      const mlsLegs = mlsPicks.map(fmtLeg);
+      const nbaLegs = nbaPicks.map(fmtLeg);
+      const mlsNoSlate = mlsLegs.length === 0;
+      const payload = {
+        date: date2,
+        generated_at: now,
+        last_generated: now,
+        last_updated_display: dateDisplay,
+        // ── Tier Dashboard Mapping — NeonDB rows → tiers.pro / tiers.lifetime ──
+        // HARDENED TIER GATES:
+        // Pro:      confidence >= 68%, max 6 picks (soccer+nba+mls)
+        // Lifetime: confidence >= 70%, max 10 picks (unique exclusive picks beyond Pro)
+        // A 66% pick stays on Public only — never in Pro or Lifetime
+        tiers: (() => {
+          const V3_SPORTS = ["soccer", "nba", "mls"];
+          const allEligible = publicActive.filter((p) => V3_SPORTS.includes(p.sport)).sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+          const proTier = allEligible.filter((p) => (p.confidence ?? 0) >= 68 && ["pro", "lifetime"].includes(p.tier)).slice(0, 6).map(fmtLeg);
+          const lifetimeTier = allEligible.filter((p) => (p.confidence ?? 0) >= 70 && p.tier === "lifetime").slice(0, 10).map(fmtLeg);
+          return {
+            pro: {
+              picks: proTier,
+              count: proTier.length,
+              quota: 6,
+              sport_breakdown: {
+                soccer: proTier.filter((p) => p.sport === "soccer").length,
+                nba: proTier.filter((p) => p.sport === "nba").length,
+                mls: proTier.filter((p) => p.sport === "mls").length
+              }
+            },
+            lifetime: {
+              picks: lifetimeTier,
+              count: lifetimeTier.length,
+              quota: 10,
+              sport_breakdown: {
+                soccer: lifetimeTier.filter((p) => p.sport === "soccer").length,
+                nba: lifetimeTier.filter((p) => p.sport === "nba").length,
+                mls: lifetimeTier.filter((p) => p.sport === "mls").length
+              }
+            },
+            // Legacy string labels preserved for backward compatibility
+            power_pick: "free",
+            soccer_picks: "free",
+            mls_parlay: "free",
+            nba_parlay: "free",
+            nba_picks: "free"
+          };
+        })(),
+        parlay: { legs: parlayLegs, legs_count: parlayLegs.length, combined_probability: combinedProb2(soccerPicks) },
+        three_leg_conservative: { legs: parlayLegs, legs_count: parlayLegs.length, combined_probability: combinedProb2(soccerPicks) },
+        soccer_picks: parlayLegs,
+        mls_parlay: { legs: mlsLegs, legs_count: mlsLegs.length, combined_probability: combinedProb2(mlsPicks), enabled: mlsAdminEnabled },
+        mls_no_slate: mlsNoSlate,
+        mls_next_slate_date: mlsNoSlate ? "Check back soon" : "",
+        nba_parlay: { legs: nbaLegs, legs_count: nbaLegs.length, combined_probability: combinedProb2(nbaPicks) },
+        corner_parlay: { legs: [], legs_count: 0, combined_probability: "0%" },
+        power_pick: powerPick ? {
+          game: `${powerPick.homeTeam} vs ${powerPick.awayTeam}`,
+          pick: powerPick.prediction || powerPick.pick,
+          league: powerPick.league || "Unknown",
+          probability: parseFloat(((powerPick.confidence ?? 0) / 100).toFixed(2)),
+          probability_display: `${Math.round(powerPick.confidence ?? 0)}%`,
+          confidence: Math.round(powerPick.confidence ?? 0),
+          confidence_pct: `${Math.round(powerPick.confidence ?? 0)}%`,
+          odds: powerPick.odds || "-110",
+          sport: powerPick.sport || "nba",
+          time: `${date2} \u2014 Today`,
+          analysis: powerPick.analysis || powerPick.metadata?.recommendation || `Gold Standard V3 Titan XII \u2014 Top pick at ${Math.round(powerPick.confidence ?? 0)}%.`,
+          enabled: ppAdminEnabled,
+          momentum: powerPick?.momentum ?? null,
+          quality: powerPick?.quality ?? null,
+          mq_composite: powerPick?.mqComposite ?? powerPick?.mq_composite ?? null
+        } : null,
+        featured_pick: featuredMegaPick ? {
+          game: `${featuredMegaPick.homeTeam} vs ${featuredMegaPick.awayTeam}`,
+          homeTeam: featuredMegaPick.homeTeam || "",
+          awayTeam: featuredMegaPick.awayTeam || "",
+          league: featuredMegaPick.league || "Unknown",
+          sport: featuredMegaPick.sport || "nba",
+          pick: featuredMegaPick.prediction || featuredMegaPick.pick,
+          pick_type: featuredMegaPick.prediction || featuredMegaPick.pick,
+          confidence: Math.round(featuredMegaPick.confidence ?? 0),
+          probability: parseFloat(((featuredMegaPick.confidence ?? 0) / 100).toFixed(2)),
+          confidence_pct: `${Math.round(featuredMegaPick.confidence ?? 0)}%`,
+          odds: featuredMegaPick.odds || "-110",
+          homeOdds: featuredMegaPick.homeOdds || featuredMegaPick.odds || "",
+          awayOdds: featuredMegaPick.awayOdds || "",
+          drawOdds: featuredMegaPick.drawOdds || "",
+          dateLabel: featuredMegaPick.dateLabel || "",
+          imageUrl: featuredMegaPick.imageUrl || "",
+          liveOnSite: !!featuredMegaPick.liveOnSite,
+          time_display: date2,
+          label: featuredMegaPick.isFeatured ? "FEATURED GAME" : "POWER PICK",
+          pick_label: featuredMegaPick.prediction || featuredMegaPick.pick,
+          reasoning: featuredMegaPick.metadata?.recommendation || `Gold Standard V3 Titan XII \u2014 Top pick at ${Math.round(featuredMegaPick.confidence ?? 0)}%.`,
+          game_time: featuredMegaPick.metadata?.gameTime || "",
+          hero_title: featuredMegaPick.isFeatured ? `FEATURED: ${featuredMegaPick.awayTeam?.toUpperCase()} vs ${featuredMegaPick.homeTeam?.toUpperCase()} \u2014 ${Math.round(featuredMegaPick.confidence ?? 0)}% CONFIDENCE` : "",
+          auto_generated: true,
+          tag: featuredMegaPick.isFeatured ? "FEATURED" : "POWER PICK",
+          disclaimer: "For entertainment purposes only.",
+          momentum: featuredMegaPick?.momentum ?? null,
+          quality: featuredMegaPick?.quality ?? null,
+          mq_composite: featuredMegaPick?.mqComposite ?? featuredMegaPick?.mq_composite ?? null
+        } : null,
+        featured_soccer: parlayLegs[0] ? {
+          match: parlayLegs[0].match || parlayLegs[0].game || "",
+          league: parlayLegs[0].league || "Soccer",
+          sport: "soccer",
+          pick: parlayLegs[0].pick || "",
+          confidence: Math.round(parlayLegs[0].confidence ?? 0),
+          confidence_display: `${Math.round(parlayLegs[0].confidence ?? 0)}%`,
+          reasoning: parlayLegs[0].reasoning || `Gold Standard V3 Titan XII \u2014 ${parlayLegs[0].pick} at ${Math.round(parlayLegs[0].confidence ?? 0)}%.`,
+          match_date: date2,
+          enabled: socAdminEnabled,
+          momentum: parlayLegs[0].momentum ?? null,
+          quality: parlayLegs[0].quality ?? null,
+          mq_composite: parlayLegs[0].mqComposite ?? parlayLegs[0].mq_composite ?? null
+        } : { match: "", league: "", sport: "soccer", pick: "", confidence: 0, confidence_display: "0%", reasoning: "", match_date: date2, enabled: socAdminEnabled, momentum: null, quality: null, mq_composite: null },
+        featured_mls: mlsLegs[0] ? {
+          match: mlsLegs[0].match || mlsLegs[0].game || "",
+          league: mlsLegs[0].league || "MLS",
+          sport: "mls",
+          pick: mlsLegs[0].pick || "",
+          confidence: Math.round(mlsLegs[0].confidence ?? 0),
+          confidence_display: `${Math.round(mlsLegs[0].confidence ?? 0)}%`,
+          reasoning: mlsNoSlate ? "No MLS games today." : mlsLegs[0].reasoning || `Gold Standard V3 Titan XII \u2014 ${mlsLegs[0].pick} at ${Math.round(mlsLegs[0].confidence ?? 0)}%.`,
+          match_date: date2,
+          enabled: mlsAdminEnabled
+        } : { match: "", league: "MLS", sport: "mls", pick: "", confidence: 0, confidence_display: "0%", reasoning: "No MLS games today.", match_date: date2, enabled: mlsAdminEnabled },
+        featured_nba: nbaLegs[0] ? {
+          match: nbaLegs[0].match || nbaLegs[0].game || "",
+          league: nbaLegs[0].league || "NBA",
+          sport: "nba",
+          pick: nbaLegs[0].pick || "",
+          confidence: Math.round(nbaLegs[0].confidence ?? 0),
+          confidence_display: `${Math.round(nbaLegs[0].confidence ?? 0)}%`,
+          reasoning: nbaLegs[0].reasoning || `Gold Standard V3 Titan XII \u2014 ${nbaLegs[0].pick} at ${Math.round(nbaLegs[0].confidence ?? 0)}%.`,
+          match_date: date2,
+          enabled: nbaAdminEnabled,
+          momentum: nbaLegs[0].momentum ?? null,
+          quality: nbaLegs[0].quality ?? null,
+          mq_composite: nbaLegs[0].mqComposite ?? nbaLegs[0].mq_composite ?? null
+        } : { match: "", league: "NBA", sport: "nba", pick: "", confidence: 0, confidence_display: "0%", reasoning: "", match_date: date2, enabled: nbaAdminEnabled, momentum: null, quality: null, mq_composite: null },
+        nba_picks: nbaLegs,
+        player_prop_picks: [],
+        free_tier_picks: active.filter((p) => p.tier === "free").slice(0, 3).map(fmtLeg),
+        results: { date_display: dateDisplay, entries: [] },
+        expert_analysis: expertAnalysis || {
+          title: `Gold Standard V3 Titan XII \u2014 ${dateDisplay}`,
+          body: `Today's picks were generated by the Gold Standard V3 Titan XII 12-factor AI engine. All picks passed the 68% confidence threshold.`,
+          visible: true,
+          updated_at: now
+        },
+        manual_lock: cfg["maintenance_mode"] === "true",
+        locked_sections: cfg["maintenance_mode"] === "true" ? ["all"] : [],
+        site_settings: {
+          alertEnabled: cfg["alert_enabled"] === "true",
+          alertText: cfg["alert_text"] || "",
+          alertType: cfg["alert_type"] || "info",
+          maintenanceMode: cfg["maintenance_mode"] === "true",
+          maintenanceMsg: cfg["maintenance_msg"] || "Site is under maintenance. Check back soon.",
+          engineLabel: cfg["engine_label"] || "Gold Standard V3 Titan XII",
+          footerDisclaimer: cfg["footer_disclaimer"] || "For entertainment purposes only. Please gamble responsibly.",
+          contactEmail: cfg["contact_email"] || "Glenoring@gmail.com",
+          twitterUrl: cfg["twitter_url"] || "",
+          instagramUrl: cfg["instagram_url"] || "",
+          discordUrl: cfg["discord_url"] || ""
+        },
+        vip_content: cfg["vip_override"] === "true" ? {
+          headline: cfg["vip_headline"] || "",
+          subheadline: cfg["vip_subheadline"] || "",
+          feature1: cfg["vip_feature1"] || "",
+          feature2: cfg["vip_feature2"] || "",
+          feature3: cfg["vip_feature3"] || "",
+          feature4: cfg["vip_feature4"] || "",
+          ctaText: cfg["vip_cta_text"] || "",
+          ctaLink: cfg["vip_cta_link"] || "",
+          badgeLabel: cfg["vip_badge_label"] || "",
+          imageUrl: cfg["vip_image_url"] || "",
+          overrideOn: true
+        } : null,
+        history_manual: (() => {
+          try {
+            return JSON.parse(cfg["history_entries"] || "[]");
+          } catch {
+            return [];
+          }
+        })(),
+        featured_games: publicActive.slice(0, 3).map((p, i) => ({
+          rank: i + 1,
+          game: `${p.homeTeam} vs ${p.awayTeam}`,
+          league: p.league || "Unknown",
+          pick: p.prediction || p.pick,
+          confidence: Math.round(p.confidence ?? 0),
+          confidence_pct: `${Math.round(p.confidence ?? 0)}%`,
+          reasoning: `Gold Standard V3 Titan XII \u2014 ${p.prediction} at ${Math.round(p.confidence ?? 0)}%.`,
+          time_display: date2,
+          sport: p.sport || "soccer",
+          auto_generated: true,
+          tag: i === 0 ? "TOP PICK" : i === 1 ? "VALUE PLAY" : "SAFE BET"
+        }))
+      };
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.json(payload);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/results", async (req, res) => {
+    try {
+      const results2 = await getResults(200);
+      const settled = results2.filter((r) => ["won", "lost", "void"].includes(r.result));
+      const summary = await getWinLossSummary();
+      res.json({
+        results: settled,
+        summary,
+        lastUpdated: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/results/summary", async (req, res) => {
+    try {
+      const summary = await getWinLossSummary();
+      res.json(summary);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/picks", requireAuth, async (req, res) => {
+    try {
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
+      const picks2 = await getPicksByDate(date2);
+      res.json(picks2);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/picks-today", requireAuth, async (req, res) => {
+    try {
+      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
+      const picks2 = await getPicksByDate(today);
+      res.json({ picks: picks2, date: today, total: picks2.length });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/personal-picks", requireAuth, async (req, res) => {
+    try {
+      const dateFilter = req.query.date;
+      const db2 = getDb();
+      let query;
+      let params;
+      if (dateFilter) {
+        query = "SELECT * FROM picks WHERE is_personal = TRUE AND date = $1 ORDER BY confidence DESC";
+        params = [dateFilter];
+      } else {
+        query = "SELECT * FROM picks WHERE is_personal = TRUE ORDER BY date DESC, confidence DESC LIMIT 500";
+        params = [];
+      }
+      const result = await db2.$client.query(query, params);
+      res.json({ picks: result.rows, total: result.rows.length });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/picks", requireAuth, async (req, res) => {
+    try {
+      const pick = await createPick(req.body);
+      res.json(pick);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.put("/api/admin/picks/:id", requireAuth, async (req, res) => {
+    try {
+      const pick = await updatePick(parseInt(req.params.id), req.body);
+      res.json(pick);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.delete("/api/admin/picks/:id", requireAuth, async (req, res) => {
+    try {
+      await deletePick(parseInt(req.params.id));
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/active-tier-picks", requireAuth, async (req, res) => {
+    try {
+      const date2 = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
+      const picks2 = await getPicksByDate(date2);
+      const byTier = {
+        free: picks2.filter((p) => p.tier === "free"),
+        pro: picks2.filter((p) => p.tier === "pro"),
+        lifetime: picks2.filter((p) => p.tier === "lifetime")
+      };
+      res.json(byTier);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/parlays", requireAuth, async (req, res) => {
+    try {
+      const date2 = req.query.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
+      const parlays2 = await getParlaysByDate(date2);
+      res.json(parlays2);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/parlays", requireAuth, async (req, res) => {
+    try {
+      const { date: date2, type, legs, totalOdds } = req.body;
+      const parlay = await saveParlays(date2, type, legs, totalOdds);
+      res.json(parlay);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/parlay-override", requireAuth, async (req, res) => {
+    try {
+      const { date: date2, legs, totalOdds } = req.body;
+      const parlay = await saveParlays(date2 || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA"), "soccer", legs, totalOdds);
+      res.json({ success: true, parlay });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/nba-parlay-override", requireAuth, async (req, res) => {
+    try {
+      const { date: date2, legs, totalOdds } = req.body;
+      const parlay = await saveParlays(date2 || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA"), "nba", legs, totalOdds);
+      res.json({ success: true, parlay });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/mls-parlay-override", requireAuth, async (req, res) => {
+    try {
+      const { date: date2, legs, totalOdds } = req.body;
+      const parlay = await saveParlays(date2 || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA"), "mls", legs, totalOdds);
+      res.json({ success: true, parlay });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/results", requireAuth, async (req, res) => {
+    try {
+      const results2 = await getResults();
+      res.json(results2);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  const MANAGER_OVERRIDE_CODE = process.env.MANAGER_OVERRIDE_CODE || "PK-MANAGER-2026";
+  function requireManagerOverride(req, res, next) {
+    const override = req.headers["x-manager-override"] || req.body?.managerOverride;
+    if (!override || override !== MANAGER_OVERRIDE_CODE) {
+      console.warn(`[GUARDRAIL-3] READ-ONLY PROTECTION: Blocked write to Historical Records without Manager Override. IP: ${req.ip}`);
+      return res.status(403).json({
+        error: "READ-ONLY PROTECTION ACTIVE",
+        message: "Historical Records and Win/Loss pages are read-only. A Manager Override code is required to modify these records.",
+        guardrail: 3,
+        hint: "Include X-Manager-Override header with the override code to proceed."
+      });
+    }
+    console.log(`[GUARDRAIL-3] Manager Override accepted \u2014 write to Historical Records authorized`);
+    next();
+  }
+  app.post("/api/admin/results", requireAuth, requireManagerOverride, async (req, res) => {
+    try {
+      const result = await createResult(req.body);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.put("/api/admin/results/:id", requireAuth, requireManagerOverride, async (req, res) => {
+    try {
+      const result = await updateResult(parseInt(req.params.id), req.body);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/winloss", requireAuth, async (req, res) => {
+    try {
+      const summary = await getWinLossSummary();
+      res.json(summary);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/tier-results/:tier", requireAuth, async (req, res) => {
+    try {
+      const results2 = await getResults();
+      const tierResults = results2.filter((r) => r.tier === req.params.tier);
+      const wins = tierResults.filter((r) => r.result === "won").length;
+      const losses = tierResults.filter((r) => r.result === "lost").length;
+      const total = wins + losses;
+      res.json({
+        tier: req.params.tier,
+        wins,
+        losses,
+        total,
+        winRate: total > 0 ? Math.round(wins / total * 1e3) / 10 : 0,
+        results: tierResults
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/trigger", requireAuth, async (req, res) => {
+    try {
+      const date2 = req.body.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      res.json({ success: true, message: `Generation triggered for ${date2}`, date: date2 });
+      generateDailyPicks(date2).then(() => {
+        app._clearPicksCache?.();
+        app._pingSearchEngines?.();
+      }).catch((err) => console.error("[Admin] Manual trigger failed:", err));
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/engine-config", requireAuth, async (req, res) => {
+    try {
+      const config = await getEngineConfig();
+      res.json(config);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/engine-config", requireAuth, async (req, res) => {
+    try {
+      const { key, value } = req.body;
+      await setEngineConfig(key, value);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/run-logs", requireAuth, async (req, res) => {
+    try {
+      const logs = await getRunLogs(20);
+      res.json(logs);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/cache-status", requireAuth, async (req, res) => {
+    try {
+      const { getCacheStatus: getCacheStatus2 } = await Promise.resolve().then(() => (init_apiFootball(), apiFootball_exports));
+      res.json(getCacheStatus2());
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/clear-cache", requireAuth, async (req, res) => {
+    try {
+      const { clearApiCache: clearApiCache2 } = await Promise.resolve().then(() => (init_apiFootball(), apiFootball_exports));
+      clearApiCache2();
+      res.json({ success: true, message: "API cache cleared" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/seo-ping", requireAuth, async (req, res) => {
+    try {
+      const siteUrl = "https://soccernbaparlayking.vip";
+      const sitemapUrl = encodeURIComponent(`${siteUrl}/sitemap.xml`);
+      const results2 = [];
+      try {
+        const gRes = await fetch(`https://www.google.com/ping?sitemap=${sitemapUrl}`);
+        results2.push(`Google: ${gRes.status === 200 ? "OK" : gRes.status}`);
+      } catch {
+        results2.push("Google: unreachable");
+      }
+      try {
+        const bRes = await fetch(`https://www.bing.com/ping?sitemap=${sitemapUrl}`);
+        results2.push(`Bing: ${bRes.status === 200 ? "OK" : bRes.status}`);
+      } catch {
+        results2.push("Bing: unreachable");
+      }
+      res.json({ success: true, results: results2, message: results2.join(" | ") });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/members", requireAuth, async (req, res) => {
+    try {
+      const members2 = await getMembers();
+      res.json(members2);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/member/heartbeat", async (req, res) => {
+    try {
+      const { email, page } = req.body;
+      if (!email) return res.status(400).json({ error: "Email required" });
+      await recordHeartbeat(email, page);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/active-users", requireAuth, async (req, res) => {
+    try {
+      const users2 = await getActiveUsers(15);
+      res.json(users2);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/tiers-pricing", requireAuth, async (req, res) => {
+    try {
+      const pricing = await getTierPricing();
+      res.json(pricing);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/tiers-pricing", requireAuth, async (req, res) => {
+    try {
+      const { tier, price, label } = req.body;
+      await setTierPricing(tier, price, label);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/tier-pricing", requireAuth, async (req, res) => {
+    try {
+      const pricing = await getTierPricing();
+      res.json(pricing);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/tier-pricing", requireAuth, async (req, res) => {
+    try {
+      const { tier, price, label } = req.body;
+      await setTierPricing(tier, price, label);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/alerts", requireAuth, async (req, res) => {
+    try {
+      const alerts = await getAlerts();
+      res.json(alerts);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  let manualLock = false;
+  app.get("/api/admin/lock-status", requireAuth, (req, res) => {
+    res.json({ locked: manualLock });
+  });
+  app.post("/api/admin/lock-toggle", requireAuth, (req, res) => {
+    manualLock = !manualLock;
+    res.json({ locked: manualLock });
+  });
+  app.post("/api/admin/set-manual-lock", requireAuth, (req, res) => {
+    manualLock = req.body.locked ?? true;
+    res.json({ locked: manualLock });
+  });
+  app.get("/api/admin/audit-reports", requireAuth, async (req, res) => {
+    try {
+      const reports = await getAuditReports();
+      res.json(reports);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/audit-trigger", requireAuth, async (req, res) => {
+    res.json({ success: true, message: "Audit report generation queued" });
+  });
+  app.get("/api/bet-builder/games", async (req, res) => {
+    try {
+      const date2 = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const picks2 = await getPicksByDate(date2);
+      const freePicks = picks2.filter((p) => p.tier === "free" && !p.isDisabled);
+      res.json(freePicks);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/nba-props", async (req, res) => {
+    res.json({ props: [], message: "NBA props updated daily at 11 AM AST" });
+  });
+  app.post("/api/admin/re-engage", requireAuth, async (req, res) => {
+    res.json({ success: true, message: "Re-engagement notifications queued" });
+  });
+  app.get("/tier-guard.js", (_req, res) => {
+    const tierGuardPath = path5.join(process.cwd(), "server/templates/tier-guard.js");
+    if (fs5.existsSync(tierGuardPath)) {
+      res.setHeader("Content-Type", "application/javascript");
+      res.setHeader("Cache-Control", "public, max-age=300");
+      return res.sendFile(tierGuardPath);
+    }
+    res.status(404).send("// tier-guard.js not found");
+  });
+  app.post("/api/paypal/ipn", async (req, res) => {
+    res.status(200).send("OK");
+    try {
+      const params = new URLSearchParams(req.body);
+      const paymentStatus = params.get("payment_status");
+      const payerEmail = params.get("payer_email") || "";
+      const itemName = params.get("item_name") || "";
+      const txnType = params.get("txn_type") || "";
+      if (paymentStatus !== "Completed" && txnType !== "subscr_payment") return;
+      let tier = "free";
+      if (itemName.toLowerCase().includes("lifetime") || itemName.toLowerCase().includes("499")) {
+        tier = "lifetime";
+      } else if (itemName.toLowerCase().includes("vip") || itemName.toLowerCase().includes("14")) {
+        tier = "vip";
+      } else if (itemName.toLowerCase().includes("pro") || itemName.toLowerCase().includes("streamz")) {
+        tier = "pro";
+      }
+      const lifetimeDisabledUntil = /* @__PURE__ */ new Date("2026-03-20T04:00:00Z");
+      const now = /* @__PURE__ */ new Date();
+      if (tier === "lifetime" && now < lifetimeDisabledUntil) {
+        tier = "pro";
+        console.log(`[PayPal IPN] Lifetime tier not yet available \u2014 granting pro tier to ${payerEmail} until 2026-03-20`);
+      }
+      if (payerEmail && tier !== "free") {
+        await createOrUpdateMember(payerEmail, tier);
+        console.log(`[PayPal IPN] Tier '${tier}' granted to ${payerEmail}`);
+      } else if (payerEmail) {
+        await createOrUpdateMember(payerEmail, "free");
+        console.log(`[PayPal IPN] Free tier recorded for ${payerEmail}`);
+      }
+    } catch (err) {
+      console.error("[PayPal IPN] Error processing IPN:", err);
+    }
+  });
+  app.get("/api/member/tier", async (req, res) => {
+    const email = req.query.email;
+    if (!email) return res.json({ tier: "free" });
+    try {
+      const member = await getMemberByEmail(email);
+      if (member) {
+        return res.json({ tier: member.tier, token: member.token });
+      }
+      return res.json({ tier: "free" });
+    } catch {
+      return res.json({ tier: "free" });
+    }
+  });
+  const JWT_SECRET2 = process.env.SESSION_SECRET || "parlay-king-secret-2025";
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { email, username, password, plan } = req.body;
+      if (!email || !username || !password) {
+        return res.status(400).json({ error: "Email, username, and password are required." });
+      }
+      if (password.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters." });
+      }
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const existing = await pool3.query("SELECT id FROM members WHERE username = $1", [username]);
+      if (existing.rows.length > 0) {
+        await pool3.end();
+        return res.status(409).json({ error: "Username already taken. Please choose another." });
+      }
+      const passwordHash = await import_bcryptjs.default.hash(password, 10);
+      let tier = "free";
+      let expiresAt = null;
+      let tierLockedUntil = null;
+      let subscriptionPlan = plan || "free";
+      if (plan === "lifetime") {
+        tier = "lifetime";
+        expiresAt = null;
+        tierLockedUntil = null;
+      } else if (plan === "pro-monthly") {
+        tier = "pro";
+        expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1e3);
+        tierLockedUntil = expiresAt;
+      } else if (plan === "vip-monthly") {
+        tier = "vip";
+        expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1e3);
+        tierLockedUntil = expiresAt;
+      }
+      await pool3.query(
+        `INSERT INTO members (email, username, password_hash, tier, subscription_plan, expires_at, tier_locked_until, is_active, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW())
+         ON CONFLICT (email) DO UPDATE SET
+           username = EXCLUDED.username,
+           password_hash = EXCLUDED.password_hash,
+           tier = EXCLUDED.tier,
+           subscription_plan = EXCLUDED.subscription_plan,
+           expires_at = EXCLUDED.expires_at,
+           tier_locked_until = EXCLUDED.tier_locked_until,
+           is_active = true`,
+        [email, username, passwordHash, tier, subscriptionPlan, expiresAt, tierLockedUntil]
+      );
+      await pool3.end();
+      const token = import_jsonwebtoken2.default.sign({ email, username, tier, expiresAt: expiresAt?.toISOString() || null }, JWT_SECRET2, { expiresIn: "90d" });
+      return res.json({ success: true, token, tier, username, expiresAt: expiresAt?.toISOString() || null, subscriptionPlan });
+    } catch (err) {
+      console.error("[Auth Register]", err.message);
+      return res.status(500).json({ error: "Registration failed. Please try again." });
+    }
+  });
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required." });
+      }
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const result = await pool3.query(
+        "SELECT * FROM members WHERE username = $1 AND is_active = true",
+        [username]
+      );
+      await pool3.end();
+      if (result.rows.length === 0) {
+        return res.status(401).json({ error: "Invalid username or password." });
+      }
+      const member = result.rows[0];
+      if (!member.password_hash) {
+        return res.status(401).json({ error: "Account not set up yet. Please complete registration." });
+      }
+      const valid = await import_bcryptjs.default.compare(password, member.password_hash);
+      if (!valid) {
+        return res.status(401).json({ error: "Invalid username or password." });
+      }
+      let activeTier = member.tier;
+      if (member.expires_at && new Date(member.expires_at) < /* @__PURE__ */ new Date() && member.tier !== "lifetime") {
+        activeTier = "free";
+        const pool22 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+        await pool22.query("UPDATE members SET tier = $1, tier_locked_until = NULL WHERE email = $2", ["free", member.email]);
+        await pool22.end();
+      }
+      const token = import_jsonwebtoken2.default.sign(
+        { email: member.email, username: member.username, tier: activeTier, expiresAt: member.expires_at || null },
+        JWT_SECRET2,
+        { expiresIn: "90d" }
+      );
+      return res.json({
+        success: true,
+        token,
+        tier: activeTier,
+        username: member.username,
+        email: member.email,
+        expiresAt: member.expires_at || null,
+        tierLockedUntil: member.tier_locked_until || null,
+        subscriptionPlan: member.subscription_plan || null
+      });
+    } catch (err) {
+      console.error("[Auth Login]", err.message);
+      return res.status(500).json({ error: "Login failed. Please try again." });
+    }
+  });
+  app.get("/api/admin/verify-connection", requireAuth, async (req, res) => {
+    try {
+      const { getOddsApiStatus: getOddsApiStatus2 } = await Promise.resolve().then(() => (init_oddsApi(), oddsApi_exports));
+      const status = await getOddsApiStatus2();
+      res.json({
+        guardrail: 4,
+        status: "LIVE",
+        source: "the-odds-api.com",
+        budgetLedger: status.budgetLedger,
+        sampleGames: status.sampleGames,
+        cacheStatus: status.cacheStatus,
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message, status: "DISCONNECTED" });
+    }
+  });
+  app.get("/api/admin/budget-status", requireAuth, async (req, res) => {
+    try {
+      const { getBudgetLedger: getBudgetLedger2 } = await Promise.resolve().then(() => (init_oddsApi(), oddsApi_exports));
+      const ledger = getBudgetLedger2();
+      res.json({
+        guardrail: 2,
+        hardCeiling: 100,
+        used: ledger.used,
+        remaining: ledger.remaining,
+        cacheHits: ledger.cacheHits,
+        lastReset: ledger.lastReset,
+        status: ledger.remaining > 10 ? "OK" : ledger.remaining > 0 ? "WARNING" : "EXHAUSTED"
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/v3-games", requireAuth, async (req, res) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    try {
+      const { Pool: V3Pool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new V3Pool({ connectionString: process.env.DATABASE_URL });
+      const serverNow = /* @__PURE__ */ new Date();
+      const serverNowISO = serverNow.toISOString();
+      const today = serverNow.toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const in48h = new Date(serverNow.getTime() + 48 * 60 * 60 * 1e3).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const dateFilter = req.query.date || null;
+      const sportFilter = req.query.sport || null;
+      const picksDateFrom = dateFilter || today;
+      const picksDateTo = dateFilter || in48h;
+      const picksSportClause = sportFilter ? `AND sport = '${sportFilter.replace(/'/g, "''")}'` : "";
+      const result = await pool3.query(`
+        SELECT id, date, sport, league, home_team, away_team, prediction, confidence,
+               odds, tier, is_power_pick, momentum, quality, mq_composite, metadata, is_disabled
+        FROM picks
+        WHERE date >= $1 AND date <= $2
+          AND confidence >= 68
+          AND is_disabled = FALSE
+          ${picksSportClause}
+        ORDER BY date ASC, confidence DESC
+      `, [picksDateFrom, picksDateTo]);
+      await pool3.end();
+      const games = result.rows.map((r) => {
+        const metaTime = r.metadata?.commence_time || r.metadata?.commenceTime || r.metadata?.game_time || null;
+        const commenceTime = metaTime ? new Date(metaTime).toISOString() : r.date + "T17:00:00Z";
+        return {
+          id: String(r.id),
+          sportKey: r.sport === "nba" ? "basketball_nba" : "soccer_global",
+          sport: r.sport,
+          league: r.league || "",
+          homeTeam: r.home_team,
+          awayTeam: r.away_team,
+          commenceTime,
+          date: r.date,
+          confidence: parseFloat(r.confidence) || 0,
+          bestPick: r.prediction || "N/A",
+          odds: r.odds || "",
+          tier: r.tier || "pro",
+          is_power_pick: r.is_power_pick || false,
+          momentum: r.momentum || null,
+          quality: r.quality || null,
+          mq_composite: r.mq_composite || null,
+          analysis: r.metadata?.analysis || "",
+          outcomes: [{ label: r.prediction, conf: parseFloat(r.confidence) || 0 }],
+          validated: true,
+          source: "neondb-v3"
+        };
+      }).filter((g) => {
+        const gameDate = g.commenceTime.substring(0, 10);
+        if (gameDate > today) return true;
+        if (gameDate === today) return true;
+        return false;
+      });
+      if (games.length === 0) {
+        try {
+          const { Pool: FPool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+          const fpool = new FPool({ connectionString: process.env.DATABASE_URL });
+          const in72h = new Date(serverNow.getTime() + 72 * 60 * 60 * 1e3).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+          const fixDateFrom = dateFilter || today;
+          const fixDateTo = dateFilter || in72h;
+          const fixSportClause = sportFilter ? `AND sport = '${sportFilter.replace(/'/g, "''")}'` : "";
+          const fResult = await fpool.query(`
+            SELECT id, sport, league, home_team, away_team, game_date, game_datetime, status, analysis_result, analysis_score, analysis_pass,
+                   TO_CHAR(game_date AT TIME ZONE 'America/Halifax', 'YYYY-MM-DD') AS local_date
+            FROM upcoming_fixtures
+            WHERE TO_CHAR(game_date AT TIME ZONE 'America/Halifax', 'YYYY-MM-DD') >= $1
+              AND TO_CHAR(game_date AT TIME ZONE 'America/Halifax', 'YYYY-MM-DD') <= $2
+              AND status NOT IN ('final', 'in_progress')
+              ${fixSportClause}
+            ORDER BY game_date ASC, sport ASC
+          `, [fixDateFrom, fixDateTo]);
+          await fpool.end();
+          if (fResult.rows.length > 0) {
+            const fallbackGames = fResult.rows.map((r) => ({
+              id: "fix_" + r.id,
+              sportKey: r.sport === "nba" ? "basketball_nba" : "soccer_global",
+              sport: r.sport,
+              league: r.league || "",
+              homeTeam: r.home_team,
+              awayTeam: r.away_team,
+              commenceTime: r.game_datetime ? new Date(r.game_datetime).toISOString() : r.game_date + "T17:00:00Z",
+              date: r.local_date || new Date(r.game_date).toLocaleDateString("en-CA", { timeZone: "America/Halifax" }),
+              confidence: r.analysis_score ? parseFloat(r.analysis_score) : 0,
+              bestPick: r.analysis_result ? (() => {
+                try {
+                  const ar = typeof r.analysis_result === "string" ? JSON.parse(r.analysis_result) : r.analysis_result;
+                  return ar?.pick || "Pending Analysis";
+                } catch {
+                  return "Pending Analysis";
+                }
+              })() : "Pending Analysis",
+              odds: "",
+              tier: "pro",
+              is_power_pick: false,
+              momentum: null,
+              quality: null,
+              mq_composite: null,
+              analysis: r.analysis_result ? (() => {
+                try {
+                  const ar = typeof r.analysis_result === "string" ? JSON.parse(r.analysis_result) : r.analysis_result;
+                  return ar?.summary || ar?.reasoning || "";
+                } catch {
+                  return "";
+                }
+              })() : "",
+              outcomes: [{ label: "Pending Analysis", conf: 0 }],
+              validated: r.analysis_pass === true,
+              source: "upcoming-fixtures",
+              analyzed: !!r.analysis_result,
+              analysisPassed: r.analysis_pass
+            }));
+            return res.json({
+              success: true,
+              games: fallbackGames,
+              total: fallbackGames.length,
+              serverNow: serverNowISO,
+              source: "upcoming-fixtures-fallback",
+              message: `${fallbackGames.length} upcoming fixtures loaded (picks generate at 1 AM AST)`,
+              budget: { used: 0, remaining: 100, resetTime: today }
+            });
+          }
+        } catch (fallbackErr) {
+          console.warn("[V3Games] Fallback to upcoming_fixtures failed:", fallbackErr.message);
+        }
+        return res.json({ success: true, games: [], total: 0, message: "No games found \u2014 picks generate at 1 AM AST", budget: { used: 0, remaining: 100, resetTime: today } });
+      }
+      res.json({
+        success: true,
+        games,
+        total: games.length,
+        serverNow: serverNowISO,
+        // FIX 1: server ISO timestamp for client stale-game check
+        budget: { used: 0, remaining: 100, resetTime: today }
+      });
+    } catch (err) {
+      console.error("[V3Games] DB error (no retry):", err.message);
+      res.status(500).json({ error: err.message, message: "DB fetch failed \u2014 no retry per Efficiency Veto" });
+    }
+  });
+  app.post("/api/admin/v2-validate", requireAuth, async (req, res) => {
+    try {
+      const { homeTeam, awayTeam, league, sport, homeOdds, drawOdds, awayOdds } = req.body;
+      if (!homeTeam || !awayTeam) return res.status(400).json({ error: "homeTeam and awayTeam are required" });
+      const sportNorm = sport === "nba" ? "nba" : sport === "mls" ? "mls" : "soccer";
+      const fixture = {
+        fixtureId: Date.now(),
+        homeTeam: homeTeam.trim(),
+        awayTeam: awayTeam.trim(),
+        league: (league || sportNorm.toUpperCase()).trim(),
+        sport: sportNorm,
+        homeOdds: homeOdds ? parseFloat(homeOdds) : void 0,
+        drawOdds: drawOdds ? parseFloat(drawOdds) : void 0,
+        awayOdds: awayOdds ? parseFloat(awayOdds) : void 0,
+        homeInjuries: 0,
+        awayInjuries: 0,
+        isNeutralVenue: false
+      };
+      const { calcDeterministicBase: calcDeterministicBase2 } = await Promise.resolve().then(() => (init_geminiV3Engine(), geminiV3Engine_exports));
+      const fixtureV15 = fixture;
+      let preds = await runBatchPredictionsV15([fixtureV15]);
+      let pred = preds[0];
+      let usedFallback = false;
+      if (!pred) {
+        usedFallback = true;
+        const base = calcDeterministicBase2(fixtureV15);
+        const homeConf = Math.round(base.rawHome * 100 * 10) / 10;
+        const awayConf = Math.round(base.rawAway * 100 * 10) / 10;
+        const drawConf = Math.round(base.rawDraw * 100 * 10) / 10;
+        const topConf = Math.max(homeConf, awayConf);
+        const topPick = homeConf >= awayConf ? `${homeTeam.trim()} Win` : `${awayTeam.trim()} Win`;
+        const threshold2 = parseFloat(process.env.V3_HIGH_VAL_THRESHOLD || "68");
+        const tier2 = topConf >= threshold2 ? "pro" : topConf >= 65 ? "free" : "below-threshold";
+        return res.json({
+          success: true,
+          recommendation: `${topPick} \u2014 ${topConf}% (deterministic base, awaiting live odds)`,
+          confidence: topConf,
+          bestPick: topPick,
+          tier: tier2,
+          isPowerPick: topConf >= threshold2,
+          predictions: { homeWin: homeConf, awayWin: awayConf, draw: drawConf || void 0 },
+          outcomes: [
+            { label: `${homeTeam.trim()} Win`, conf: homeConf },
+            { label: `${awayTeam.trim()} Win`, conf: awayConf },
+            ...drawConf > 0 ? [{ label: "Draw", conf: drawConf }] : []
+          ].sort((a, b) => b.conf - a.conf),
+          factors: null,
+          note: "Deterministic base scores used \u2014 no live odds available yet. Run again closer to tip-off for full V3-15 analysis."
+        });
+      }
+      const conf = pred.topConfidence;
+      const p = pred.predictions;
+      const outcomes = [];
+      if (p.homeWin) outcomes.push({ label: `${homeTeam} Win`, conf: p.homeWin });
+      if (p.awayWin) outcomes.push({ label: `${awayTeam} Win`, conf: p.awayWin });
+      if (p.draw) outcomes.push({ label: "Draw", conf: p.draw });
+      if (p.homeOrDraw) outcomes.push({ label: `${homeTeam} Win or Draw`, conf: p.homeOrDraw });
+      if (p.awayOrDraw) outcomes.push({ label: `${awayTeam} Win or Draw`, conf: p.awayOrDraw });
+      if (p.over25) outcomes.push({ label: "Over 2.5 Goals", conf: p.over25 });
+      if (p.under25) outcomes.push({ label: "Under 2.5 Goals", conf: p.under25 });
+      if (p.btts) outcomes.push({ label: "Both Teams to Score", conf: p.btts });
+      const threshold = parseFloat(process.env.V3_HIGH_VAL_THRESHOLD || "68");
+      const isPowerPick = conf >= threshold;
+      const tier = conf >= threshold ? "pro" : conf >= 65 ? "free" : "below-threshold";
+      res.json({
+        success: true,
+        recommendation: pred.recommendation || `${pred.topPick} (${Math.round(conf)}%)`,
+        confidence: Math.round(conf * 10) / 10,
+        bestPick: pred.topPick,
+        tier,
+        isPowerPick,
+        predictions: {
+          homeWin: p.homeWin ? Math.round(p.homeWin) : void 0,
+          awayWin: p.awayWin ? Math.round(p.awayWin) : void 0,
+          draw: p.draw ? Math.round(p.draw) : void 0
+        },
+        outcomes: outcomes.sort((a, b) => b.conf - a.conf),
+        factors: pred.factors,
+        note: pred.note || null
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/v3-validate", requireAuth, async (req, res) => {
+    try {
+      const { gameId } = req.body;
+      if (!gameId) return res.status(400).json({ error: "gameId required" });
+      const { getGlobalSoccerOdds: getGlobalSoccerOdds2, getNBAOdds: getNBAOdds2, getMLSOdds: getMLSOdds2 } = await Promise.resolve().then(() => (init_oddsApi(), oddsApi_exports));
+      const [soccerGames, nbaGames, mlsGames] = await Promise.all([
+        getGlobalSoccerOdds2().catch(() => []),
+        getNBAOdds2().catch(() => []),
+        getMLSOdds2().catch(() => [])
+      ]);
+      const g = [...soccerGames, ...nbaGames, ...mlsGames].find((x) => x.id === gameId);
+      if (!g) return res.status(404).json({ error: "Game not found in current API data" });
+      const sport = g.sport_key.startsWith("basketball") ? "nba" : g.sport_key === "soccer_usa_mls" ? "mls" : "soccer";
+      const fixture = {
+        fixtureId: parseInt(g.id.replace(/\D/g, "").slice(0, 8) || "0", 10),
+        homeTeam: g.home_team,
+        awayTeam: g.away_team,
+        league: g.sport_title,
+        sport,
+        homeOdds: g.home_odds ?? void 0,
+        drawOdds: g.draw_odds ?? void 0,
+        awayOdds: g.away_odds ?? void 0,
+        homeInjuries: 0,
+        awayInjuries: 0,
+        isNeutralVenue: false
+      };
+      const preds = await runBatchPredictionsV15([fixture]);
+      const pred = preds[0];
+      if (!pred) return res.status(422).json({ error: "Engine returned no prediction for this fixture" });
+      const conf = pred.topConfidence;
+      const outcomes = [];
+      const p = pred.predictions;
+      if (p.homeWin) outcomes.push({ label: `${g.home_team} Win`, conf: p.homeWin });
+      if (p.awayWin) outcomes.push({ label: `${g.away_team} Win`, conf: p.awayWin });
+      if (p.draw) outcomes.push({ label: "Draw", conf: p.draw });
+      if (p.homeOrDraw) outcomes.push({ label: `${g.home_team} Win or Draw`, conf: p.homeOrDraw });
+      if (p.awayOrDraw) outcomes.push({ label: `${g.away_team} Win or Draw`, conf: p.awayOrDraw });
+      if (p.over25) outcomes.push({ label: "Over 2.5 Goals", conf: p.over25 });
+      if (p.under25) outcomes.push({ label: "Under 2.5 Goals", conf: p.under25 });
+      if (p.btts) outcomes.push({ label: "Both Teams to Score", conf: p.btts });
+      res.json({
+        success: true,
+        game: {
+          id: g.id,
+          homeTeam: g.home_team,
+          awayTeam: g.away_team,
+          league: g.sport_title,
+          sport,
+          confidence: Math.round(conf * 10) / 10,
+          bestPick: pred.topPick,
+          outcomes: outcomes.sort((a, b) => b.conf - a.conf),
+          factors: pred.factors,
+          recommendation: pred.recommendation,
+          validated: true
+        }
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/feature-pick", requireAuth, async (req, res) => {
+    try {
+      const { matchup, pick, confidence } = req.body;
+      if (!matchup || !pick) return res.status(400).json({ error: "matchup and pick required" });
+      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
+      const { Pool: FeaturePool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const fPool = new FeaturePool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      await fPool.query("UPDATE picks SET is_featured = false WHERE date = $1", [today]);
+      await fPool.query(
+        "UPDATE picks SET is_featured = true WHERE date = $1 AND (home_team || ' vs ' || away_team = $2 OR prediction = $3) LIMIT 1",
+        [today, matchup, pick]
+      );
+      await fPool.end();
+      res.json({ success: true, message: `Featured: ${matchup} \u2014 ${pick} @ ${confidence}%` });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/push-pick", requireAuth, async (req, res) => {
+    try {
+      const { matchup, pick, confidence, sport, league } = req.body;
+      if (!matchup || !pick || !sport) return res.status(400).json({ error: "matchup, pick, sport required" });
+      const parts = matchup.split(" vs ");
+      const homeTeam = parts[0]?.trim() || matchup;
+      const awayTeam = parts[1]?.trim() || "";
+      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA");
+      const tier = confidence >= 68 ? "pro" : "free";
+      const isHighVolatility = confidence < 68;
+      await createPick({
+        homeTeam,
+        awayTeam,
+        league: league || sport.toUpperCase(),
+        sport,
+        prediction: pick,
+        confidence: Math.round(confidence * 10) / 10,
+        status: "pending",
+        date: today,
+        tier,
+        isPowerPick: false,
+        isFeatured: false,
+        metadata: { isHighVolatility, source: "v3-validator", pushedAt: (/* @__PURE__ */ new Date()).toISOString() }
+      });
+      res.json({ success: true, message: `Pushed to live: ${matchup} \u2014 ${pick} @ ${confidence}%` });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  let _picksCache = null;
+  function clearPicksCache() {
+    _picksCache = null;
+    _modulePicksCache = null;
+  }
+  app._clearPicksCache = clearPicksCache;
+  clearModulePicksCache._impl = clearPicksCache;
+  app._getPicksCache = () => _picksCache;
+  app._setPicksCache = (v) => {
+    _picksCache = v;
+  };
+  function pingSearchEngines() {
+    const sitemap = "https://soccernbaparlayking.vip/sitemap.xml";
+    fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(sitemap)}`).then(() => console.log("[Ping] Google sitemap ping sent")).catch(() => {
+    });
+    fetch(`https://www.bing.com/ping?sitemap=${encodeURIComponent(sitemap)}`).then(() => console.log("[Ping] Bing sitemap ping sent")).catch(() => {
+    });
+  }
+  app._pingSearchEngines = pingSearchEngines;
+  app.get("/api/admin/featured-game", requireAuth, async (req, res) => {
+    try {
+      const cfg = await getEngineConfig();
+      res.json({
+        homeTeam: cfg["fg_home"] || "",
+        awayTeam: cfg["fg_away"] || "",
+        league: cfg["fg_league"] || "",
+        sport: cfg["fg_sport"] || "soccer",
+        homeOdds: cfg["fg_home_odds"] || "",
+        awayOdds: cfg["fg_away_odds"] || "",
+        drawOdds: cfg["fg_draw_odds"] || "",
+        confidence: cfg["fg_confidence"] || "",
+        pick: cfg["fg_pick"] || "",
+        dateLabel: cfg["fg_date_label"] || "",
+        imageUrl: cfg["fg_image_url"] || "",
+        liveOnSite: cfg["fg_live"] === "true"
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/featured-game", requireAuth, async (req, res) => {
+    try {
+      const { homeTeam, awayTeam, league, sport, homeOdds, awayOdds, drawOdds, confidence, pick, dateLabel, imageUrl, liveOnSite } = req.body;
+      const conf = parseFloat(confidence) || 0;
+      const autoHomeOdds = homeOdds || confidenceToAmericanOdds(conf);
+      const autoAwayOdds = awayOdds || confidenceToAmericanOdds(Math.max(conf - 10, 45));
+      const autoDrawOdds = drawOdds || (sport === "soccer" ? "+280" : "");
+      await Promise.all([
+        setEngineConfig("fg_home", homeTeam || ""),
+        setEngineConfig("fg_away", awayTeam || ""),
+        setEngineConfig("fg_league", league || ""),
+        setEngineConfig("fg_sport", sport || "soccer"),
+        setEngineConfig("fg_home_odds", autoHomeOdds),
+        setEngineConfig("fg_away_odds", autoAwayOdds),
+        setEngineConfig("fg_draw_odds", autoDrawOdds),
+        setEngineConfig("fg_confidence", String(conf || "")),
+        setEngineConfig("fg_pick", pick || ""),
+        setEngineConfig("fg_date_label", dateLabel || ""),
+        setEngineConfig("fg_image_url", imageUrl || ""),
+        setEngineConfig("fg_live", liveOnSite ? "true" : "false")
+      ]);
+      clearPicksCache();
+      pingSearchEngines();
+      res.json({ success: true, message: liveOnSite ? "Featured game is LIVE on site" : "Featured game saved (not live)" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  function confidenceToAmericanOdds(confidence) {
+    if (!confidence || confidence <= 0) return "";
+    const vig = 0.05;
+    const impliedProb = Math.min(Math.max(confidence / 100, 0.01), 0.99);
+    const viggedProb = impliedProb * (1 + vig);
+    if (viggedProb >= 0.5) {
+      const odds = Math.round(-(viggedProb / (1 - viggedProb)) * 100);
+      return String(odds);
+    } else {
+      const odds = Math.round((1 - viggedProb) / viggedProb * 100);
+      return "+" + String(odds);
+    }
+  }
+  app.get("/api/admin/expert-analysis", requireAuth, async (req, res) => {
+    try {
+      const cfg = await getEngineConfig();
+      res.json({
+        title: cfg["ea_title"] || "",
+        body: cfg["ea_body"] || "",
+        visible: cfg["ea_visible"] !== "false"
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/expert-analysis", requireAuth, async (req, res) => {
+    try {
+      const { title, body, visible } = req.body;
+      await Promise.all([
+        setEngineConfig("ea_title", title || ""),
+        setEngineConfig("ea_body", body || ""),
+        setEngineConfig("ea_visible", visible !== false ? "true" : "false")
+      ]);
+      clearPicksCache();
+      pingSearchEngines();
+      res.json({ success: true, message: visible !== false ? "Expert analysis visible on site" : "Expert analysis hidden" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/parlay-nba", requireAuth, async (req, res) => {
+    try {
+      const cfg = await getEngineConfig();
+      const legs = [1, 2, 3].map((i) => ({
+        homeTeam: cfg[`nba_leg${i}_home`] || "",
+        awayTeam: cfg[`nba_leg${i}_away`] || "",
+        pick: cfg[`nba_leg${i}_pick`] || "",
+        spread: cfg[`nba_leg${i}_spread`] || "",
+        total: cfg[`nba_leg${i}_total`] || "",
+        odds: cfg[`nba_leg${i}_odds`] || "",
+        confidence: cfg[`nba_leg${i}_conf`] || ""
+      }));
+      res.json({ legs, enabled: cfg["nba_parlay_enabled"] !== "false" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/parlay-nba", requireAuth, async (req, res) => {
+    try {
+      const { legs, enabled } = req.body;
+      const saves = [];
+      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      for (const leg of (legs || []).slice(0, 10)) {
+        const conf = parseFloat(leg.confidence) || 75;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
+        const homeTeam = (leg.homeTeam || "").trim();
+        const awayTeam = (leg.awayTeam || "").trim();
+        if (!homeTeam || !awayTeam) continue;
+        const fixtureId = `manual-nba-${homeTeam.replace(/\s+/g, "-").toLowerCase()}-${awayTeam.replace(/\s+/g, "-").toLowerCase()}-${today}`;
+        const meta = JSON.stringify({
+          source_model: "manual-admin-push",
+          source: "admin-manual",
+          bypass_gemini: true,
+          original_pick_label: leg.pick || "",
+          pushed_at: (/* @__PURE__ */ new Date()).toISOString(),
+          audit_log: { note: "Admin 3-Leg NBA Parlay form \u2014 manual push" }
+        });
+        await pool3.query(
+          `UPDATE picks SET is_disabled=TRUE, updated_at=NOW()
+           WHERE date=$1 AND home_team=$2 AND away_team=$3
+             AND metadata->>'source_model'='manual-admin-push'`,
+          [today, homeTeam, awayTeam]
+        );
+        await pool3.query(
+          `INSERT INTO picks
+             (date, sport, tier, home_team, away_team, league, prediction,
+              confidence, odds, fixture_id, status, is_power_pick, is_featured,
+              is_disabled, metadata, is_personal, momentum, quality, mq_composite,
+              created_at, updated_at)
+           VALUES ($1,'nba','free',$2,$3,$4,$5,$6,$7,$8,'active',
+                   FALSE,TRUE,FALSE,$9::jsonb,FALSE,8,7,7.5,NOW(),NOW())`,
+          [
+            today,
+            homeTeam,
+            awayTeam,
+            leg.league || "NBA",
+            leg.pick || `${homeTeam} Win`,
+            conf,
+            autoOdds,
+            fixtureId,
+            meta
+          ]
+        );
+      }
+      await pool3.end();
+      (legs || []).slice(0, 3).forEach((leg, i) => {
+        const n = i + 1;
+        const conf = parseFloat(leg.confidence) || 0;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
+        saves.push(setEngineConfig(`nba_leg${n}_home`, leg.homeTeam || ""));
+        saves.push(setEngineConfig(`nba_leg${n}_away`, leg.awayTeam || ""));
+        saves.push(setEngineConfig(`nba_leg${n}_pick`, leg.pick || ""));
+        saves.push(setEngineConfig(`nba_leg${n}_spread`, leg.spread || ""));
+        saves.push(setEngineConfig(`nba_leg${n}_total`, leg.total || ""));
+        saves.push(setEngineConfig(`nba_leg${n}_odds`, autoOdds));
+        saves.push(setEngineConfig(`nba_leg${n}_conf`, String(conf || "")));
+      });
+      saves.push(setEngineConfig("nba_parlay_enabled", enabled !== false ? "true" : "false"));
+      await Promise.all(saves);
+      clearPicksCache();
+      pingSearchEngines();
+      res.json({ success: true, message: enabled !== false ? "NBA parlay saved to NeonDB and enabled on site" : "NBA parlay disabled" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/parlay-soccer", requireAuth, async (req, res) => {
+    try {
+      const cfg = await getEngineConfig();
+      const legs = [1, 2, 3].map((i) => ({
+        homeTeam: cfg[`soc_leg${i}_home`] || "",
+        awayTeam: cfg[`soc_leg${i}_away`] || "",
+        pick: cfg[`soc_leg${i}_pick`] || "",
+        odds: cfg[`soc_leg${i}_odds`] || "",
+        confidence: cfg[`soc_leg${i}_conf`] || "",
+        league: cfg[`soc_leg${i}_league`] || ""
+      }));
+      res.json({ legs, enabled: cfg["soc_parlay_enabled"] !== "false" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/parlay-soccer", requireAuth, async (req, res) => {
+    try {
+      const { legs, enabled } = req.body;
+      const saves = [];
+      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      for (const leg of (legs || []).slice(0, 10)) {
+        const conf = parseFloat(leg.confidence) || 75;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
+        const homeTeam = (leg.homeTeam || "").trim();
+        const awayTeam = (leg.awayTeam || "").trim();
+        if (!homeTeam || !awayTeam) continue;
+        const fixtureId = `manual-soc-${homeTeam.replace(/\s+/g, "-").toLowerCase()}-${awayTeam.replace(/\s+/g, "-").toLowerCase()}-${today}`;
+        const meta = JSON.stringify({
+          source_model: "manual-admin-push",
+          source: "admin-manual",
+          bypass_gemini: true,
+          original_pick_label: leg.pick || "",
+          pushed_at: (/* @__PURE__ */ new Date()).toISOString(),
+          audit_log: { note: "Admin 3-Leg Soccer Parlay form \u2014 manual push" }
+        });
+        await pool3.query(
+          `UPDATE picks SET is_disabled=TRUE, updated_at=NOW()
+           WHERE date=$1 AND home_team=$2 AND away_team=$3
+             AND metadata->>'source_model'='manual-admin-push'`,
+          [today, homeTeam, awayTeam]
+        );
+        await pool3.query(
+          `INSERT INTO picks
+             (date, sport, tier, home_team, away_team, league, prediction,
+              confidence, odds, fixture_id, status, is_power_pick, is_featured,
+              is_disabled, metadata, is_personal, momentum, quality, mq_composite,
+              created_at, updated_at)
+           VALUES ($1,'soccer','free',$2,$3,$4,$5,$6,$7,$8,'active',
+                   FALSE,TRUE,FALSE,$9::jsonb,FALSE,8,7,7.5,NOW(),NOW())`,
+          [
+            today,
+            homeTeam,
+            awayTeam,
+            leg.league || "Soccer",
+            leg.pick || `${homeTeam} Win`,
+            conf,
+            autoOdds,
+            fixtureId,
+            meta
+          ]
+        );
+      }
+      await pool3.end();
+      (legs || []).slice(0, 3).forEach((leg, i) => {
+        const n = i + 1;
+        const conf = parseFloat(leg.confidence) || 0;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
+        saves.push(setEngineConfig(`soc_leg${n}_home`, leg.homeTeam || ""));
+        saves.push(setEngineConfig(`soc_leg${n}_away`, leg.awayTeam || ""));
+        saves.push(setEngineConfig(`soc_leg${n}_pick`, leg.pick || ""));
+        saves.push(setEngineConfig(`soc_leg${n}_odds`, autoOdds));
+        saves.push(setEngineConfig(`soc_leg${n}_conf`, String(conf || "")));
+        saves.push(setEngineConfig(`soc_leg${n}_league`, leg.league || ""));
+      });
+      saves.push(setEngineConfig("soc_parlay_enabled", enabled !== false ? "true" : "false"));
+      await Promise.all(saves);
+      clearPicksCache();
+      pingSearchEngines();
+      res.json({ success: true, message: enabled !== false ? "Soccer parlay saved to NeonDB and enabled on site" : "Soccer parlay disabled" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/parlay-mls", requireAuth, async (req, res) => {
+    try {
+      const cfg = await getEngineConfig();
+      const legs = [1, 2, 3].map((i) => ({
+        homeTeam: cfg[`mls_leg${i}_home`] || "",
+        awayTeam: cfg[`mls_leg${i}_away`] || "",
+        pick: cfg[`mls_leg${i}_pick`] || "",
+        odds: cfg[`mls_leg${i}_odds`] || "",
+        confidence: cfg[`mls_leg${i}_conf`] || ""
+      }));
+      res.json({ legs, enabled: cfg["mls_parlay_enabled"] !== "false" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/parlay-mls", requireAuth, async (req, res) => {
+    try {
+      const { legs, enabled } = req.body;
+      const saves = [];
+      const today = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      for (const leg of (legs || []).slice(0, 10)) {
+        const conf = parseFloat(leg.confidence) || 75;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
+        const homeTeam = (leg.homeTeam || "").trim();
+        const awayTeam = (leg.awayTeam || "").trim();
+        if (!homeTeam || !awayTeam) continue;
+        const fixtureId = `manual-mls-${homeTeam.replace(/\s+/g, "-").toLowerCase()}-${awayTeam.replace(/\s+/g, "-").toLowerCase()}-${today}`;
+        const meta = JSON.stringify({
+          source_model: "manual-admin-push",
+          source: "admin-manual",
+          bypass_gemini: true,
+          original_pick_label: leg.pick || "",
+          pushed_at: (/* @__PURE__ */ new Date()).toISOString(),
+          audit_log: { note: "Admin 3-Leg MLS Parlay form \u2014 manual push" }
+        });
+        await pool3.query(
+          `UPDATE picks SET is_disabled=TRUE, updated_at=NOW()
+           WHERE date=$1 AND home_team=$2 AND away_team=$3
+             AND metadata->>'source_model'='manual-admin-push'`,
+          [today, homeTeam, awayTeam]
+        );
+        await pool3.query(
+          `INSERT INTO picks
+             (date, sport, tier, home_team, away_team, league, prediction,
+              confidence, odds, fixture_id, status, is_power_pick, is_featured,
+              is_disabled, metadata, is_personal, momentum, quality, mq_composite,
+              created_at, updated_at)
+           VALUES ($1,'mls','free',$2,$3,$4,$5,$6,$7,$8,'active',
+                   FALSE,TRUE,FALSE,$9::jsonb,FALSE,8,7,7.5,NOW(),NOW())`,
+          [
+            today,
+            homeTeam,
+            awayTeam,
+            leg.league || "MLS",
+            leg.pick || `${homeTeam} Win`,
+            conf,
+            autoOdds,
+            fixtureId,
+            meta
+          ]
+        );
+      }
+      await pool3.end();
+      (legs || []).slice(0, 3).forEach((leg, i) => {
+        const n = i + 1;
+        const conf = parseFloat(leg.confidence) || 0;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
+        saves.push(setEngineConfig(`mls_leg${n}_home`, leg.homeTeam || ""));
+        saves.push(setEngineConfig(`mls_leg${n}_away`, leg.awayTeam || ""));
+        saves.push(setEngineConfig(`mls_leg${n}_pick`, leg.pick || ""));
+        saves.push(setEngineConfig(`mls_leg${n}_odds`, autoOdds));
+        saves.push(setEngineConfig(`mls_leg${n}_conf`, String(conf || "")));
+      });
+      saves.push(setEngineConfig("mls_parlay_enabled", enabled !== false ? "true" : "false"));
+      await Promise.all(saves);
+      clearPicksCache();
+      pingSearchEngines();
+      res.json({ success: true, message: enabled !== false ? "MLS parlay saved to NeonDB and enabled on site" : "MLS parlay disabled" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/power-pick-manual", requireAuth, async (req, res) => {
+    try {
+      const cfg = await getEngineConfig();
+      res.json({
+        homeTeam: cfg["pp_home"] || "",
+        awayTeam: cfg["pp_away"] || "",
+        league: cfg["pp_league"] || "",
+        sport: cfg["pp_sport"] || "nba",
+        pick: cfg["pp_pick"] || "",
+        confidence: cfg["pp_confidence"] || "",
+        odds: cfg["pp_odds"] || "",
+        analysis: cfg["pp_analysis"] || "",
+        enabled: cfg["pp_enabled"] !== "false"
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/power-pick-manual", requireAuth, async (req, res) => {
+    try {
+      const { homeTeam, awayTeam, league, sport, pick, confidence, odds, analysis, enabled } = req.body;
+      const conf = parseFloat(confidence) || 0;
+      const autoOdds = odds || confidenceToAmericanOdds(conf);
+      await Promise.all([
+        setEngineConfig("pp_home", homeTeam || ""),
+        setEngineConfig("pp_away", awayTeam || ""),
+        setEngineConfig("pp_league", league || ""),
+        setEngineConfig("pp_sport", sport || "nba"),
+        setEngineConfig("pp_pick", pick || ""),
+        setEngineConfig("pp_confidence", String(conf || "")),
+        setEngineConfig("pp_odds", autoOdds),
+        setEngineConfig("pp_analysis", analysis || ""),
+        setEngineConfig("pp_enabled", enabled !== false ? "true" : "false")
+      ]);
+      clearPicksCache();
+      pingSearchEngines();
+      res.json({ success: true, message: enabled !== false ? "Power Pick is LIVE on site" : "Power Pick disabled \u2014 placeholder shown" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/site-control", requireAuth, async (req, res) => {
+    try {
+      const cfg = await getEngineConfig();
+      res.json({
+        featuredGame: {
+          homeTeam: cfg["fg_home"] || "",
+          awayTeam: cfg["fg_away"] || "",
+          league: cfg["fg_league"] || "",
+          sport: cfg["fg_sport"] || "soccer",
+          homeOdds: cfg["fg_home_odds"] || "",
+          awayOdds: cfg["fg_away_odds"] || "",
+          drawOdds: cfg["fg_draw_odds"] || "",
+          confidence: cfg["fg_confidence"] || "",
+          pick: cfg["fg_pick"] || "",
+          liveOnSite: cfg["fg_live"] === "true"
+        },
+        expertAnalysis: {
+          title: cfg["ea_title"] || "",
+          body: cfg["ea_body"] || "",
+          visible: cfg["ea_visible"] !== "false"
+        },
+        parlayNba: {
+          legs: [1, 2, 3].map((i) => ({
+            homeTeam: cfg[`nba_leg${i}_home`] || "",
+            awayTeam: cfg[`nba_leg${i}_away`] || "",
+            pick: cfg[`nba_leg${i}_pick`] || "",
+            spread: cfg[`nba_leg${i}_spread`] || "",
+            total: cfg[`nba_leg${i}_total`] || "",
+            odds: cfg[`nba_leg${i}_odds`] || "",
+            confidence: cfg[`nba_leg${i}_conf`] || ""
+          })),
+          enabled: cfg["nba_parlay_enabled"] !== "false"
+        },
+        parlaySoccer: {
+          legs: [1, 2, 3].map((i) => ({
+            homeTeam: cfg[`soc_leg${i}_home`] || "",
+            awayTeam: cfg[`soc_leg${i}_away`] || "",
+            pick: cfg[`soc_leg${i}_pick`] || "",
+            odds: cfg[`soc_leg${i}_odds`] || "",
+            confidence: cfg[`soc_leg${i}_conf`] || "",
+            league: cfg[`soc_leg${i}_league`] || ""
+          })),
+          enabled: cfg["soc_parlay_enabled"] !== "false"
+        },
+        parlayMls: {
+          legs: [1, 2, 3].map((i) => ({
+            homeTeam: cfg[`mls_leg${i}_home`] || "",
+            awayTeam: cfg[`mls_leg${i}_away`] || "",
+            pick: cfg[`mls_leg${i}_pick`] || "",
+            odds: cfg[`mls_leg${i}_odds`] || "",
+            confidence: cfg[`mls_leg${i}_conf`] || ""
+          })),
+          enabled: cfg["mls_parlay_enabled"] !== "false"
+        },
+        powerPick: {
+          homeTeam: cfg["pp_home"] || "",
+          awayTeam: cfg["pp_away"] || "",
+          league: cfg["pp_league"] || "",
+          sport: cfg["pp_sport"] || "nba",
+          pick: cfg["pp_pick"] || "",
+          confidence: cfg["pp_confidence"] || "",
+          odds: cfg["pp_odds"] || "",
+          analysis: cfg["pp_analysis"] || "",
+          enabled: cfg["pp_enabled"] !== "false"
+        }
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/vip-content", requireAuth, async (req, res) => {
+    try {
+      const cfg = await getEngineConfig();
+      res.json({
+        headline: cfg["vip_headline"] || "",
+        subheadline: cfg["vip_subheadline"] || "",
+        feature1: cfg["vip_feature1"] || "",
+        feature2: cfg["vip_feature2"] || "",
+        feature3: cfg["vip_feature3"] || "",
+        feature4: cfg["vip_feature4"] || "",
+        ctaText: cfg["vip_cta_text"] || "",
+        ctaLink: cfg["vip_cta_link"] || "",
+        badgeLabel: cfg["vip_badge_label"] || "",
+        imageUrl: cfg["vip_image_url"] || "",
+        overrideOn: cfg["vip_override"] === "true"
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/vip-content", requireAuth, async (req, res) => {
+    try {
+      const {
+        headline,
+        subheadline,
+        feature1,
+        feature2,
+        feature3,
+        feature4,
+        ctaText,
+        ctaLink,
+        badgeLabel,
+        imageUrl,
+        overrideOn
+      } = req.body;
+      await Promise.all([
+        setEngineConfig("vip_headline", headline || ""),
+        setEngineConfig("vip_subheadline", subheadline || ""),
+        setEngineConfig("vip_feature1", feature1 || ""),
+        setEngineConfig("vip_feature2", feature2 || ""),
+        setEngineConfig("vip_feature3", feature3 || ""),
+        setEngineConfig("vip_feature4", feature4 || ""),
+        setEngineConfig("vip_cta_text", ctaText || ""),
+        setEngineConfig("vip_cta_link", ctaLink || ""),
+        setEngineConfig("vip_badge_label", badgeLabel || ""),
+        setEngineConfig("vip_image_url", imageUrl || ""),
+        setEngineConfig("vip_override", overrideOn ? "true" : "false")
+      ]);
+      clearPicksCache();
+      res.json({ success: true, message: overrideOn ? "VIP content override is LIVE" : "VIP content saved (override OFF \u2014 default shown)" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/history-entries", requireAuth, async (req, res) => {
+    try {
+      const cfg = await getEngineConfig();
+      const raw = cfg["history_entries"] || "[]";
+      let entries = [];
+      try {
+        entries = JSON.parse(raw);
+      } catch {
+        entries = [];
+      }
+      res.json({ entries });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/history-entries", requireAuth, async (req, res) => {
+    try {
+      const { entries } = req.body;
+      if (!Array.isArray(entries)) return res.status(400).json({ error: "entries must be an array" });
+      const clean = entries.map((e) => ({
+        id: e.id || `hist_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        date: e.date || "",
+        matchup: e.matchup || "",
+        pick: e.pick || "",
+        result: ["won", "lost", "void"].includes(e.result) ? e.result : "void",
+        odds: e.odds || "",
+        sport: e.sport || "soccer",
+        league: e.league || "",
+        notes: e.notes || ""
+      }));
+      await setEngineConfig("history_entries", JSON.stringify(clean));
+      clearPicksCache();
+      res.json({ success: true, count: clean.length, message: `${clean.length} history record(s) saved` });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.delete("/api/admin/history-entries/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const cfg = await getEngineConfig();
+      let entries = [];
+      try {
+        entries = JSON.parse(cfg["history_entries"] || "[]");
+      } catch {
+        entries = [];
+      }
+      const filtered = entries.filter((e) => e.id !== id);
+      await setEngineConfig("history_entries", JSON.stringify(filtered));
+      clearPicksCache();
+      res.json({ success: true, message: `Entry ${id} deleted` });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/site-settings", requireAuth, async (req, res) => {
+    try {
+      const cfg = await getEngineConfig();
+      res.json({
+        alertEnabled: cfg["alert_enabled"] === "true",
+        alertText: cfg["alert_text"] || "",
+        alertType: cfg["alert_type"] || "info",
+        // info | warning | success | danger
+        maintenanceMode: cfg["maintenance_mode"] === "true",
+        maintenanceMsg: cfg["maintenance_msg"] || "Site is under maintenance. Check back soon.",
+        engineLabel: cfg["engine_label"] || "Gold Standard V3 Titan XII",
+        footerDisclaimer: cfg["footer_disclaimer"] || "For entertainment purposes only. Please gamble responsibly.",
+        contactEmail: cfg["contact_email"] || "Glenoring@gmail.com",
+        twitterUrl: cfg["twitter_url"] || "",
+        instagramUrl: cfg["instagram_url"] || "",
+        discordUrl: cfg["discord_url"] || ""
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/site-settings", requireAuth, async (req, res) => {
+    try {
+      const {
+        alertEnabled,
+        alertText,
+        alertType,
+        maintenanceMode,
+        maintenanceMsg,
+        engineLabel,
+        footerDisclaimer,
+        contactEmail,
+        twitterUrl,
+        instagramUrl,
+        discordUrl
+      } = req.body;
+      await Promise.all([
+        setEngineConfig("alert_enabled", alertEnabled ? "true" : "false"),
+        setEngineConfig("alert_text", alertText || ""),
+        setEngineConfig("alert_type", alertType || "info"),
+        setEngineConfig("maintenance_mode", maintenanceMode ? "true" : "false"),
+        setEngineConfig("maintenance_msg", maintenanceMsg || ""),
+        setEngineConfig("engine_label", engineLabel || "Gold Standard V3 Titan XII"),
+        setEngineConfig("footer_disclaimer", footerDisclaimer || ""),
+        setEngineConfig("contact_email", contactEmail || ""),
+        setEngineConfig("twitter_url", twitterUrl || ""),
+        setEngineConfig("instagram_url", instagramUrl || ""),
+        setEngineConfig("discord_url", discordUrl || "")
+      ]);
+      clearPicksCache();
+      res.json({ success: true, message: "Site settings saved and cache cleared" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/api-budget", requireAuth, async (req, res) => {
+    try {
+      const { getBudgetStatus: getBudgetStatus2 } = await Promise.resolve().then(() => (init_oddsApi(), oddsApi_exports));
+      const status = getBudgetStatus2();
+      res.json({
+        ...status,
+        throttle_warning: status.used_today >= 80,
+        throttle_active: status.used_today >= 90,
+        manual_reserve: Math.max(0, 100 - status.used_today),
+        message: status.used_today >= 90 ? `\u26D4 AUTO TASKS PAUSED \u2014 ${status.used_today}/100 calls used. ${100 - status.used_today} manual calls remaining.` : status.used_today >= 80 ? `\u26A0\uFE0F WARNING \u2014 ${status.used_today}/100 calls used. Approaching auto-task limit (90).` : `\u2705 ${status.used_today}/100 calls used. ${90 - status.used_today} auto-task calls remaining.`
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "Not authenticated." });
+      }
+      const token = authHeader.slice(7);
+      const decoded = import_jsonwebtoken2.default.verify(token, JWT_SECRET2);
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const result = await pool3.query("SELECT tier, expires_at, tier_locked_until, subscription_plan FROM members WHERE email = $1", [decoded.email]);
+      await pool3.end();
+      const row = result.rows[0];
+      const activeTier = row ? row.tier : decoded.tier;
+      return res.json({
+        success: true,
+        email: decoded.email,
+        username: decoded.username,
+        tier: activeTier,
+        expiresAt: row?.expires_at || null,
+        tierLockedUntil: row?.tier_locked_until || null,
+        subscriptionPlan: row?.subscription_plan || null
+      });
+    } catch {
+      return res.status(401).json({ error: "Invalid or expired session. Please log in again." });
+    }
+  });
+  app.get("/api/member/dashboard", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "Not authenticated." });
+      }
+      const token = authHeader.slice(7);
+      const decoded = import_jsonwebtoken2.default.verify(token, JWT_SECRET2);
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const result = await pool3.query("SELECT * FROM members WHERE email = $1", [decoded.email]);
+      await pool3.end();
+      if (result.rows.length === 0) return res.status(404).json({ error: "Member not found." });
+      const member = result.rows[0];
+      let activeTier = member.tier;
+      let daysRemaining = null;
+      let hoursRemaining = null;
+      let isExpired = false;
+      if (member.expires_at && member.tier !== "lifetime") {
+        const expiryMs = new Date(member.expires_at).getTime() - Date.now();
+        if (expiryMs <= 0) {
+          isExpired = true;
+          activeTier = "free";
+        } else {
+          daysRemaining = Math.floor(expiryMs / (1e3 * 60 * 60 * 24));
+          hoursRemaining = Math.floor(expiryMs % (1e3 * 60 * 60 * 24) / (1e3 * 60 * 60));
+        }
+      }
+      const V3_ALLOWED_SPORTS = ["soccer", "nba", "mls"];
+      const V3_PRO_QUOTA = 6;
+      const V3_LIFETIME_QUOTA = 10;
+      const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+      const tierFilter = activeTier === "lifetime" ? ["lifetime", "pro", "vip", "free"] : activeTier === "pro" ? ["pro", "vip", "free"] : activeTier === "vip" ? ["vip", "free"] : ["free"];
+      const pool22 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const picksResult = await pool22.query(
+        `SELECT DISTINCT ON (home_team, away_team) * FROM picks
+         WHERE date = $1
+           AND tier = ANY($2)
+           AND is_disabled = false
+           AND sport = ANY($3)
+         ORDER BY home_team, away_team, confidence DESC`,
+        [today, tierFilter, V3_ALLOWED_SPORTS]
+      );
+      await pool22.end();
+      const allEligible = picksResult.rows.sort(
+        (a, b) => (parseFloat(b.confidence) || 0) - (parseFloat(a.confidence) || 0)
+      );
+      const tierQuota = activeTier === "lifetime" ? V3_LIFETIME_QUOTA : activeTier === "pro" ? V3_PRO_QUOTA : 20;
+      const tieredPicks = allEligible.slice(0, tierQuota);
+      return res.json({
+        success: true,
+        member: {
+          email: member.email,
+          username: member.username,
+          tier: activeTier,
+          subscriptionPlan: member.subscription_plan,
+          expiresAt: member.expires_at || null,
+          isLifetime: activeTier === "lifetime",
+          isExpired,
+          daysRemaining,
+          hoursRemaining,
+          tierLockedUntil: member.tier_locked_until || null,
+          canUpgrade: isExpired || activeTier === "free"
+        },
+        picks: tieredPicks,
+        picksDate: today,
+        // Distribution metadata (informational)
+        distribution: {
+          allowedSports: V3_ALLOWED_SPORTS,
+          quota: tierQuota,
+          totalEligible: allEligible.length,
+          returned: tieredPicks.length
+        }
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/member/parlay-builder", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "Not authenticated." });
+      }
+      const token = authHeader.slice(7);
+      const decoded = import_jsonwebtoken2.default.verify(token, JWT_SECRET2);
+      const memberTier = decoded.tier || "free";
+      const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+      const tierFilter = memberTier === "lifetime" ? ["lifetime", "pro", "vip", "free"] : memberTier === "pro" ? ["pro", "vip", "free"] : memberTier === "vip" ? ["vip", "free"] : ["free"];
+      const PB_ALLOWED_SPORTS = ["soccer", "nba", "mls"];
+      const PB_PRO_QUOTA = 6;
+      const PB_LIFETIME_QUOTA = 10;
+      const parlayQuota = memberTier === "lifetime" ? PB_LIFETIME_QUOTA : memberTier === "pro" ? PB_PRO_QUOTA : 10;
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const picksResult = await pool3.query(
+        `SELECT * FROM picks
+         WHERE date = $1
+           AND tier = ANY($2)
+           AND is_disabled = false
+           AND sport = ANY($3)
+         ORDER BY confidence DESC
+         LIMIT $4`,
+        [today, tierFilter, PB_ALLOWED_SPORTS, parlayQuota]
+      );
+      await pool3.end();
+      const sportsbooks = [
+        { name: "DraftKings", url: "https://sportsbook.draftkings.com", logo: "dk" },
+        { name: "FanDuel", url: "https://sportsbook.fanduel.com", logo: "fd" },
+        { name: "BetMGM", url: "https://sports.betmgm.com", logo: "mgm" },
+        { name: "Caesars", url: "https://sportsbook.caesars.com", logo: "czr" },
+        { name: "PointsBet", url: "https://pointsbet.com", logo: "pb" },
+        { name: "BetRivers", url: "https://betrivers.com", logo: "br" },
+        { name: "ESPN BET", url: "https://espnbet.com", logo: "espn" },
+        { name: "Bet365", url: "https://bet365.com", logo: "b365" }
+      ];
+      const legs = picksResult.rows.map((pick) => {
+        const searchQuery = encodeURIComponent(`${pick.home_team} vs ${pick.away_team}`);
+        return {
+          id: pick.id,
+          homeTeam: pick.home_team,
+          awayTeam: pick.away_team,
+          league: pick.league,
+          sport: pick.sport,
+          prediction: pick.prediction,
+          confidence: pick.confidence,
+          odds: pick.odds,
+          tier: pick.tier,
+          isPowerPick: pick.is_power_pick,
+          sportsbookLinks: sportsbooks.map((sb) => ({
+            name: sb.name,
+            url: `${sb.url}/search?q=${searchQuery}`,
+            logo: sb.logo
+          }))
+        };
+      });
+      return res.json({
+        success: true,
+        date: today,
+        memberTier,
+        legs,
+        sportsbooks,
+        totalLegs: legs.length
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/auth/upgrade-check", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "Not authenticated." });
+      }
+      const token = authHeader.slice(7);
+      const decoded = import_jsonwebtoken2.default.verify(token, JWT_SECRET2);
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const result = await pool3.query("SELECT tier, expires_at, tier_locked_until FROM members WHERE email = $1", [decoded.email]);
+      await pool3.end();
+      if (result.rows.length === 0) return res.status(404).json({ error: "Member not found." });
+      const member = result.rows[0];
+      const isLocked = member.tier_locked_until && new Date(member.tier_locked_until) > /* @__PURE__ */ new Date();
+      const isExpired = member.expires_at && new Date(member.expires_at) < /* @__PURE__ */ new Date();
+      const canUpgrade = !isLocked || isExpired || member.tier === "free";
+      return res.json({
+        success: true,
+        currentTier: member.tier,
+        canUpgrade,
+        isLocked: !!isLocked,
+        lockExpiresAt: member.tier_locked_until || null,
+        message: canUpgrade ? "You are eligible to upgrade your plan." : `Your current subscription is active until ${new Date(member.tier_locked_until).toLocaleDateString()}. You can upgrade once it expires.`
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/members/:id/set-tier", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { tier, expiresAt, subscriptionPlan } = req.body;
+      if (!tier) return res.status(400).json({ error: "tier is required" });
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const expiry = expiresAt ? new Date(expiresAt) : tier === "lifetime" ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1e3);
+      const lockUntil = tier === "lifetime" || tier === "free" ? null : expiry;
+      await pool3.query(
+        `UPDATE members SET tier = $1, subscription_plan = $2, expires_at = $3, tier_locked_until = $4 WHERE id = $5`,
+        [tier, subscriptionPlan || tier, expiry, lockUntil, id]
+      );
+      await pool3.end();
+      picksCache = null;
+      return res.json({ success: true, message: `Member #${id} updated to ${tier} tier.` });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/test-payment", (req, res) => {
+    const key = req.query.key;
+    const plan = req.query.plan || "pro-monthly";
+    const OWNER_KEY = "ParlayKingOwner2026";
+    if (key !== OWNER_KEY) {
+      return res.status(403).send("Forbidden");
+    }
+    const validPlans = ["pro-monthly", "vip-monthly", "lifetime"];
+    const safePlan = validPlans.includes(plan) ? plan : "pro-monthly";
+    return res.redirect(`/register?plan=${safePlan}&payment=success&test=1`);
+  });
+  app.get("/api/admin/pending-validator", requireAuth, async (req, res) => {
+    try {
+      const { Pool: PVPool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pvPool = new PVPool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const TZ_AST = "America/Moncton";
+      const defaultDate = /* @__PURE__ */ new Date();
+      defaultDate.setDate(defaultDate.getDate() + 1);
+      const date2 = req.query.date || defaultDate.toLocaleDateString("en-CA", { timeZone: TZ_AST });
+      const sport = req.query.sport || "all";
+      const minConf = parseFloat(req.query.min_confidence || "0");
+      let query = `SELECT * FROM pending_validator WHERE date = $1`;
+      const params = [date2];
+      if (sport !== "all") {
+        query += ` AND sport = $${params.length + 1}`;
+        params.push(sport);
+      }
+      if (minConf > 0) {
+        query += ` AND confidence >= $${params.length + 1}`;
+        params.push(minConf);
+      }
+      query += ` ORDER BY confidence DESC`;
+      const result = await pvPool.query(query, params);
+      await pvPool.end();
+      return res.json({ success: true, date: date2, total: result.rows.length, games: result.rows });
+    } catch (err) {
+      if (err.message?.includes("does not exist")) {
+        return res.json({ success: true, date: req.query.date || "", total: 0, games: [], note: "pending_validator table not yet created \u2014 runs at 2 AM" });
+      }
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/pending-validator/sync", requireAuth, async (req, res) => {
+    try {
+      const { syncTomorrowGames: syncTomorrowGames2 } = await Promise.resolve().then(() => (init_tomorrowSync(), tomorrowSync_exports));
+      const result = await syncTomorrowGames2("admin-manual");
+      return res.json({ success: true, ...result });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/pending-validator/approve", requireAuth, async (req, res) => {
+    try {
+      const { id, tier = "pro" } = req.body;
+      if (!id) return res.status(400).json({ error: "id required" });
+      const { Pool: ApprovePool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const aPool = new ApprovePool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const pvRow = await aPool.query(`SELECT * FROM pending_validator WHERE id = $1`, [id]);
+      if (!pvRow.rows.length) {
+        await aPool.end();
+        return res.status(404).json({ error: "Row not found" });
+      }
+      const g = pvRow.rows[0];
+      const pickResult = await aPool.query(`
+        INSERT INTO picks (date, sport, league, home_team, away_team, prediction, confidence, tier, status, is_power_pick, metadata, created_at, updated_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending',$9,$10,NOW(),NOW())
+        ON CONFLICT DO NOTHING RETURNING id
+      `, [
+        g.date,
+        g.sport,
+        g.league,
+        g.home_team,
+        g.away_team,
+        g.best_pick,
+        g.confidence,
+        tier,
+        g.confidence >= 72,
+        JSON.stringify({ source: "pending_validator", game_id: g.game_id, factors: g.factors, reasoning: g.reasoning })
+      ]);
+      await aPool.query(`UPDATE pending_validator SET approved = true, pushed_to_live = true, updated_at = NOW() WHERE id = $1`, [id]);
+      await aPool.end();
+      return res.json({ success: true, pickId: pickResult.rows[0]?.id, message: `Approved and pushed to ${tier} tier` });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/command", requireAuth, async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
+        return res.status(400).json({ error: "prompt is required", success: false });
+      }
+      const GEMINI_API_KEY3 = process.env.GEMINI_API_KEY || "";
+      if (!GEMINI_API_KEY3) {
+        return res.status(500).json({ error: "GEMINI_API_KEY not configured on server", success: false });
+      }
+      const lowerPrompt = prompt.toLowerCase().trim();
+      if (lowerPrompt.includes("test") && (lowerPrompt.includes("database") || lowerPrompt.includes("db") || lowerPrompt.includes("connection"))) {
+        const { Pool: TestPool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+        const testPool = new TestPool({
+          connectionString: process.env.DATABASE_URL,
+          ssl: process.env.DATABASE_URL?.includes("neon.tech") ? { rejectUnauthorized: false } : false,
+          max: 1,
+          connectionTimeoutMillis: 5e3
+        });
+        const testClient = await testPool.connect();
+        const testResult = await testClient.query(
+          "SELECT 1 AS connection_ok, NOW() AS server_time, current_database() AS db_name"
+        );
+        testClient.release();
+        await testPool.end();
+        const row = testResult.rows[0];
+        return res.json({
+          message: `\u2705 Database connection OK \u2014 Connected to "${row.db_name}" at ${new Date(row.server_time).toUTCString()}. SELECT 1 returned ${row.connection_ok}.`,
+          action: "db_test",
+          success: true
+        });
+      }
+      const { GoogleGenerativeAI: GoogleGenerativeAI2 } = await Promise.resolve().then(() => (init_dist(), dist_exports));
+      const genAI3 = new GoogleGenerativeAI2(GEMINI_API_KEY3);
+      const controlTools = {
+        functionDeclarations: [
+          {
+            name: "update_pick_status",
+            description: "Updates a pick status (win/loss/pending) in the picks table by pick ID.",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                pick_id: { type: "NUMBER", description: "The numeric ID of the pick to update" },
+                status: { type: "STRING", enum: ["win", "loss", "pending"], description: "New status for the pick" }
+              },
+              required: ["pick_id", "status"]
+            }
+          },
+          {
+            name: "publish_parlay",
+            description: "Publishes a 3-leg parlay to a specific member tier (pro or lifetime) in the parlays table.",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                tier: { type: "STRING", enum: ["pro", "lifetime"], description: "Target tier for the parlay" },
+                games: { type: "ARRAY", items: { type: "STRING" }, description: "Array of exactly 3 pick IDs or game identifiers" },
+                date: { type: "STRING", description: "Date for the parlay in YYYY-MM-DD format" }
+              },
+              required: ["tier", "games"]
+            }
+          },
+          {
+            name: "get_picks_summary",
+            description: "Returns a summary of picks for a given date (count, wins, losses, pending).",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                date: { type: "STRING", description: "Date in YYYY-MM-DD format. Use today if not specified." }
+              },
+              required: []
+            }
+          },
+          {
+            name: "disable_pick",
+            description: "Disables (hides) a pick from the live dashboard by setting is_disabled = true.",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                pick_id: { type: "NUMBER", description: "The numeric ID of the pick to disable" }
+              },
+              required: ["pick_id"]
+            }
+          }
+        ]
+      };
+      const model = genAI3.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        tools: [controlTools]
+      });
+      const chat = model.startChat();
+      const result = await chat.sendMessage(
+        `You are the AI Commander for the Parlay King admin dashboard. The user says: "${prompt}" Use the available functions to execute the request. If no function applies, respond with a helpful plain-text answer.`
+      );
+      const calls = result.response.functionCalls();
+      if (!calls || calls.length === 0) {
+        return res.json({ message: result.response.text(), action: "text_response", success: true });
+      }
+      const call = calls[0];
+      const args = call.args;
+      const { Pool: CmdPool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const cmdPool = new CmdPool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.DATABASE_URL?.includes("neon.tech") ? { rejectUnauthorized: false } : false,
+        max: 2,
+        connectionTimeoutMillis: 5e3
+      });
+      const cmdClient = await cmdPool.connect();
+      try {
+        let responseMessage = "";
+        if (call.name === "update_pick_status") {
+          const { pick_id, status } = args;
+          const upd = await cmdClient.query(
+            "UPDATE picks SET status = $1 WHERE id = $2 RETURNING id, status, home_team, away_team",
+            [status, pick_id]
+          );
+          if (upd.rowCount === 0) {
+            responseMessage = `\u26A0\uFE0F No pick found with ID ${pick_id}. No changes made.`;
+          } else {
+            const r = upd.rows[0];
+            responseMessage = `\u2705 Pick #${pick_id} (${r.home_team} vs ${r.away_team}) updated to **${status.toUpperCase()}**.`;
+          }
+        } else if (call.name === "publish_parlay") {
+          const { tier, games, date: parlayDate } = args;
+          const pDate = parlayDate || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+          if (!games || games.length !== 3) {
+            responseMessage = `\u26A0\uFE0F A parlay requires exactly 3 games. Received ${games?.length || 0}.`;
+          } else {
+            await cmdClient.query(
+              "INSERT INTO parlays (tier, game_ids, date, created_at) VALUES ($1, $2, $3, NOW()) ON CONFLICT DO NOTHING",
+              [tier, JSON.stringify(games), pDate]
+            );
+            responseMessage = `\u2705 3-Leg **${tier.toUpperCase()}** parlay published for ${pDate} with games: ${games.join(", ")}.`;
+          }
+        } else if (call.name === "get_picks_summary") {
+          const summaryDate = args.date || (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
+          const s = await cmdClient.query(
+            `SELECT COUNT(*) FILTER (WHERE status='win') AS wins,
+                    COUNT(*) FILTER (WHERE status='loss') AS losses,
+                    COUNT(*) FILTER (WHERE status='pending') AS pending,
+                    COUNT(*) AS total
+             FROM picks WHERE date = $1`,
+            [summaryDate]
+          );
+          const row = s.rows[0];
+          responseMessage = `\u{1F4CA} Picks for **${summaryDate}**: ${row.total} total \u2014 ${row.wins} wins, ${row.losses} losses, ${row.pending} pending.`;
+        } else if (call.name === "disable_pick") {
+          const { pick_id } = args;
+          const dis = await cmdClient.query(
+            "UPDATE picks SET is_disabled = true WHERE id = $1 RETURNING id, home_team, away_team",
+            [pick_id]
+          );
+          if (dis.rowCount === 0) {
+            responseMessage = `\u26A0\uFE0F No pick found with ID ${pick_id}.`;
+          } else {
+            const r = dis.rows[0];
+            responseMessage = `\u{1F6AB} Pick #${pick_id} (${r.home_team} vs ${r.away_team}) disabled and hidden from the live dashboard.`;
+          }
+        } else {
+          responseMessage = `\u26A0\uFE0F Unknown function: ${call.name}`;
+        }
+        return res.json({ message: responseMessage, action: call.name, args, success: true });
+      } finally {
+        cmdClient.release();
+        await cmdPool.end();
+      }
+    } catch (err) {
+      console.error("[AI Commander] Error:", err.message);
+      return res.status(500).json({ error: `AI Commander error: ${err.message}`, success: false });
+    }
+  });
+  app.get("/api/admin/members-full", requireAuth, async (req, res) => {
+    try {
+      const { Pool: Pool3 } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const pool3 = new Pool3({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const result = await pool3.query(
+        `SELECT id, email, username, tier, subscription_plan, expires_at, tier_locked_until, is_active, last_active, created_at
+         FROM members ORDER BY created_at DESC`
+      );
+      await pool3.end();
+      const now = /* @__PURE__ */ new Date();
+      const members2 = result.rows.map((m) => {
+        const isExpired = m.expires_at && new Date(m.expires_at) < now && m.tier !== "lifetime";
+        const isLocked = m.tier_locked_until && new Date(m.tier_locked_until) > now;
+        const daysLeft = m.expires_at && !isExpired ? Math.ceil((new Date(m.expires_at).getTime() - now.getTime()) / (1e3 * 60 * 60 * 24)) : null;
+        return { ...m, isExpired, isLocked, daysLeft };
+      });
+      return res.json({ success: true, members: members2, total: members2.length });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/validator/mode", requireAuth, async (req, res) => {
+    try {
+      const { mode } = req.body;
+      if (mode !== "shadow" && mode !== "active") {
+        return res.status(400).json({ error: 'mode must be "shadow" or "active"' });
+      }
+      const { setValidatorMode: setValidatorMode2 } = await Promise.resolve().then(() => (init_v2Validator(), v2Validator_exports));
+      setValidatorMode2(mode);
+      console.log(`[V2Validator] Admin switched validator to ${mode.toUpperCase()} MODE`);
+      return res.json({ success: true, mode, message: `V2 Validator switched to ${mode.toUpperCase()} MODE` });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/validator/status", requireAuth, async (req, res) => {
+    try {
+      const { getValidatorMode: getValidatorMode2, VALIDATOR_THRESHOLDS: VALIDATOR_THRESHOLDS2 } = await Promise.resolve().then(() => (init_v2Validator(), v2Validator_exports));
+      return res.json({
+        success: true,
+        mode: getValidatorMode2(),
+        thresholds: VALIDATOR_THRESHOLDS2,
+        description: getValidatorMode2() === "shadow" ? "SHADOW MODE: Validator logs what would be blocked WITHOUT blocking anything" : "ACTIVE MODE: Validator is BLOCKING picks that fail the 65%/68% threshold, V3-15 audit, safety anchors, or value gate"
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/validator/dry-run", requireAuth, async (req, res) => {
+    try {
+      const { Pool: DryPool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const dPool = new DryPool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const rows = await dPool.query(`SELECT id, home_team, away_team, confidence, tier, is_power_pick, metadata FROM picks ORDER BY created_at DESC LIMIT 10`);
+      await dPool.end();
+      const { runDryRun: runDryRun2 } = await Promise.resolve().then(() => (init_v2Validator(), v2Validator_exports));
+      const picks2 = rows.rows.map((p) => {
+        const meta = typeof p.metadata === "string" ? JSON.parse(p.metadata || "{}") : p.metadata || {};
+        return {
+          homeTeam: p.home_team,
+          awayTeam: p.away_team,
+          prediction: "",
+          confidence: parseFloat(p.confidence),
+          pickType: p.is_power_pick || p.tier === "lifetime" ? "featured" : "tab",
+          factors: meta.factors || meta.v3_factors || {}
+        };
+      });
+      const result = runDryRun2(picks2);
+      return res.json({ success: true, ...result });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/admin/upcoming-fixtures", requireAuth, async (req, res) => {
+    try {
+      const { getUpcomingFixtures: getUpcomingFixtures2 } = await Promise.resolve().then(() => (init_fixtureScraper(), fixtureScraper_exports));
+      const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+      const from = req.query.from || today;
+      const to = req.query.to || new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
+      const sport = req.query.sport || "all";
+      const fixtures = await getUpcomingFixtures2(from, to, sport);
+      return res.json({ success: true, fixtures, count: fixtures.length, from, to });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/upcoming-fixtures/scrape", requireAuth, async (req, res) => {
+    try {
+      const { scrapeUpcomingFixtures: scrapeUpcomingFixtures2 } = await Promise.resolve().then(() => (init_fixtureScraper(), fixtureScraper_exports));
+      const result = await scrapeUpcomingFixtures2();
+      return res.json({ success: true, ...result, message: `Scraped ${result.total} fixtures (${result.nba} NBA, ${result.soccer} Soccer) \u2014 0 API credits used` });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  app.post("/api/admin/upcoming-fixtures/:id/analyze", requireAuth, async (req, res) => {
+    try {
+      const fixtureId = parseInt(req.params.id);
+      if (isNaN(fixtureId)) return res.status(400).json({ error: "Invalid fixture ID" });
+      const { Pool: APool } = await Promise.resolve().then(() => (init_esm(), esm_exports));
+      const aPool = new APool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const row = await aPool.query(`SELECT * FROM upcoming_fixtures WHERE id = $1`, [fixtureId]);
+      await aPool.end();
+      if (!row.rows.length) return res.status(404).json({ error: "Fixture not found" });
+      const fixture = row.rows[0];
+      if (fixture.analyzed && fixture.analysis_result) {
+        const cachedResult = typeof fixture.analysis_result === "string" ? JSON.parse(fixture.analysis_result) : fixture.analysis_result;
+        console.log(`[FixtureAnalyze] Cache hit for fixture ${fixtureId}: ${fixture.home_team} vs ${fixture.away_team} | conf=${cachedResult.confidence}%`);
+        return res.json({
+          success: true,
+          cached: true,
+          fixtureId,
+          homeTeam: fixture.home_team,
+          awayTeam: fixture.away_team,
+          ...cachedResult,
+          analyzedAt: fixture.analyzed_at
+        });
+      }
+      const { runBatchPredictionsV15: runBatchPredictionsV152, calcDeterministicBase: calcDeterministicBase2 } = await Promise.resolve().then(() => (init_geminiV3Engine(), geminiV3Engine_exports));
+      const GEMINI_API_KEY3 = process.env.GEMINI_API_KEY || "";
+      if (!GEMINI_API_KEY3) return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
+      const missingFactors = [];
+      if (!fixture.home_team || !fixture.away_team) missingFactors.push("F01: Team names missing");
+      if (!fixture.league) missingFactors.push("F02: League/competition data missing");
+      if (!fixture.game_datetime) missingFactors.push("F03: Game date/time missing");
+      console.log(`[FixtureAnalyze] Missing factors for ${fixture.home_team} vs ${fixture.away_team}: ${missingFactors.length === 0 ? "none" : missingFactors.join(", ")}`);
+      if (missingFactors.length >= 2) {
+        return res.status(422).json({
+          error: "Awaiting Data",
+          reason: "Insufficient data for V3-15 analysis",
+          missingFactors,
+          status: "awaiting_data",
+          homeTeam: fixture.home_team,
+          awayTeam: fixture.away_team
+        });
+      }
+      const TEAM_NAME_MAP = {
+        // NBA
+        "Golden State": "Golden State Warriors",
+        "GS Warriors": "Golden State Warriors",
+        "GSW": "Golden State Warriors",
+        "Minnesota": "Minnesota Timberwolves",
+        "MIN Timberwolves": "Minnesota Timberwolves",
+        "LA Lakers": "Los Angeles Lakers",
+        "Los Angeles Lakers": "Los Angeles Lakers",
+        "LAL": "Los Angeles Lakers",
+        "LA Clippers": "Los Angeles Clippers",
+        "LAC": "Los Angeles Clippers",
+        "NY Knicks": "New York Knicks",
+        "New York": "New York Knicks",
+        "NYK": "New York Knicks",
+        "Brooklyn": "Brooklyn Nets",
+        "BKN": "Brooklyn Nets",
+        "Boston": "Boston Celtics",
+        "BOS": "Boston Celtics",
+        "Miami": "Miami Heat",
+        "MIA": "Miami Heat",
+        "Chicago": "Chicago Bulls",
+        "CHI": "Chicago Bulls",
+        "Cleveland": "Cleveland Cavaliers",
+        "CLE": "Cleveland Cavaliers",
+        "Detroit": "Detroit Pistons",
+        "DET": "Detroit Pistons",
+        "Indiana": "Indiana Pacers",
+        "IND": "Indiana Pacers",
+        "Milwaukee": "Milwaukee Bucks",
+        "MIL": "Milwaukee Bucks",
+        "Atlanta": "Atlanta Hawks",
+        "ATL": "Atlanta Hawks",
+        "Charlotte": "Charlotte Hornets",
+        "CHA": "Charlotte Hornets",
+        "Orlando": "Orlando Magic",
+        "ORL": "Orlando Magic",
+        "Washington": "Washington Wizards",
+        "WAS": "Washington Wizards",
+        "Denver": "Denver Nuggets",
+        "DEN": "Denver Nuggets",
+        "Oklahoma City": "Oklahoma City Thunder",
+        "OKC": "Oklahoma City Thunder",
+        "Portland": "Portland Trail Blazers",
+        "POR": "Portland Trail Blazers",
+        "Sacramento": "Sacramento Kings",
+        "SAC": "Sacramento Kings",
+        "Utah": "Utah Jazz",
+        "UTA": "Utah Jazz",
+        "Phoenix": "Phoenix Suns",
+        "PHX": "Phoenix Suns",
+        "Dallas": "Dallas Mavericks",
+        "DAL": "Dallas Mavericks",
+        "Houston": "Houston Rockets",
+        "HOU": "Houston Rockets",
+        "Memphis": "Memphis Grizzlies",
+        "MEM": "Memphis Grizzlies",
+        "New Orleans": "New Orleans Pelicans",
+        "NOP": "New Orleans Pelicans",
+        "San Antonio": "San Antonio Spurs",
+        "SAS": "San Antonio Spurs",
+        "Toronto": "Toronto Raptors",
+        "TOR": "Toronto Raptors",
+        "Philadelphia": "Philadelphia 76ers",
+        "PHI": "Philadelphia 76ers",
+        // Soccer common abbreviations
+        "Man City": "Manchester City",
+        "Man United": "Manchester United",
+        "Man Utd": "Manchester United",
+        "Spurs": "Tottenham Hotspur",
+        "Tottenham": "Tottenham Hotspur",
+        "Arsenal FC": "Arsenal",
+        "Chelsea FC": "Chelsea",
+        "Liverpool FC": "Liverpool",
+        "Real Madrid CF": "Real Madrid",
+        "FC Barcelona": "Barcelona",
+        "Atletico Madrid": "Atletico de Madrid",
+        "Bayern Munich": "Bayern Munchen",
+        "Bayern Munchen": "Bayern Munich",
+        "PSG": "Paris Saint-Germain",
+        "Paris SG": "Paris Saint-Germain",
+        "Inter Milan": "Inter",
+        "AC Milan": "Milan",
+        "Juventus FC": "Juventus"
+      };
+      const normalizeTeam = (name) => TEAM_NAME_MAP[name] || name;
+      const normalizedHome = normalizeTeam(fixture.home_team);
+      const normalizedAway = normalizeTeam(fixture.away_team);
+      if (normalizedHome !== fixture.home_team) console.log(`[FixtureAnalyze] Normalized home: '${fixture.home_team}' \u2192 '${normalizedHome}'`);
+      if (normalizedAway !== fixture.away_team) console.log(`[FixtureAnalyze] Normalized away: '${fixture.away_team}' \u2192 '${normalizedAway}'`);
+      const fixtureData = [{
+        id: `upcoming_${fixtureId}`,
+        homeTeam: normalizedHome,
+        awayTeam: normalizedAway,
+        league: fixture.league,
+        sport: fixture.sport === "nba" ? "basketball" : "soccer",
+        commenceTime: fixture.game_datetime || (/* @__PURE__ */ new Date()).toISOString(),
+        bookmakers: []
+        // No odds data — engine uses deterministic fallback
+      }];
+      console.log(`[FixtureAnalyze] Running V3-15 on: ${fixture.home_team} vs ${fixture.away_team} (${fixture.league})`);
+      let predictions = [];
+      try {
+        predictions = await runBatchPredictionsV152(fixtureData, GEMINI_API_KEY3, "flash");
+      } catch (engineErr) {
+        console.error(`[FixtureAnalyze] Engine error for ${fixture.home_team} vs ${fixture.away_team}:`, engineErr.message);
+        return res.status(422).json({
+          error: "V3-15 engine failed",
+          reason: engineErr.message || "Unknown engine error",
+          missingFactors: ["Engine exception \u2014 check server logs"],
+          status: "engine_error",
+          homeTeam: fixture.home_team,
+          awayTeam: fixture.away_team
+        });
+      }
+      if (!predictions || predictions.length === 0) {
+        console.log(`[FixtureAnalyze] Engine returned no predictions (below 68% threshold) \u2014 using deterministic fallback for ${fixture.home_team} vs ${fixture.away_team}`);
+        try {
+          const base = calcDeterministicBase2(fixtureData[0]);
+          const homeConf = base.rawHome * 100;
+          const awayConf = base.rawAway * 100;
+          const drawConf = base.rawDraw * 100;
+          const topConf = Math.max(homeConf, awayConf, drawConf);
+          const topPick = homeConf >= awayConf ? `${fixture.home_team} Win` : `${fixture.away_team} Win`;
+          const pass2 = topConf >= 65;
+          const analysisResult2 = {
+            confidence: topConf,
+            pass: pass2,
+            bestPick: topPick,
+            reasoning: `Deterministic fallback (no bookmaker odds available). Home: ${homeConf.toFixed(1)}%, Away: ${awayConf.toFixed(1)}%, Draw: ${drawConf.toFixed(1)}%`,
+            factors: {
+              f01_market: 0.5,
+              f02_momentum: 0.5,
+              f03_class_gap: Math.abs(base.rawHome - base.rawAway),
+              f04_h2h: 0.5,
+              f05_steam: 0.5,
+              f06_rest: 0.5,
+              f07_injuries: 0.5,
+              f08_travel: 0.5,
+              f09_referee: 0.5,
+              f10_weather: 0.5,
+              f11_standing: 0.5,
+              f12_venue: 0.5,
+              f13_steam_ext: 0.5,
+              f14_altitude: 0.95,
+              f15_referee_ext: 0.5
+            },
+            blockedBy: pass2 ? [] : [`Confidence ${topConf.toFixed(1)}% < 65% floor`],
+            allOutcomes: [
+              { outcome: `${fixture.home_team} Win`, confidence: homeConf },
+              { outcome: `${fixture.away_team} Win`, confidence: awayConf },
+              { outcome: "Draw", confidence: drawConf }
+            ],
+            note: "Awaiting live odds \u2014 deterministic base scores used"
+          };
+          const { cacheAnalysisResult: cacheAnalysisResult3 } = await Promise.resolve().then(() => (init_fixtureScraper(), fixtureScraper_exports));
+          await cacheAnalysisResult3(fixtureId, analysisResult2);
+          console.log(`[FixtureAnalyze] Deterministic fallback: ${pass2 ? "\u2705 PASS" : "\u274C FAIL"} | ${topConf.toFixed(1)}%`);
+          return res.json({
+            success: true,
+            cached: false,
+            fixtureId,
+            homeTeam: fixture.home_team,
+            awayTeam: fixture.away_team,
+            ...analysisResult2
+          });
+        } catch (fallbackErr) {
+          return res.status(422).json({
+            error: "Awaiting Data",
+            reason: "V3-15 engine returned no predictions and deterministic fallback failed. Missing: Player stats, injury reports, or live odds.",
+            missingFactors: ["F01: No bookmaker odds", "F07: No injury data", "F02: No form/momentum data"],
+            status: "awaiting_data",
+            homeTeam: fixture.home_team,
+            awayTeam: fixture.away_team
+          });
+        }
+      }
+      const pred = predictions[0];
+      const confidence = pred.topConfidence;
+      const pass = confidence >= 65;
+      const blockedBy = [];
+      if (confidence < 65) blockedBy.push(`Confidence ${confidence.toFixed(1)}% < 65% floor`);
+      const analysisResult = {
+        confidence,
+        pass,
+        bestPick: pred.topPick,
+        reasoning: pred.reasoning || "",
+        factors: pred.factors || {},
+        blockedBy,
+        allOutcomes: pred.outcomes || []
+      };
+      const { cacheAnalysisResult: cacheAnalysisResult2 } = await Promise.resolve().then(() => (init_fixtureScraper(), fixtureScraper_exports));
+      await cacheAnalysisResult2(fixtureId, analysisResult);
+      console.log(`[FixtureAnalyze] ${pass ? "\u2705 PASS" : "\u274C FAIL"} | ${fixture.home_team} vs ${fixture.away_team} | ${confidence.toFixed(1)}%`);
+      return res.json({
+        success: true,
+        cached: false,
+        fixtureId,
+        homeTeam: fixture.home_team,
+        awayTeam: fixture.away_team,
+        ...analysisResult
+      });
+    } catch (err) {
+      console.error("[FixtureAnalyze] Error:", err.message);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+  try {
+    const { registerGoldTierRoutes: registerGoldTierRoutes2 } = await Promise.resolve().then(() => (init_goldTierRoutes(), goldTierRoutes_exports));
+    registerGoldTierRoutes2(app, requireAuth);
+    console.log("[Routes] \u2705 Gold Tier Architecture routes registered (Pro/Lifetime hardened endpoints)");
+  } catch (err) {
+    console.error("[Routes] Failed to register gold tier routes:", err.message);
+  }
+}
+var import_bcryptjs, import_jsonwebtoken2, path5, fs5, ADMIN_PASSWORDS, activeTokens, CONFIDENCE_THRESHOLDS2, TIER_PICK_COUNTS, _modulePicksCache;
+var init_routes = __esm({
+  "server/routes.ts"() {
+    init_storage();
+    import_bcryptjs = __toESM(require_bcryptjs());
+    import_jsonwebtoken2 = __toESM(require_jsonwebtoken());
+    init_goldStandardV2();
+    init_geminiV3Engine();
+    path5 = __toESM(require("path"));
+    fs5 = __toESM(require("fs"));
+    ADMIN_PASSWORDS = ["Parlayking", "386Leblanc", "admin123"];
+    activeTokens = /* @__PURE__ */ new Set();
+    CONFIDENCE_THRESHOLDS2 = {
+      FREE_MIN: 64,
+      // Free tier: 64-67%
+      FREE_MAX: 67,
+      // Free tier ceiling
+      PRO_MIN: 68,
+      // Pro tier: 68%+
+      LIFETIME_MIN: 70,
+      // Lifetime tier: 70%+
+      POWER_PICK: 80,
+      // Power Pick badge
+      // ── HARDENED THRESHOLD (3-Leg Tabs) ──────────────────────────────────────
+      // All 3-Leg Soccer, MLS, and NBA tab picks must meet this minimum.
+      // Picks below this floor are NEVER pushed to the database.
+      LEG_HARD_FLOOR: 65
+      // Absolute minimum for any 3-leg tab pick
+    };
+    TIER_PICK_COUNTS = {
+      free: 2,
+      // 2 picks at 64-67%
+      pro: 6,
+      // 6 picks at 68%+
+      lifetime: 10
+      // 10 picks at 70%+
+    };
+    _modulePicksCache = null;
   }
 });
 
@@ -54683,8 +57102,8 @@ async function initializeExpress() {
     const express = (await Promise.resolve().then(() => __toESM(require_express2()))).default;
     const session = (await Promise.resolve().then(() => __toESM(require_express_session()))).default;
     const cors = (await Promise.resolve().then(() => __toESM(require_lib3()))).default;
-    const path3 = await import("path");
-    const fs3 = await import("fs");
+    const path6 = await import("path");
+    const fs6 = await import("fs");
     const app = express();
     app.set("trust proxy", 1);
     app.use(cors({
@@ -54736,16 +57155,16 @@ async function initializeExpress() {
       });
       console.log("[SEO] Fallback sitemap/robots routes registered");
     }
-    const distPath = path3.join(process.cwd(), "dist");
-    if (fs3.existsSync(distPath)) {
+    const distPath = path6.join(process.cwd(), "dist");
+    if (fs6.existsSync(distPath)) {
       app.use(express.static(distPath));
     }
-    const adminHtmlPath = path3.join(process.cwd(), "server/templates/admin.html");
-    const clientHtmlPath = path3.join(process.cwd(), "server/templates/client.html");
+    const adminHtmlPath = path6.join(process.cwd(), "server/templates/admin.html");
+    const clientHtmlPath = path6.join(process.cwd(), "server/templates/client.html");
     app.get("/", async (req, res) => {
       const ua = req.headers["user-agent"] || "";
       if (!ua.includes("Mozilla")) return res.send("OK");
-      if (!fs3.existsSync(clientHtmlPath)) return res.redirect("/picks");
+      if (!fs6.existsSync(clientHtmlPath)) return res.redirect("/picks");
       try {
         const { storage } = await Promise.resolve().then(() => (init_storage(), storage_exports));
         const date2 = (/* @__PURE__ */ new Date()).toLocaleDateString("en-CA", { timeZone: "America/Moncton" });
@@ -54769,7 +57188,7 @@ async function initializeExpress() {
             }))
           };
           const schemaTag = `<script type="application/ld+json">${JSON.stringify(dynamicSchema)}</script>`;
-          let html = fs3.readFileSync(clientHtmlPath, "utf8");
+          let html = fs6.readFileSync(clientHtmlPath, "utf8");
           html = html.replace("<head>", `<head>
 ${schemaTag}`);
           res.setHeader("Content-Type", "text/html");
@@ -54779,9 +57198,9 @@ ${schemaTag}`);
       }
       return res.sendFile(clientHtmlPath);
     });
-    const matchHtmlPath = path3.join(process.cwd(), "server/templates/match-atalanta-vs-bayern.html");
+    const matchHtmlPath = path6.join(process.cwd(), "server/templates/match-atalanta-vs-bayern.html");
     app.get("/match/atalanta-vs-bayern-munich", (_req, res) => {
-      if (fs3.existsSync(matchHtmlPath)) return res.sendFile(matchHtmlPath);
+      if (fs6.existsSync(matchHtmlPath)) return res.sendFile(matchHtmlPath);
       res.redirect("/");
     });
     app.get("/match/atalanta-vs-bayern", (_req, res) => res.redirect(301, "/match/atalanta-vs-bayern-munich"));
@@ -54806,7 +57225,7 @@ ${schemaTag}`);
     ];
     publicPages.forEach((page) => {
       app.get(page, (_req, res) => {
-        if (fs3.existsSync(clientHtmlPath)) return res.sendFile(clientHtmlPath);
+        if (fs6.existsSync(clientHtmlPath)) return res.sendFile(clientHtmlPath);
         res.redirect("/");
       });
     });
@@ -54947,20 +57366,20 @@ ${schemaTag}`);
         </div></body></html>`);
     });
     app.get("/admin", (req, res) => {
-      if (fs3.existsSync(adminHtmlPath)) {
+      if (fs6.existsSync(adminHtmlPath)) {
         return res.sendFile(adminHtmlPath);
       }
       res.send(getAdminFallbackHtml());
     });
     app.get("/master-control", (req, res) => {
-      if (fs3.existsSync(adminHtmlPath)) {
+      if (fs6.existsSync(adminHtmlPath)) {
         return res.sendFile(adminHtmlPath);
       }
       res.send(getAdminFallbackHtml());
     });
     app.get("/recovery", (req, res) => {
-      const recoveryPath = path3.join(process.cwd(), "server/templates/recovery.html");
-      if (fs3.existsSync(recoveryPath)) {
+      const recoveryPath = path6.join(process.cwd(), "server/templates/recovery.html");
+      if (fs6.existsSync(recoveryPath)) {
         return res.sendFile(recoveryPath);
       }
       res.send("<html><body><h2>Recovery Mode</h2><p>System is operational.</p></body></html>");
@@ -54972,12 +57391,12 @@ ${schemaTag}`);
         return res.status(404).json({ error: "Not found" });
       }
       if (req.path.startsWith("/admin") || req.path.startsWith("/master-control") || req.path.startsWith("/dashboard") || req.path.startsWith("/recovery")) {
-        if (fs3.existsSync(adminHtmlPath)) return res.sendFile(adminHtmlPath);
+        if (fs6.existsSync(adminHtmlPath)) return res.sendFile(adminHtmlPath);
         return res.send(getAdminFallbackHtml());
       }
-      if (fs3.existsSync(clientHtmlPath)) return res.sendFile(clientHtmlPath);
-      const indexPath = path3.join(distPath, "index.html");
-      if (fs3.existsSync(indexPath)) return res.sendFile(indexPath);
+      if (fs6.existsSync(clientHtmlPath)) return res.sendFile(clientHtmlPath);
+      const indexPath = path6.join(distPath, "index.html");
+      if (fs6.existsSync(indexPath)) return res.sendFile(indexPath);
       res.send(getAdminFallbackHtml());
     });
     expressApp = app;
