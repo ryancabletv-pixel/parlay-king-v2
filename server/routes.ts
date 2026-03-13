@@ -3634,15 +3634,19 @@ export async function registerRoutes(app: Express) {
       const fixture = row.rows[0];
 
       // Check cache first — if already analyzed, return cached result
+      // CREDIT-SAVING: skip re-analysis if already cached (even if awaiting odds)
       if (fixture.analyzed && fixture.analysis_result) {
-        console.log(`[FixtureAnalyze] Cache hit for fixture ${fixtureId}: ${fixture.home_team} vs ${fixture.away_team}`);
+        const cachedResult = typeof fixture.analysis_result === 'string'
+          ? JSON.parse(fixture.analysis_result)
+          : fixture.analysis_result;
+        console.log(`[FixtureAnalyze] Cache hit for fixture ${fixtureId}: ${fixture.home_team} vs ${fixture.away_team} | conf=${cachedResult.confidence}%`);
         return res.json({
           success: true,
           cached: true,
           fixtureId,
           homeTeam: fixture.home_team,
           awayTeam: fixture.away_team,
-          ...fixture.analysis_result,
+          ...cachedResult,
           analyzedAt: fixture.analyzed_at,
         });
       }
@@ -3675,10 +3679,59 @@ export async function registerRoutes(app: Express) {
         });
       }
 
+      // ── Team Name Normalization Map ──────────────────────────────────────────
+      // Standardizes scraped names to canonical names the V3 engine recognizes
+      const TEAM_NAME_MAP: Record<string, string> = {
+        // NBA
+        'Golden State': 'Golden State Warriors', 'GS Warriors': 'Golden State Warriors', 'GSW': 'Golden State Warriors',
+        'Minnesota': 'Minnesota Timberwolves', 'MIN Timberwolves': 'Minnesota Timberwolves',
+        'LA Lakers': 'Los Angeles Lakers', 'Los Angeles Lakers': 'Los Angeles Lakers', 'LAL': 'Los Angeles Lakers',
+        'LA Clippers': 'Los Angeles Clippers', 'LAC': 'Los Angeles Clippers',
+        'NY Knicks': 'New York Knicks', 'New York': 'New York Knicks', 'NYK': 'New York Knicks',
+        'Brooklyn': 'Brooklyn Nets', 'BKN': 'Brooklyn Nets',
+        'Boston': 'Boston Celtics', 'BOS': 'Boston Celtics',
+        'Miami': 'Miami Heat', 'MIA': 'Miami Heat',
+        'Chicago': 'Chicago Bulls', 'CHI': 'Chicago Bulls',
+        'Cleveland': 'Cleveland Cavaliers', 'CLE': 'Cleveland Cavaliers',
+        'Detroit': 'Detroit Pistons', 'DET': 'Detroit Pistons',
+        'Indiana': 'Indiana Pacers', 'IND': 'Indiana Pacers',
+        'Milwaukee': 'Milwaukee Bucks', 'MIL': 'Milwaukee Bucks',
+        'Atlanta': 'Atlanta Hawks', 'ATL': 'Atlanta Hawks',
+        'Charlotte': 'Charlotte Hornets', 'CHA': 'Charlotte Hornets',
+        'Orlando': 'Orlando Magic', 'ORL': 'Orlando Magic',
+        'Washington': 'Washington Wizards', 'WAS': 'Washington Wizards',
+        'Denver': 'Denver Nuggets', 'DEN': 'Denver Nuggets',
+        'Oklahoma City': 'Oklahoma City Thunder', 'OKC': 'Oklahoma City Thunder',
+        'Portland': 'Portland Trail Blazers', 'POR': 'Portland Trail Blazers',
+        'Sacramento': 'Sacramento Kings', 'SAC': 'Sacramento Kings',
+        'Utah': 'Utah Jazz', 'UTA': 'Utah Jazz',
+        'Phoenix': 'Phoenix Suns', 'PHX': 'Phoenix Suns',
+        'Dallas': 'Dallas Mavericks', 'DAL': 'Dallas Mavericks',
+        'Houston': 'Houston Rockets', 'HOU': 'Houston Rockets',
+        'Memphis': 'Memphis Grizzlies', 'MEM': 'Memphis Grizzlies',
+        'New Orleans': 'New Orleans Pelicans', 'NOP': 'New Orleans Pelicans',
+        'San Antonio': 'San Antonio Spurs', 'SAS': 'San Antonio Spurs',
+        'Toronto': 'Toronto Raptors', 'TOR': 'Toronto Raptors',
+        'Philadelphia': 'Philadelphia 76ers', 'PHI': 'Philadelphia 76ers',
+        // Soccer common abbreviations
+        'Man City': 'Manchester City', 'Man United': 'Manchester United', 'Man Utd': 'Manchester United',
+        'Spurs': 'Tottenham Hotspur', 'Tottenham': 'Tottenham Hotspur',
+        'Arsenal FC': 'Arsenal', 'Chelsea FC': 'Chelsea', 'Liverpool FC': 'Liverpool',
+        'Real Madrid CF': 'Real Madrid', 'FC Barcelona': 'Barcelona', 'Atletico Madrid': 'Atletico de Madrid',
+        'Bayern Munich': 'Bayern Munchen', 'Bayern Munchen': 'Bayern Munich',
+        'PSG': 'Paris Saint-Germain', 'Paris SG': 'Paris Saint-Germain',
+        'Inter Milan': 'Inter', 'AC Milan': 'Milan', 'Juventus FC': 'Juventus',
+      };
+      const normalizeTeam = (name: string): string => TEAM_NAME_MAP[name] || name;
+      const normalizedHome = normalizeTeam(fixture.home_team);
+      const normalizedAway = normalizeTeam(fixture.away_team);
+      if (normalizedHome !== fixture.home_team) console.log(`[FixtureAnalyze] Normalized home: '${fixture.home_team}' → '${normalizedHome}'`);
+      if (normalizedAway !== fixture.away_team) console.log(`[FixtureAnalyze] Normalized away: '${fixture.away_team}' → '${normalizedAway}'`);
+
       const fixtureData = [{
         id: `upcoming_${fixtureId}`,
-        homeTeam: fixture.home_team,
-        awayTeam: fixture.away_team,
+        homeTeam: normalizedHome,
+        awayTeam: normalizedAway,
         league: fixture.league,
         sport: fixture.sport === 'nba' ? 'basketball' : 'soccer',
         commenceTime: fixture.game_datetime || new Date().toISOString(),

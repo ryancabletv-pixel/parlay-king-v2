@@ -2604,11 +2604,14 @@ function v3RenderGameCard(game) {
   const conf = game.confidence || 0;
   const aboveThreshold = conf >= 68;
   const inFallback = conf >= 65 && conf < 68;
-  const borderColor = aboveThreshold ? 'var(--green)' : inFallback ? 'var(--gold)' : 'var(--red)';
+  // Detect deterministic-fallback / awaiting-odds state:
+  // analysis ran but all factors are neutral (0.5) because no live odds yet
+  const isAwaitingOdds = game.analyzed && !game.analysisPassed && conf <= 52 && game.source === 'upcoming-fixtures';
+  const borderColor = aboveThreshold ? 'var(--green)' : inFallback ? 'var(--gold)' : isAwaitingOdds ? 'rgba(255,215,0,0.4)' : 'var(--red)';
   const statusLabel = aboveThreshold ? '' :
     `<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
-      <div style="width:10px;height:10px;border-radius:50%;background:${inFallback ? 'var(--gold)' : 'var(--red)'}"></div>
-      <span style="font-size:11px;font-weight:800;letter-spacing:2px;color:${inFallback ? 'var(--gold)' : 'var(--red)'}">${inFallback ? 'FALLBACK ZONE (65-67%)' : 'BELOW THRESHOLD'}</span>
+      <div style="width:10px;height:10px;border-radius:50%;background:${inFallback ? 'var(--gold)' : isAwaitingOdds ? 'var(--gold)' : 'var(--red)'}"></div>
+      <span style="font-size:11px;font-weight:800;letter-spacing:2px;color:${inFallback ? 'var(--gold)' : isAwaitingOdds ? 'var(--gold)' : 'var(--red)'}">${inFallback ? 'FALLBACK ZONE (65-67%)' : isAwaitingOdds ? 'DATA PENDING' : 'BELOW THRESHOLD'}</span>
     </div>`;
   const barPct = Math.min(100, conf);
   const barColor = aboveThreshold ? 'var(--green)' : inFallback ? 'var(--gold)' : '#ff4466';
@@ -2730,13 +2733,21 @@ function v3RenderGameCard(game) {
     </div>
     <!-- Audit Status Block (shown for upcoming-fixtures games) -->
     <div id="audit-status-${game.id}" style="margin-top:12px;${game.source !== 'upcoming-fixtures' ? 'display:none' : ''}">
-      ${game.analyzed && game.analysisPassed !== null ? `
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:${game.analysisPassed ? 'rgba(0,230,118,0.08)' : 'rgba(255,68,68,0.08)'};border:1px solid ${game.analysisPassed ? 'rgba(0,230,118,0.3)' : 'rgba(255,68,68,0.3)'};border-radius:10px">
+      ${game.analyzed && game.analysisPassed !== null ? (() => {
+        const awaitingOdds = !game.analysisPassed && (game.confidence||0) <= 52;
+        if (awaitingOdds) {
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.3);border-radius:10px">
+            <span style="font-size:20px">⏳</span>
+            <div><div style="font-size:13px;font-weight:800;color:var(--gold)">DATA PENDING — Awaiting Live Odds</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px">Deterministic base used · Check back 2 hrs before tip-off</div><div style="font-size:11px;color:var(--text-dim)">V3-15 Score: ${(game.confidence||0).toFixed(1)}% (neutral baseline)</div></div>
+          </div>`;
+        }
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:${game.analysisPassed ? 'rgba(0,230,118,0.08)' : 'rgba(255,68,68,0.08)'};border:1px solid ${game.analysisPassed ? 'rgba(0,230,118,0.3)' : 'rgba(255,68,68,0.3)'};border-radius:10px">
           <span style="font-size:20px">${game.analysisPassed ? '✅' : '❌'}</span>
           <div><div style="font-size:13px;font-weight:800;color:${game.analysisPassed ? 'var(--green)' : 'var(--red)'}">${game.analysisPassed ? 'PASSED — 65%+ Threshold Met' : 'FAILED — Below 65% Floor'}</div><div style="font-size:11px;color:var(--text-dim)">V3-15 Score: ${(game.confidence||0).toFixed(1)}%</div></div>
-        </div>` : `
+        </div>`;
+      })() : `
         <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,215,0,0.04);border:1px solid rgba(255,215,0,0.15);border-radius:10px">
-          <span style="font-size:12px;color:var(--text-dim);font-style:italic">⏳ Pending Analysis — 0.0% confidence</span>
+          <span style="font-size:12px;color:var(--text-dim);font-style:italic">⏳ Pending Analysis — click Run V3-15 Audit to analyze</span>
         </div>`}
     </div>
     <!-- Action Buttons -->
@@ -2759,6 +2770,8 @@ function v3RenderGameCard(game) {
 }
 
 // ── Audit Now — Single-Game V3-15 Trigger ────────────────────────────────────
+// Retry state: tracks how many times each game has been re-checked for odds
+const _auditRetryCount = {};
 async function v3RunAuditNow(gameId, matchup, sport, league) {
   const btn = document.getElementById('audit-btn-' + gameId);
   const statusEl = document.getElementById('audit-status-' + gameId);
@@ -2795,32 +2808,46 @@ async function v3RunAuditNow(gameId, matchup, sport, league) {
     const passed = result.pass;
     const conf = result.confidence || 0;
     const cached = result.cached ? ' (cached)' : '';
+    // Detect awaiting-odds state: deterministic fallback returns ~50% with note
+    const isAwaitingOdds = !passed && conf <= 52 && (result.note || '').toLowerCase().includes('awaiting');
 
     // Update audit status block
     if (statusEl) {
-      statusEl.innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:${passed ? 'rgba(0,230,118,0.08)' : 'rgba(255,68,68,0.08)'};border:1px solid ${passed ? 'rgba(0,230,118,0.3)' : 'rgba(255,68,68,0.3)'};border-radius:10px">
-          <span style="font-size:22px">${passed ? '✅' : '❌'}</span>
-          <div>
-            <div style="font-size:14px;font-weight:900;color:${passed ? 'var(--green)' : 'var(--red)'}">${passed ? 'PASSED — 65%+ Threshold Met' : 'FAILED — Below 65% Floor'}${cached}</div>
-            <div style="font-size:13px;font-weight:700;color:${passed ? 'var(--green)' : 'var(--red)'};margin-top:2px">V3-15 Score: ${conf.toFixed(1)}%</div>
-            ${result.bestPick ? '<div style="font-size:12px;color:var(--text-dim);margin-top:2px">Best Pick: ' + result.bestPick + '</div>' : ''}
-          </div>
-        </div>`;
+      if (isAwaitingOdds) {
+        statusEl.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.3);border-radius:10px">
+            <span style="font-size:22px">⏳</span>
+            <div>
+              <div style="font-size:14px;font-weight:900;color:var(--gold)">DATA PENDING — Awaiting Live Odds${cached}</div>
+              <div style="font-size:12px;color:var(--text-dim);margin-top:2px">Deterministic base used · Check back 2 hrs before tip-off</div>
+              <div style="font-size:13px;font-weight:700;color:var(--gold);margin-top:2px">V3-15 Score: ${conf.toFixed(1)}% (neutral baseline)</div>
+            </div>
+          </div>`;
+      } else {
+        statusEl.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:${passed ? 'rgba(0,230,118,0.08)' : 'rgba(255,68,68,0.08)'};border:1px solid ${passed ? 'rgba(0,230,118,0.3)' : 'rgba(255,68,68,0.3)'};border-radius:10px">
+            <span style="font-size:22px">${passed ? '✅' : '❌'}</span>
+            <div>
+              <div style="font-size:14px;font-weight:900;color:${passed ? 'var(--green)' : 'var(--red)'}">${passed ? 'PASSED — 65%+ Threshold Met' : 'FAILED — Below 65% Floor'}${cached}</div>
+              <div style="font-size:13px;font-weight:700;color:${passed ? 'var(--green)' : 'var(--red)'};margin-top:2px">V3-15 Score: ${conf.toFixed(1)}%</div>
+              ${result.bestPick ? '<div style="font-size:12px;color:var(--text-dim);margin-top:2px">Best Pick: ' + result.bestPick + '</div>' : ''}
+            </div>
+          </div>`;
+      }
     }
 
     // Update confidence display on card
     const confEl = document.querySelector('#audit-btn-' + gameId + ' ~ * .conf-display, [data-game-id="' + gameId + '"] .conf-display');
 
-    // Update Audit button to Re-analyze
+    // Update Audit button to Re-analyze (or Re-check for awaiting-odds)
     if (btn) {
       btn.disabled = false;
-      btn.textContent = '🔄 Re-analyze';
+      btn.textContent = isAwaitingOdds ? '🔄 Re-check Odds' : '🔄 Re-analyze';
       btn.style.opacity = '1';
       btn.style.cursor = 'pointer';
-      btn.style.background = 'rgba(255,255,255,0.05)';
-      btn.style.borderColor = 'rgba(255,255,255,0.2)';
-      btn.style.color = 'var(--text-dim)';
+      btn.style.background = isAwaitingOdds ? 'rgba(255,215,0,0.06)' : 'rgba(255,255,255,0.05)';
+      btn.style.borderColor = isAwaitingOdds ? 'rgba(255,215,0,0.3)' : 'rgba(255,255,255,0.2)';
+      btn.style.color = isAwaitingOdds ? 'var(--gold)' : 'var(--text-dim)';
       btn.style.fontSize = '12px';
     }
 
@@ -2846,29 +2873,95 @@ async function v3RunAuditNow(gameId, matchup, sport, league) {
     // Update factor breakdown panel with real data
     if (factorsContent && result.factors) {
       const f = result.factors;
-      const FACTOR_NAMES = [
-        ['marketConsensus','F01 Market Consensus'],['momentum','F02 Momentum'],['classGap','F03 Class Gap'],
-        ['h2h','F04 H2H History'],['steam','F05 Market Steam'],['rest','F06 Rest/Fatigue'],
-        ['injuries','F07 Injuries'],['travel','F08 Travel Stress'],['referee','F09 Referee Bias'],
-        ['environment','F10 Environmental'],['standing','F11 League Standing'],['venue','F12 Venue Pressure'],
-        ['steamExtended','F13 Steam Extended'],['altitudeFatigue','F14 Altitude/Fatigue'],['valueEdge','F15 Value Edge']
+      // Support both camelCase keys (old engine) and snake_case keys (new engine)
+      const FACTOR_MAP = [
+        ['f01_market','marketConsensus','F01 Market Consensus'],
+        ['f02_momentum','momentum','F02 Momentum'],
+        ['f03_class_gap','classGap','F03 Class Gap'],
+        ['f04_h2h','h2h','F04 H2H History'],
+        ['f05_steam','steam','F05 Market Steam'],
+        ['f06_rest','rest','F06 Rest/Fatigue'],
+        ['f07_injuries','injuries','F07 Injuries'],
+        ['f08_travel','travel','F08 Travel Stress'],
+        ['f09_referee','referee','F09 Referee Bias'],
+        ['f10_weather','environment','F10 Environmental'],
+        ['f11_standing','standing','F11 League Standing'],
+        ['f12_venue','venue','F12 Venue Pressure'],
+        ['f13_steam_ext','steamExtended','F13 Steam Extended'],
+        ['f14_altitude','altitudeFatigue','F14 Altitude/Fatigue'],
+        ['f15_referee_ext','valueEdge','F15 Value Edge']
       ];
-      const passedCount = FACTOR_NAMES.filter(([key]) => {
-        const val = f[key];
-        return val !== undefined && val !== null && val !== 0 && val !== 'neutral';
+      const getVal = (snake, camel) => f[snake] !== undefined ? f[snake] : (f[camel] !== undefined ? f[camel] : undefined);
+      // In awaiting-odds state, neutral (0.5) means "no live data" not "has data"
+      const isNeutralBaseline = isAwaitingOdds;
+      const passedCount = isNeutralBaseline ? 0 : FACTOR_MAP.filter(([s,c]) => {
+        const val = getVal(s,c);
+        return val !== undefined && val !== null && val !== 0 && val !== 0.5 && val !== 'neutral';
       }).length;
-      factorsContent.innerHTML =
-        '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px">' + passedCount + '/15 factors with real data</div>' +
-        FACTOR_NAMES.map(([key, label]) => {
-          const val = f[key];
-          const ok = val !== undefined && val !== null && val !== 0 && val !== 'neutral';
-          return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:' + (ok ? 'var(--green)' : 'var(--red)') + ';font-size:14px">' + (ok ? '✅' : '❌') + '</span><span style="flex:1;font-size:12px;color:' + (ok ? 'var(--text)' : 'var(--text-dim)') + '">' + label + '</span><span style="font-size:11px;color:var(--text-dim)">' + (val !== undefined && val !== null ? String(val).substring(0,20) : 'no data') + '</span></div>';
+      const headerMsg = isNeutralBaseline
+        ? '<div style="font-size:12px;color:var(--gold);margin-bottom:8px">⏳ 0/15 factors with live data — awaiting bookmaker odds</div>'
+        : '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px">' + passedCount + '/15 factors with real data</div>';
+      factorsContent.innerHTML = headerMsg +
+        FACTOR_MAP.map(([snake, camel, label]) => {
+          const val = getVal(snake, camel);
+          const isNeutral = val === 0.5 || val === 'neutral';
+          const ok = !isNeutralBaseline && val !== undefined && val !== null && val !== 0 && !isNeutral;
+          const displayVal = isNeutralBaseline ? 'neutral (0.5)' : (val !== undefined && val !== null ? String(val).substring(0,20) : 'no data');
+          const icon = isNeutralBaseline ? '⏳' : (ok ? '✅' : '❌');
+          const color = isNeutralBaseline ? 'var(--gold)' : (ok ? 'var(--green)' : 'var(--red)');
+          return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:' + color + ';font-size:14px">' + icon + '</span><span style="flex:1;font-size:12px;color:' + (ok ? 'var(--text)' : 'var(--text-dim)') + '">' + label + '</span><span style="font-size:11px;color:var(--text-dim)">' + displayVal + '</span></div>';
         }).join('');
       // Auto-expand factors panel to show results
       if (factorsPanel) factorsPanel.style.display = 'block';
     }
 
-    notify((passed ? '✅ PASSED' : '❌ FAILED') + ': ' + matchup + ' — ' + conf.toFixed(1) + '%' + cached);
+    const notifyMsg = isAwaitingOdds
+      ? '⏳ DATA PENDING: ' + matchup + ' — Awaiting live odds (check back 2 hrs before tip-off)'
+      : (passed ? '✅ PASSED' : '❌ FAILED') + ': ' + matchup + ' — ' + conf.toFixed(1) + '%' + cached;
+    notify(notifyMsg, isAwaitingOdds ? 'warning' : passed ? 'success' : 'error');
+
+    // ── Exponential Backoff Retry for Awaiting-Odds Games ──────────────────
+    // If awaiting odds: auto-retry once after 5 min; if still pending, show final message
+    if (isAwaitingOdds) {
+      const retryCount = (_auditRetryCount[gameId] || 0);
+      _auditRetryCount[gameId] = retryCount + 1;
+      if (retryCount < 1) {
+        // First attempt was pending — schedule auto-retry in 5 minutes
+        const RETRY_DELAY_MS = 5 * 60 * 1000; // 5 minutes
+        if (statusEl) {
+          statusEl.innerHTML += '<div style="margin-top:8px;font-size:11px;color:var(--text-dim);font-style:italic">⏰ Auto-retry scheduled in 5 minutes...</div>';
+        }
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = '⏰ Retry in 5 min...';
+          btn.style.color = 'var(--text-dim)';
+          // Countdown timer on button
+          let secsLeft = 300;
+          const countdown = setInterval(() => {
+            secsLeft--;
+            if (secsLeft <= 0) {
+              clearInterval(countdown);
+              btn.disabled = false;
+              btn.textContent = '🔄 Re-check Odds';
+              btn.style.color = 'var(--gold)';
+              // Auto-trigger the re-check
+              v3RunAuditNow(gameId, matchup, sport, league);
+            } else {
+              const mins = Math.floor(secsLeft / 60);
+              const secs = secsLeft % 60;
+              btn.textContent = '⏰ Retry in ' + mins + ':' + String(secs).padStart(2,'0');
+            }
+          }, 1000);
+        }
+      } else {
+        // Second attempt still pending — show final "check back" message
+        _auditRetryCount[gameId] = 0; // reset for future manual retries
+        if (statusEl) {
+          statusEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.3);border-radius:10px"><span style="font-size:22px">⏳</span><div><div style="font-size:14px;font-weight:900;color:var(--gold)">DATA PENDING — Awaiting Live Odds</div><div style="font-size:12px;color:var(--text-dim);margin-top:2px">Bookmaker odds not yet released. Check back 2 hrs before tip-off.</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px">V3-15 Score: ' + conf.toFixed(1) + '% (neutral baseline)</div></div></div>';
+        }
+        notify('⏳ DATA PENDING: ' + matchup + ' — Odds not yet released. Check back 2 hrs before tip-off.', 'warning');
+      }
+    }
   } catch(e) {
     if (btn && btn._pulse) clearInterval(btn._pulse);
     if (btn) {
