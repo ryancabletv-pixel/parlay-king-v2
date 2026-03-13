@@ -2740,11 +2740,19 @@ function v3RenderGameCard(game) {
         </div>`}
     </div>
     <!-- Action Buttons -->
-    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center">
-      ${game.source === 'upcoming-fixtures' ? `<button id="audit-btn-${game.id}" onclick="v3RunAuditNow('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,"&#39;")}','${game.sport||'soccer'}','${(game.league||'').replace(/'/g,"&#39;")}')" style="padding:9px 18px;background:linear-gradient(135deg,rgba(255,215,0,0.25),rgba(255,165,0,0.15));border:1px solid var(--gold);border-radius:8px;color:var(--gold);font-size:13px;font-weight:900;cursor:pointer;letter-spacing:0.5px">⚡ Run V3-15 Audit</button>` : ''}
-      <button onclick="(function(){var el=document.getElementById('factors-${game.id}');el.style.display=el.style.display==='none'?'block':'none';})()" style="padding:8px 14px;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.2);border-radius:8px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer">▼ Factors</button>
+    <div id="action-row-${game.id}" style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center">
+      ${game.source === 'upcoming-fixtures' ? `
+        <!-- Primary: Audit button (shown until audited, then becomes Re-analyze) -->
+        <button id="audit-btn-${game.id}" onclick="v3RunAuditNow('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,"&#39;")}','${game.sport||'soccer'}','${(game.league||'').replace(/'/g,"&#39;")}')" style="padding:9px 18px;background:linear-gradient(135deg,rgba(255,215,0,0.25),rgba(255,165,0,0.15));border:1px solid var(--gold);border-radius:8px;color:var(--gold);font-size:13px;font-weight:900;cursor:pointer;letter-spacing:0.5px">⚡ Run V3-15 Audit</button>
+        <!-- Publish to 3-Leg tab: hidden until audit PASSES 65% -->
+        <button id="publish-btn-${game.id}" onclick="v3PublishToLeg('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,"&#39;")}','${(game.bestPick||'').replace(/'/g,"&#39;")}',0,'${game.sport||'soccer'}','${(game.league||'').replace(/'/g,"&#39;")}')" style="display:none;padding:9px 18px;background:linear-gradient(135deg,rgba(0,230,118,0.25),rgba(0,200,100,0.15));border:1px solid var(--green);border-radius:8px;color:var(--green);font-size:13px;font-weight:900;cursor:pointer;letter-spacing:0.5px">🚀 Publish to 3-Leg ${(game.sport||'soccer').toLowerCase().includes('basketball')||game.sport==='basketball'?'NBA':game.league&&game.league.toLowerCase().includes('mls')?'MLS':'Soccer'}</button>
+      ` : `
+        <!-- For NeonDB picks: show Publish if above threshold -->
+        ${aboveThreshold ? `<button onclick="v3PushToSite('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,"&#39;")}','${(game.bestPick||'').replace(/'/g,"&#39;")}',${conf},'${game.sport||'soccer'}','${game.league}')" style="padding:9px 18px;background:linear-gradient(135deg,rgba(0,230,118,0.25),rgba(0,200,100,0.15));border:1px solid var(--green);border-radius:8px;color:var(--green);font-size:13px;font-weight:900;cursor:pointer">🚀 Publish to 3-Leg ${(game.sport||'soccer').toLowerCase().includes('basketball')||game.sport==='basketball'?'NBA':game.league&&game.league.toLowerCase().includes('mls')?'MLS':'Soccer'}</button>` : ''}
+      `}
+      <!-- Info icon: click to toggle factor breakdown -->
+      <button onclick="(function(){var el=document.getElementById('factors-${game.id}');el.style.display=el.style.display==='none'?'block':'none';this.textContent=el.style.display==='block'?'ℹ️▲ Factors':'ℹ️ Factors';}).call(this)" style="padding:8px 14px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);border-radius:8px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer" title="Click to show/hide V3-15 factor breakdown">ℹ️ Factors</button>
       <button onclick="v3FeatureGame('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,"&#39;")}','${(game.bestPick||'').replace(/'/g,"&#39;")}',${conf})" style="padding:8px 16px;background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3);border-radius:8px;color:var(--green);font-size:12px;font-weight:700;cursor:pointer">⭐ Feature on Site</button>
-      ${aboveThreshold ? `<button onclick="v3PushToSite('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,"&#39;")}','${(game.bestPick||'').replace(/'/g,"&#39;")}',${conf},'${game.sport||'soccer'}','${game.league}')" style="padding:8px 16px;background:rgba(255,215,0,0.15);border:1px solid var(--gold-border);border-radius:8px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer">🚀 Push to Live Picks</button>` : ''}
       <button onclick="v3ForcePublish('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,"&#39;")}','${(game.bestPick||'').replace(/'/g,"&#39;")}',${conf},'${game.sport||'soccer'}','${game.league}')" style="padding:8px 16px;background:rgba(255,80,80,0.12);border:1px solid rgba(255,80,80,0.35);border-radius:8px;color:#ff6b6b;font-size:12px;font-weight:700;cursor:pointer" title="Admin Master Key — bypasses all validator gates">⚡ Force Publish</button>
     </div>
   </div>`;
@@ -2813,6 +2821,26 @@ async function v3RunAuditNow(gameId, matchup, sport, league) {
       btn.style.background = 'rgba(255,255,255,0.05)';
       btn.style.borderColor = 'rgba(255,255,255,0.2)';
       btn.style.color = 'var(--text-dim)';
+      btn.style.fontSize = '12px';
+    }
+
+    // Reveal Publish button ONLY if audit PASSED 65%
+    const publishBtn = document.getElementById('publish-btn-' + gameId);
+    if (publishBtn) {
+      if (passed) {
+        // Update confidence value in onclick and show
+        publishBtn.setAttribute('onclick', publishBtn.getAttribute('onclick').replace(',0,', ',' + conf.toFixed(1) + ','));
+        publishBtn.style.display = 'inline-flex';
+        publishBtn.style.alignItems = 'center';
+        publishBtn.style.gap = '6px';
+        // Add confidence badge to button label
+        const sport = publishBtn.getAttribute('onclick').match(/'([^']+)')$/) ? '' : '';
+        const tabLabel = publishBtn.textContent.replace(/🚀 Publish to /, '');
+        publishBtn.innerHTML = '🚀 Publish to ' + tabLabel + ' <span style="background:rgba(0,230,118,0.3);padding:2px 7px;border-radius:10px;font-size:11px;font-weight:900">' + conf.toFixed(1) + '%</span>';
+      } else {
+        // Keep hidden on FAIL
+        publishBtn.style.display = 'none';
+      }
     }
 
     // Update factor breakdown panel with real data
@@ -2851,6 +2879,38 @@ async function v3RunAuditNow(gameId, matchup, sport, league) {
     }
     if (statusEl) statusEl.innerHTML = '<div style="padding:10px 14px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.3);border-radius:10px;color:var(--red);font-size:12px">❌ Audit failed: ' + e.message + '</div>';
     notify('Audit error: ' + e.message, 'error');
+  }
+}
+
+// ── Publish to 3-Leg Tab (Soccer / MLS / NBA) ──────────────────────────
+async function v3PublishToLeg(gameId, matchup, pick, conf, sport, league) {
+  // Determine which 3-Leg tab this game belongs to
+  const sportLower = (sport || 'soccer').toLowerCase();
+  const leagueLower = (league || '').toLowerCase();
+  let tabLabel, tabSport;
+  if (sportLower.includes('basketball') || sportLower === 'basketball' || sportLower === 'nba') {
+    tabLabel = '3-Leg NBA'; tabSport = 'basketball';
+  } else if (leagueLower.includes('mls') || leagueLower.includes('major league soccer')) {
+    tabLabel = '3-Leg MLS'; tabSport = 'soccer_usa_mls';
+  } else {
+    tabLabel = '3-Leg Soccer'; tabSport = 'soccer';
+  }
+
+  if (!confirm('🚀 PUBLISH TO ' + tabLabel.toUpperCase() + '\n\n"' + matchup + '"\nPick: ' + (pick||'Best Pick') + ' @ ' + (typeof conf==='number'?conf.toFixed(1):conf) + '%\nTab: ' + tabLabel + '\n\nPublish this game to the public 3-Leg tab?')) return;
+
+  const btn = document.getElementById('publish-btn-' + gameId);
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Publishing...'; }
+
+  try {
+    await api('/api/admin/v3-push', {
+      method: 'POST',
+      body: JSON.stringify({ gameId, matchup, pick, confidence: conf, sport: tabSport, league, tab: tabLabel, forcePublish: false })
+    });
+    notify('🚀 Published to ' + tabLabel + ': ' + matchup + ' — ' + (typeof conf==='number'?conf.toFixed(1):conf) + '%');
+    if (btn) { btn.innerHTML = '✅ Published to ' + tabLabel; btn.style.background = 'rgba(0,230,118,0.08)'; btn.style.borderColor = 'rgba(0,230,118,0.3)'; btn.disabled = true; }
+  } catch(e) {
+    notify('Publish error: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '🚀 Publish to ' + tabLabel; }
   }
 }
 
