@@ -4359,23 +4359,23 @@ async function renderTierPage(tier) {
     const today = new Date().toLocaleDateString('en-CA');
     const picks = await api(`/api/admin/picks?date=${today}`);
 
-    // ── HARDENED TIER SEPARATION (PERMANENT FIX) ────────────────────────────────
-    // Pro      (6 slots):  tier='pro'      in DB — 68-69.9% gate, top 6 by confidence
-    // Lifetime (10 slots): tier='lifetime' in DB — 70%+ gate, top 10 by confidence
-    // These are DISTINCT lists — NO mirroring, NO overlap.
+    // ── HARDENED TIER SEPARATION (PERMANENT FIX v2) ───────────────────────────
+    // Pro      (6 slots):  ONLY picks tagged tier='pro' in DB (68-70.2% range)
+    // Lifetime (10 slots): ALL picks at 70%+ confidence (both 'pro' and 'lifetime'
+    //                      tagged) — Lifetime members see the full top-10 board.
+    // These are DISTINCT lists — NO mirroring.
     let eligible;
-    const SLOT_LIMITS = { pro: 6, lifetime: 10 };
-    const SLOT_LIMIT = SLOT_LIMITS[tier] || 10;
+    const SLOT_LIMIT = tier === 'pro' ? 6 : 10;
     if (tier === 'pro') {
-      // Pro: ONLY picks tagged tier='pro' in the database (68-69.9% range)
+      // Pro: ONLY picks tagged tier='pro' in the database (68-70.2% range), max 6
       eligible = picks
         .filter(p => (p.tier || '').toLowerCase() === 'pro')
         .sort((a, b) => parseFloat(b.confidence) - parseFloat(a.confidence))
         .slice(0, 6);
     } else {
-      // Lifetime: ONLY picks tagged tier='lifetime' in the database (70%+ range)
+      // Lifetime: ALL picks at 70%+ confidence (superset), max 10
       eligible = picks
-        .filter(p => (p.tier || '').toLowerCase() === 'lifetime')
+        .filter(p => parseFloat(p.confidence) >= 70)
         .sort((a, b) => parseFloat(b.confidence) - parseFloat(a.confidence))
         .slice(0, 10);
     }
