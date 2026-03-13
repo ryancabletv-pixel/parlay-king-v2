@@ -2093,7 +2093,13 @@ export async function registerRoutes(app: Express) {
       const serverNowISO = serverNow.toISOString(); // passed to client for stale-game check
       const today = serverNow.toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
       const in48h = new Date(serverNow.getTime() + 48 * 60 * 60 * 1000).toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+      // Query param filters
+      const dateFilter = (req.query.date as string) || null;
+      const sportFilter = (req.query.sport as string) || null;
 
+      const picksDateFrom = dateFilter || today;
+      const picksDateTo   = dateFilter || in48h;
+      const picksSportClause = sportFilter ? `AND sport = '${sportFilter.replace(/'/g,"''")}'` : '';
       const result = await pool.query(`
         SELECT id, date, sport, league, home_team, away_team, prediction, confidence,
                odds, tier, is_power_pick, momentum, quality, mq_composite, metadata, is_disabled
@@ -2101,8 +2107,9 @@ export async function registerRoutes(app: Express) {
         WHERE date >= $1 AND date <= $2
           AND confidence >= 68
           AND is_disabled = FALSE
+          ${picksSportClause}
         ORDER BY date ASC, confidence DESC
-      `, [today, in48h]);
+      `, [picksDateFrom, picksDateTo]);
       await pool.end();
 
       // FIX 1+3: Build commenceTime from metadata if available, else use date at noon ADT
@@ -2148,13 +2155,21 @@ export async function registerRoutes(app: Express) {
         try {
           const { Pool: FPool } = await import('pg');
           const fpool = new FPool({ connectionString: process.env.DATABASE_URL });
+          // FIX: game_date is stored as UTC timestamp. Use TO_CHAR with Halifax timezone for reliable date string.
+          const in72h = new Date(serverNow.getTime() + 72 * 60 * 60 * 1000).toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+          const fixDateFrom = dateFilter || today;
+          const fixDateTo   = dateFilter || in72h;
+          const fixSportClause = sportFilter ? `AND sport = '${sportFilter.replace(/'/g,"''")}'` : '';
           const fResult = await fpool.query(`
-            SELECT id, sport, league, home_team, away_team, game_date, game_datetime, status, analysis_result, analysis_score, analysis_pass
+            SELECT id, sport, league, home_team, away_team, game_date, game_datetime, status, analysis_result, analysis_score, analysis_pass,
+                   TO_CHAR(game_date AT TIME ZONE 'America/Halifax', 'YYYY-MM-DD') AS local_date
             FROM upcoming_fixtures
-            WHERE game_date >= $1 AND game_date <= $2
+            WHERE TO_CHAR(game_date AT TIME ZONE 'America/Halifax', 'YYYY-MM-DD') >= $1
+              AND TO_CHAR(game_date AT TIME ZONE 'America/Halifax', 'YYYY-MM-DD') <= $2
               AND status NOT IN ('final', 'in_progress')
+              ${fixSportClause}
             ORDER BY game_date ASC, sport ASC
-          `, [today, in48h]);
+          `, [fixDateFrom, fixDateTo]);
           await fpool.end();
 
           if (fResult.rows.length > 0) {
@@ -2166,16 +2181,16 @@ export async function registerRoutes(app: Express) {
               homeTeam:     r.home_team,
               awayTeam:     r.away_team,
               commenceTime: r.game_datetime ? new Date(r.game_datetime).toISOString() : (r.game_date + 'T17:00:00Z'),
-              date:         typeof r.game_date === 'string' ? r.game_date.substring(0, 10) : new Date(r.game_date).toISOString().substring(0, 10),
+              date:         r.local_date || new Date(r.game_date).toLocaleDateString('en-CA', {timeZone: 'America/Halifax'}),
               confidence:   r.analysis_score ? parseFloat(r.analysis_score) : 0,
-              bestPick:     r.analysis_result ? (JSON.parse(r.analysis_result)?.pick || 'Pending Analysis') : 'Pending Analysis',
+              bestPick:     r.analysis_result ? (() => { try { const ar = typeof r.analysis_result === 'string' ? JSON.parse(r.analysis_result) : r.analysis_result; return ar?.pick || 'Pending Analysis'; } catch { return 'Pending Analysis'; } })() : 'Pending Analysis',
               odds:         '',
               tier:         'pro',
               is_power_pick: false,
               momentum:     null,
               quality:      null,
               mq_composite: null,
-              analysis:     r.analysis_result ? (JSON.parse(r.analysis_result)?.summary || '') : '',
+              analysis:     r.analysis_result ? (() => { try { const ar = typeof r.analysis_result === 'string' ? JSON.parse(r.analysis_result) : r.analysis_result; return ar?.summary || ar?.reasoning || ''; } catch { return ''; } })() : '',
               outcomes:     [{ label: 'Pending Analysis', conf: 0 }],
               validated:    r.analysis_pass === true,
               source:       'upcoming-fixtures',
