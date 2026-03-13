@@ -364,7 +364,7 @@ For each game, output a JSON array entry. Return ONLY valid JSON array, no markd
 }
 
 // ─── Deterministic Base Score (V12 fallback) ──────────────────────────────────
-function calcDeterministicBase(fixture: FixtureDataV15): {
+export function calcDeterministicBase(fixture: FixtureDataV15): {
   rawHome: number; rawAway: number; rawDraw: number;
 } {
   const sport = fixture.sport?.toLowerCase() || 'soccer';

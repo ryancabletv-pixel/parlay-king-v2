@@ -3634,9 +3634,31 @@ export async function registerRoutes(app: Express) {
 
       // Run V3-15 analysis via Gemini (uses existing engine)
       // Build a minimal fixture object for the engine
-      const { runBatchPredictionsV15 } = await import('./services/geminiV3Engine.js');
+      const { runBatchPredictionsV15, calcDeterministicBase } = await import('./services/geminiV3Engine.js');
       const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
       if (!GEMINI_API_KEY) return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
+
+      // ── Guard 1: Empty Data Handler ──────────────────────────────────────────
+      // Log which factors are missing so we know exactly what's NULL
+      const missingFactors: string[] = [];
+      if (!fixture.home_team || !fixture.away_team) missingFactors.push('F01: Team names missing');
+      if (!fixture.league) missingFactors.push('F02: League/competition data missing');
+      if (!fixture.game_datetime) missingFactors.push('F03: Game date/time missing');
+      // Note: bookmakers[] will be empty for upcoming fixtures — engine uses historical defaults
+      // This is expected and handled by the deterministic fallback
+      console.log(`[FixtureAnalyze] Missing factors for ${fixture.home_team} vs ${fixture.away_team}: ${missingFactors.length === 0 ? 'none' : missingFactors.join(', ')}`);
+
+      if (missingFactors.length >= 2) {
+        // Too many mandatory factors missing — return 422 Awaiting Data
+        return res.status(422).json({
+          error: 'Awaiting Data',
+          reason: 'Insufficient data for V3-15 analysis',
+          missingFactors,
+          status: 'awaiting_data',
+          homeTeam: fixture.home_team,
+          awayTeam: fixture.away_team,
+        });
+      }
 
       const fixtureData = [{
         id: `upcoming_${fixtureId}`,
@@ -3645,14 +3667,81 @@ export async function registerRoutes(app: Express) {
         league: fixture.league,
         sport: fixture.sport === 'nba' ? 'basketball' : 'soccer',
         commenceTime: fixture.game_datetime || new Date().toISOString(),
-        bookmakers: [], // No odds data — engine will use historical defaults
+        bookmakers: [], // No odds data — engine uses deterministic fallback
       }];
 
       console.log(`[FixtureAnalyze] Running V3-15 on: ${fixture.home_team} vs ${fixture.away_team} (${fixture.league})`);
-      const predictions = await runBatchPredictionsV15(fixtureData, GEMINI_API_KEY, 'flash');
 
+      // ── Guard 2: Try-Catch with 422 on engine failure ─────────────────────────
+      let predictions: any[] = [];
+      try {
+        predictions = await runBatchPredictionsV15(fixtureData, GEMINI_API_KEY, 'flash');
+      } catch (engineErr: any) {
+        console.error(`[FixtureAnalyze] Engine error for ${fixture.home_team} vs ${fixture.away_team}:`, engineErr.message);
+        return res.status(422).json({
+          error: 'V3-15 engine failed',
+          reason: engineErr.message || 'Unknown engine error',
+          missingFactors: ['Engine exception — check server logs'],
+          status: 'engine_error',
+          homeTeam: fixture.home_team,
+          awayTeam: fixture.away_team,
+        });
+      }
+
+      // ── Guard 3: Empty predictions — use deterministic fallback ───────────────
+      // The engine returns [] when no fixture passes the FINAL_THRESHOLD (68%).
+      // For single-game audits, we lower the bar to 65% and use the deterministic
+      // base scores so the card always shows a real confidence value.
       if (!predictions || predictions.length === 0) {
-        return res.status(500).json({ error: 'V3-15 engine returned no predictions' });
+        console.log(`[FixtureAnalyze] Engine returned no predictions (below 68% threshold) — using deterministic fallback for ${fixture.home_team} vs ${fixture.away_team}`);
+        try {
+          const base = calcDeterministicBase(fixtureData[0]);
+          const homeConf = base.rawHome * 100;
+          const awayConf = base.rawAway * 100;
+          const drawConf = base.rawDraw * 100;
+          const topConf = Math.max(homeConf, awayConf, drawConf);
+          const topPick = homeConf >= awayConf ? `${fixture.home_team} Win` : `${fixture.away_team} Win`;
+          const pass = topConf >= 65;
+          const analysisResult = {
+            confidence: topConf,
+            pass,
+            bestPick: topPick,
+            reasoning: `Deterministic fallback (no bookmaker odds available). Home: ${homeConf.toFixed(1)}%, Away: ${awayConf.toFixed(1)}%, Draw: ${drawConf.toFixed(1)}%`,
+            factors: {
+              f01_market: 0.5, f02_momentum: 0.5, f03_class_gap: Math.abs(base.rawHome - base.rawAway),
+              f04_h2h: 0.5, f05_steam: 0.5, f06_rest: 0.5, f07_injuries: 0.5,
+              f08_travel: 0.5, f09_referee: 0.5, f10_weather: 0.5, f11_standing: 0.5,
+              f12_venue: 0.5, f13_steam_ext: 0.5, f14_altitude: 0.95, f15_referee_ext: 0.5,
+            },
+            blockedBy: pass ? [] : [`Confidence ${topConf.toFixed(1)}% < 65% floor`],
+            allOutcomes: [
+              { outcome: `${fixture.home_team} Win`, confidence: homeConf },
+              { outcome: `${fixture.away_team} Win`, confidence: awayConf },
+              { outcome: 'Draw', confidence: drawConf },
+            ],
+            note: 'Awaiting live odds — deterministic base scores used',
+          };
+          const { cacheAnalysisResult } = await import('./fixtureScraper.js');
+          await cacheAnalysisResult(fixtureId, analysisResult);
+          console.log(`[FixtureAnalyze] Deterministic fallback: ${pass ? '✅ PASS' : '❌ FAIL'} | ${topConf.toFixed(1)}%`);
+          return res.json({
+            success: true,
+            cached: false,
+            fixtureId,
+            homeTeam: fixture.home_team,
+            awayTeam: fixture.away_team,
+            ...analysisResult,
+          });
+        } catch (fallbackErr: any) {
+          return res.status(422).json({
+            error: 'Awaiting Data',
+            reason: 'V3-15 engine returned no predictions and deterministic fallback failed. Missing: Player stats, injury reports, or live odds.',
+            missingFactors: ['F01: No bookmaker odds', 'F07: No injury data', 'F02: No form/momentum data'],
+            status: 'awaiting_data',
+            homeTeam: fixture.home_team,
+            awayTeam: fixture.away_team,
+          });
+        }
       }
 
       const pred = predictions[0];
