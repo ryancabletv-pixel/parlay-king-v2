@@ -1765,9 +1765,9 @@ export async function registerRoutes(app: Express) {
       const date = new Date().toLocaleDateString('en-CA');
       const picks = await storage.getPicksByDate(date);
       const byTier = {
-        free: picks.filter(p => p.tier === 'free'),
-        vip:  picks.filter(p => p.tier === 'vip'),
-        pro:  picks.filter(p => p.tier === 'pro'),
+        free:     picks.filter(p => p.tier === 'free'),
+        pro:      picks.filter(p => p.tier === 'pro'),
+        lifetime: picks.filter(p => p.tier === 'lifetime'),
       };
       res.json(byTier);
     } catch (err: any) {

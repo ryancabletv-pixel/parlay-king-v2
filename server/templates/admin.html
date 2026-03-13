@@ -4315,7 +4315,29 @@ async function renderTierPage(tier) {
   try {
     const today = new Date().toLocaleDateString('en-CA');
     const picks = await api(`/api/admin/picks?date=${today}`);
-    const eligible = picks.filter(p => parseFloat(p.confidence) >= 68);
+
+    // ── HARDENED TIER SEPARATION ──────────────────────────────────────────────
+    // Pro  (6 slots):  picks tagged tier='pro' in DB (68%+ gate, top 6 by confidence)
+    // Lifetime (10 slots): ALL picks at 68%+ (tier='pro' OR tier='lifetime'), top 10 by confidence
+    // This enforces strict separation: Pro sees its 6, Lifetime sees the full board of 10.
+    let eligible;
+    const SLOT_LIMITS = { pro: 6, lifetime: 10 };
+    const SLOT_LIMIT = SLOT_LIMITS[tier] || 10;
+    if (tier === 'pro') {
+      // Pro: only picks explicitly tagged tier='pro' in the database
+      eligible = picks
+        .filter(p => (p.tier || '').toLowerCase() === 'pro')
+        .sort((a, b) => parseFloat(b.confidence) - parseFloat(a.confidence))
+        .slice(0, 6);
+    } else {
+      // Lifetime: all picks at 68%+ (both pro and lifetime tagged), top 10 by confidence
+      eligible = picks
+        .filter(p => parseFloat(p.confidence) >= 68)
+        .sort((a, b) => parseFloat(b.confidence) - parseFloat(a.confidence))
+        .slice(0, 10);
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     const bball = eligible.filter(p => {
       const s = (p.sport||p.league||'').toLowerCase();
       return s.includes('nba')||s.includes('basketball')||s.includes('nbl');
@@ -4324,7 +4346,7 @@ async function renderTierPage(tier) {
       const s = (p.sport||p.league||'').toLowerCase();
       return s.includes('soccer')||s.includes('football')||s.includes('mls')||s.includes('ucl')||s.includes('liga')||s.includes('serie')||s.includes('premier')||s.includes('bundesliga')||s.includes('ligue');
     });
-    document.getElementById(`${tier}-total-count`).textContent = eligible.length;
+    document.getElementById(`${tier}-total-count`).textContent = `${eligible.length} / ${SLOT_LIMIT}`;
     document.getElementById(`${tier}-basketball-count`).textContent = bball.length;
     document.getElementById(`${tier}-soccer-count`).textContent = soccer.length;
     const allConfs = eligible.map(p=>parseFloat(p.confidence));
@@ -4333,13 +4355,14 @@ async function renderTierPage(tier) {
     bballDot.title = bball.length > 0 ? `${bball.length} Basketball picks synced` : 'No Basketball picks yet';
     soccerDot.style.background = soccer.length > 0 ? '#00e676' : '#ff5252';
     soccerDot.title = soccer.length > 0 ? `${soccer.length} Soccer picks synced` : 'No Soccer picks yet';
+    const tierLabel = tier === 'pro' ? 'Pro (6 slots, 68%+ gate)' : 'Lifetime (10 slots, 68%+ gate)';
     if (bball.length === 0 || soccer.length === 0) {
       const missing = bball.length === 0 && soccer.length === 0 ? 'Basketball and Soccer' : bball.length === 0 ? 'Basketball' : 'Soccer';
       banner.style.cssText = 'display:block;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:.85rem;font-weight:600;background:rgba(255,82,82,.15);border:1px solid #ff5252;color:#ff5252';
-      banner.innerHTML = `⚠️ Multi-Sport Sync INCOMPLETE — ${missing} picks missing. The 1 AM engine will retry automatically.`;
+      banner.innerHTML = `⚠️ ${tierLabel} — ${missing} picks missing. Engine will retry at 1:30 AM.`;
     } else {
       banner.style.cssText = 'display:block;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:.85rem;font-weight:600;background:rgba(0,230,118,.1);border:1px solid #00e676;color:#00e676';
-      banner.innerHTML = `✅ Multi-Sport Sync ACTIVE — Basketball (${bball.length}) + Soccer (${soccer.length}) both live on ${tier.charAt(0).toUpperCase()+tier.slice(1)} dashboard.`;
+      banner.innerHTML = `✅ ${tierLabel} — Basketball (${bball.length}) + Soccer (${soccer.length}) | ${eligible.length}/${SLOT_LIMIT} slots filled`;
     }
     bballEl.innerHTML = buildPickTable(bball, '#ff6b35');
     soccerEl.innerHTML = buildPickTable(soccer, '#00e676');

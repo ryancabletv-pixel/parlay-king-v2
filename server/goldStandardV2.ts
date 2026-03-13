@@ -161,7 +161,7 @@ export interface PredictionResult {
   topPick: string;
   topConfidence: number;
   isPowerPick: boolean;
-  tier: 'free' | 'vip' | 'pro';
+  tier: 'free' | 'pro' | 'lifetime';
   factors: Record<string, number>;
   factorBreakdown: FactorBreakdown;
   recommendation: string;
@@ -185,11 +185,11 @@ export const DEFAULT_WEIGHTS: EngineWeights = {
 
 // Confidence thresholds
 export const CONFIDENCE_THRESHOLDS = {
-  MINIMUM:    64,   // Below this -> pick is discarded (Free tier starts at 64%)
-  FREE_TIER:  64,   // 64-67% — Free tier (dashboard only, NOT on main site)
-  VIP_TIER:   68,   // 68-69% — Pro tier minimum (shown on main site)
-  PRO_TIER:   70,   // 70-79% — Lifetime tier minimum
-  POWER_PICK: 80,   // 80%+
+  MINIMUM:       64,   // Below this -> pick is discarded (Free tier starts at 64%)
+  FREE_TIER:     64,   // 64-67% — Free tier (dashboard only, NOT on main site)
+  PRO_TIER:      68,   // 68-69.9% — Pro tier gate (6 slots, shown on main site)
+  LIFETIME_TIER: 70,   // 70%+ — Lifetime tier gate (10 slots, full board)
+  POWER_PICK:    80,   // 80%+
 } as const;
 
 // =============================================================================
@@ -504,13 +504,13 @@ export function runTitanXII(
   outcomes.sort((a, b) => b[1] - a[1]);
   const [topPick, topConfidence] = outcomes[0];
 
-  // --- Tier assignment ---
-  // free:     64-67% — Free tier (dashboard only)
-  // vip:      68-69% — Pro tier minimum (shown on main site)
-  // pro:      70%+   — Lifetime tier minimum
-  let tier: 'free' | 'vip' | 'pro' = 'free';
-  if (topConfidence >= CONFIDENCE_THRESHOLDS.PRO_TIER)       tier = 'pro';
-  else if (topConfidence >= CONFIDENCE_THRESHOLDS.VIP_TIER)  tier = 'vip';
+  // --- Tier assignment (HARDENED) ---
+  // free:     64-67.9% — Free tier (dashboard only, NOT on main site)
+  // pro:      68-69.9% — Pro tier (6 slots, 68%+ gate)
+  // lifetime: 70%+     — Lifetime tier (10 slots, 70%+ gate)
+  let tier: 'free' | 'pro' | 'lifetime' = 'free';
+  if (topConfidence >= CONFIDENCE_THRESHOLDS.LIFETIME_TIER)  tier = 'lifetime';
+  else if (topConfidence >= CONFIDENCE_THRESHOLDS.PRO_TIER)  tier = 'pro';
   else if (topConfidence >= CONFIDENCE_THRESHOLDS.FREE_TIER) tier = 'free';
 
   const isPowerPick = topConfidence >= CONFIDENCE_THRESHOLDS.POWER_PICK;
