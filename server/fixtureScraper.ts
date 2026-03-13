@@ -71,6 +71,8 @@ async function fetchESPN(url: string): Promise<any> {
   }
 }
 
+const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
 async function scrapeNBA(dates: Date[]): Promise<number> {
   let saved = 0;
   for (const date of dates) {
@@ -120,6 +122,7 @@ async function scrapeNBA(dates: Date[]): Promise<number> {
         // Skip individual game errors
       }
     }
+    await delay(250); // polite delay between NBA date requests
   }
   return saved;
 }
@@ -175,8 +178,7 @@ async function scrapeSoccer(dates: Date[]): Promise<number> {
         }
       }
     }
-    // Small delay between leagues to be polite to ESPN
-    await new Promise(r => setTimeout(r, 200));
+    await delay(300); // polite delay between leagues
   }
   return saved;
 }
