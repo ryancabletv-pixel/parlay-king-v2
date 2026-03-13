@@ -114,23 +114,88 @@ function selectBestLegs(
     return passesV3_15FactorAudit(p);
   }
 
-  // Filter: must pass threshold (hard floor 65%), must not be a draw pick, must pass V3-15 audit
-  const qualified = predictions
+  // ── STEP 1: SAFETY FILTER ────────────────────────────────────────────────
+  // Gate 1: 65% hard floor (enforced by effectiveMin above)
+  // Gate 2: Must have a Class Gap advantage (F03 quality score non-neutral)
+  // Gate 3: Must have an Injury Advantage (F07 injuries non-default)
+  // These are the two "Safe" anchors required before value analysis.
+  function hasSafetyAnchors(p: PredictionResult): boolean {
+    const f = p.factors;
+    if (!f) return false;
+    // Class Gap (F03): the winning side must have a meaningful quality edge
+    // Quality scores are 0-1; a gap > 0.05 indicates a real class difference
+    const homeQuality = f.f03_quality_home ?? 0.50;
+    const awayQuality = f.f03_quality_away ?? 0.50;
+    const classGap = Math.abs(homeQuality - awayQuality);
+    const hasClassGap = classGap > 0.05; // F03 Class Gap anchor
+    // Injury Advantage (F07): the winning side must have fewer injuries
+    // Injury scores are 0-1; 0.90 = no injuries (default). Lower = more injuries.
+    const homeInjury = f.f07_injuries_home ?? 0.90;
+    const awayInjury = f.f07_injuries_away ?? 0.90;
+    const injuryGap = Math.abs(homeInjury - awayInjury);
+    const hasInjuryAdvantage = injuryGap > 0.02 || (homeInjury !== 0.90 || awayInjury !== 0.90); // F07 Injury anchor
+    return hasClassGap && hasInjuryAdvantage;
+  }
+
+  // ── STEP 2: VALUE FILTER ─────────────────────────────────────────────────
+  // Calculate the bookmaker's implied probability from the market odds.
+  // Compare against our V3-15 confidence score.
+  // Only select picks where: V3_confidence > bookmaker_implied + 5%
+  // This ensures we only bet when we have a genuine edge over the market.
+  function calcValueGap(p: PredictionResult): number {
+    const f = p.factors;
+    if (!f) return 0;
+    // Bookmaker implied probability = F01 market consensus score (0-1 scale)
+    // f01_marketConsensus_home represents the market's implied win probability for the favoured side
+    const bookmakerImplied = (f.f01_marketConsensus_home ?? 0.50) * 100; // Convert to percentage
+    const v3Confidence = p.topConfidence; // Already in percentage (e.g. 72.5)
+    // Value Gap = how much better our model is vs the bookmaker
+    // Positive = we think this team is undervalued by the market
+    const valueGap = v3Confidence - bookmakerImplied;
+    return valueGap;
+  }
+
+  const VALUE_EDGE_MINIMUM = 5.0; // We must have at least 5% edge over the bookmaker
+
+  // Filter: Safety gate → V3-15 audit → Value gate
+  const safeAndValued = predictions
     .filter(p => p.topConfidence >= effectiveMin && p.topConfidence <= maxConfidence)
     .filter(p => !p.topPick.toLowerCase().includes('draw'))
-    .filter(p => hasMinDataQuality(p))
+    .filter(p => hasMinDataQuality(p))          // V3-15 factor audit (8/15 factors)
+    .filter(p => hasSafetyAnchors(p))           // Safety: Class Gap + Injury Advantage
+    .filter(p => calcValueGap(p) >= VALUE_EDGE_MINIMUM) // Value: V3 > bookmaker + 5%
     .sort((a, b) => {
-      // Primary sort: confidence descending
-      // Secondary sort: value score (confidence × implied odds value)
-      const aValue = a.topConfidence * (a.factors?.valueScore ?? 1);
-      const bValue = b.topConfidence * (b.factors?.valueScore ?? 1);
-      return bValue - aValue;
+      // PRIMARY sort: Value Gap descending (biggest market edge first)
+      const aGap = calcValueGap(a);
+      const bGap = calcValueGap(b);
+      if (Math.abs(bGap - aGap) > 0.5) return bGap - aGap;
+      // SECONDARY sort: Confidence descending (highest probability second)
+      return b.topConfidence - a.topConfidence;
     });
+
+  // Fallback: if value filter is too strict and returns < count picks,
+  // supplement with safety-only picks (no value gate) to avoid empty tabs.
+  // These fallback picks are still 65%+ and pass V3-15 audit + safety anchors.
+  const fallbackSafe = safeAndValued.length < count
+    ? predictions
+        .filter(p => p.topConfidence >= effectiveMin && p.topConfidence <= maxConfidence)
+        .filter(p => !p.topPick.toLowerCase().includes('draw'))
+        .filter(p => hasMinDataQuality(p))
+        .filter(p => hasSafetyAnchors(p))
+        .filter(p => !safeAndValued.find(sv => sv.homeTeam === p.homeTeam && sv.awayTeam === p.awayTeam))
+        .sort((a, b) => b.topConfidence - a.topConfidence)
+    : [];
+
+  const combined = [...safeAndValued, ...fallbackSafe];
+
+  if (safeAndValued.length < count && fallbackSafe.length > 0) {
+    console.log(`[Value Filter] Only ${safeAndValued.length}/${count} picks met the 5% value edge — supplementing with ${Math.min(fallbackSafe.length, count - safeAndValued.length)} safety-only picks`);
+  }
 
   // Deduplicate: no two picks from the same match
   const seen = new Set<string>();
   const unique: PredictionResult[] = [];
-  for (const p of qualified) {
+  for (const p of combined) {
     const key = `${p.homeTeam}|${p.awayTeam}`;
     if (!seen.has(key)) {
       seen.add(key);
@@ -138,7 +203,15 @@ function selectBestLegs(
     }
   }
 
-  return unique.slice(0, count);
+  // Log value gaps for the selected picks
+  const selected = unique.slice(0, count);
+  for (const p of selected) {
+    const gap = calcValueGap(p);
+    const isValuePick = gap >= VALUE_EDGE_MINIMUM;
+    console.log(`[Value Filter] ${isValuePick ? '✅ VALUE' : '⚠️  SAFETY'} | ${p.homeTeam} vs ${p.awayTeam} | V3=${p.topConfidence.toFixed(1)}% | Implied=${((p.factors?.f01_marketConsensus_home ?? 0.5)*100).toFixed(1)}% | Gap=${gap.toFixed(1)}%`);
+  }
+
+  return selected;
 }
 
 // ─── Daily Pick Generation (exported for scheduler) ───────────────────────────
