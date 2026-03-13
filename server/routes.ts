@@ -2458,6 +2458,69 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // POST /api/admin/v2-validate — run V3-15 engine on a manually-entered fixture from the Live Validator form
+  // This is called by the "Run V3-15 Gemini Model" button in the V3 Validator tab
+  app.post('/api/admin/v2-validate', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { homeTeam, awayTeam, league, sport, homeOdds, drawOdds, awayOdds } = req.body;
+      if (!homeTeam || !awayTeam) return res.status(400).json({ error: 'homeTeam and awayTeam are required' });
+
+      const sportNorm: 'nba' | 'mls' | 'soccer' = sport === 'nba' ? 'nba' : sport === 'mls' ? 'mls' : 'soccer';
+      const fixture: FixtureData = {
+        fixtureId: Date.now(),
+        homeTeam: homeTeam.trim(),
+        awayTeam: awayTeam.trim(),
+        league: (league || sportNorm.toUpperCase()).trim(),
+        sport: sportNorm,
+        homeOdds:  homeOdds  ? parseFloat(homeOdds)  : undefined,
+        drawOdds:  drawOdds  ? parseFloat(drawOdds)  : undefined,
+        awayOdds:  awayOdds  ? parseFloat(awayOdds)  : undefined,
+        homeInjuries: 0,
+        awayInjuries: 0,
+        isNeutralVenue: false,
+      } as FixtureData;
+
+      const preds = await runBatchPredictionsV15([fixture as FixtureDataV15]);
+      const pred = preds[0];
+      if (!pred) return res.status(422).json({ error: 'Engine returned no prediction for this fixture' });
+
+      const conf = pred.topConfidence;
+      const p = pred.predictions;
+      const outcomes: { label: string; conf: number }[] = [];
+      if (p.homeWin)    outcomes.push({ label: `${homeTeam} Win`,           conf: p.homeWin });
+      if (p.awayWin)    outcomes.push({ label: `${awayTeam} Win`,           conf: p.awayWin });
+      if (p.draw)       outcomes.push({ label: 'Draw',                      conf: p.draw });
+      if (p.homeOrDraw) outcomes.push({ label: `${homeTeam} Win or Draw`,   conf: p.homeOrDraw });
+      if (p.awayOrDraw) outcomes.push({ label: `${awayTeam} Win or Draw`,   conf: p.awayOrDraw });
+      if (p.over25)     outcomes.push({ label: 'Over 2.5 Goals',            conf: p.over25 });
+      if (p.under25)    outcomes.push({ label: 'Under 2.5 Goals',           conf: p.under25 });
+      if (p.btts)       outcomes.push({ label: 'Both Teams to Score',       conf: p.btts });
+
+      const threshold = parseFloat(process.env.V3_HIGH_VAL_THRESHOLD || '68');
+      const isPowerPick = conf >= threshold;
+      const tier = conf >= threshold ? 'pro' : conf >= 65 ? 'free' : 'below-threshold';
+
+      res.json({
+        success:        true,
+        recommendation: pred.recommendation || `${pred.topPick} (${Math.round(conf)}%)`,
+        confidence:     Math.round(conf * 10) / 10,
+        bestPick:       pred.topPick,
+        tier,
+        isPowerPick,
+        predictions: {
+          homeWin: p.homeWin  ? Math.round(p.homeWin)  : undefined,
+          awayWin: p.awayWin  ? Math.round(p.awayWin)  : undefined,
+          draw:    p.draw     ? Math.round(p.draw)     : undefined,
+        },
+        outcomes: outcomes.sort((a, b) => b.conf - a.conf),
+        factors:  pred.factors,
+        note:     pred.note || null,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // POST /api/admin/v3-validate — run full Titan XII on a specific game by ID
   app.post('/api/admin/v3-validate', requireAuth, async (req: Request, res: Response) => {
     try {
