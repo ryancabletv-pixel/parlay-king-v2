@@ -24,7 +24,8 @@ export function getDb() {
 // ─── Picks ────────────────────────────────────────────────────────────────────
 export async function getPicksByDate(date: string) {
   const db = getDb();
-  return db.select().from(schema.picks).where(eq(schema.picks.date, date)).orderBy(desc(schema.picks.confidence));
+  // Only return active (non-disabled) picks — prevents stale/old picks from inflating counts
+  return db.select().from(schema.picks).where(and(eq(schema.picks.date, date), eq(schema.picks.isDisabled, false))).orderBy(desc(schema.picks.confidence));
 }
 
 export async function getAllPicks(limit = 100) {
@@ -89,9 +90,10 @@ export async function getWinLossSummary() {
 
   const summary = { wins: 0, losses: 0, voids: 0, total: 0, winRate: 0 };
   for (const row of rows) {
-    if (row.result === 'won') summary.wins = row.count;
-    else if (row.result === 'lost') summary.losses = row.count;
-    else if (row.result === 'void') summary.voids = row.count;
+    // Accept both uppercase (WIN/LOSS) and lowercase (won/lost) for backwards compatibility
+    if (row.result === 'WIN' || row.result === 'won') summary.wins += row.count;
+    else if (row.result === 'LOSS' || row.result === 'lost') summary.losses += row.count;
+    else if (row.result === 'VOID' || row.result === 'void') summary.voids += row.count;
   }
   summary.total = summary.wins + summary.losses;
   summary.winRate = summary.total > 0 ? Math.round((summary.wins / summary.total) * 1000) / 10 : 0;
