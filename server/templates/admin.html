@@ -708,6 +708,18 @@
         </div>
       </div>
 
+      <!-- V2 Validator Mode Control Banner -->
+      <div style="background:rgba(255,215,0,0.04);border:1px solid rgba(255,215,0,0.2);border-radius:10px;padding:10px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px">V2 VALIDATOR</div>
+          <div id="validator-mode-status"><span style="color:var(--gold);font-weight:800">🟡 SHADOW MODE — Validator is logging only (not blocking)</span></div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Thresholds: Featured ≥68% | Tab ≥65% | Value Edge ≥5% | V3-15 Factors ≥8/15</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="validator-mode-btn" data-mode="shadow" onclick="toggleValidatorMode()" style="padding:7px 14px;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:8px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer">🟡 Switch to Active Mode</button>
+          <button onclick="runValidatorDryRun()" style="padding:7px 14px;background:rgba(79,195,247,0.1);border:1px solid rgba(79,195,247,0.3);border-radius:8px;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer">🔬 Run Dry Run</button>
+        </div>
+      </div>
       <!-- Tab Bar -->
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--gold-border)">
         <button id="v3tab-today" onclick="v3SwitchTab('today')" style="padding:10px 20px;background:transparent;border:none;border-bottom:2px solid var(--gold);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:-2px">📅 Today</button>
@@ -2335,7 +2347,7 @@ async function loadAlerts() {
     document.getElementById('alerts-list').innerHTML = alerts.map(a => `
       <div class="alert alert-${a.level === 'critical' ? 'error' : a.level === 'warning' ? 'warning' : 'info'}">
         <strong>${a.level.toUpperCase()}</strong>: ${a.message}
-        <span style="float:right;font-size:11px;opacity:0.7">${new Date(a.created_at).toLocaleString()}</span>
+        <span style="float:right;font-size:11px;opacity:0.7">${(function(v){try{const d=new Date(v);return isNaN(d.getTime())?new Date().toLocaleString():d.toLocaleString();}catch(e){return new Date().toLocaleString();}})(a.created_at)}</span>
       </div>`).join('');
   } catch(e) {
     document.getElementById('alerts-list').innerHTML = `<div class="alert alert-error">Error: ${e.message}</div>`;
@@ -2483,10 +2495,26 @@ function v3RenderGameCard(game) {
 
   const tierBadge = game.is_power_pick ? '<span style="background:rgba(255,215,0,0.2);color:var(--gold);border:1px solid var(--gold-border);padding:2px 10px;border-radius:20px;font-size:10px;font-weight:800;letter-spacing:1px">🏆 GOLD TIER</span>' : '<span style="background:rgba(255,255,255,0.05);color:var(--text-dim);border:1px solid rgba(255,255,255,0.1);padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700">PRO TIER</span>';
   const srcBadge = game.source === 'neondb-v3' ? '<span style="background:rgba(0,230,118,0.1);color:var(--green);border:1px solid rgba(0,230,118,0.2);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700">✓ V3 VALIDATED</span>' : '';
+  // V3 Verified Badge — shown when confidence ≥ threshold AND source is v3
+  const isFeaturedPick = game.is_power_pick || false;
+  const confThreshold = isFeaturedPick ? 68 : 65;
+  const v3VerifiedBadge = (conf >= confThreshold && game.source === 'neondb-v3')
+    ? '<span style="background:linear-gradient(135deg,rgba(255,215,0,0.25),rgba(255,165,0,0.15));color:var(--gold);border:1px solid var(--gold);padding:3px 10px;border-radius:20px;font-size:10px;font-weight:900;letter-spacing:1px">⚡ V3 VERIFIED</span>'
+    : '';
+  // Factor Score display (from game.matchQuality — 0-10 scale → 0-100)
+  const factorScore = (game.matchQuality != null) ? Math.round(game.matchQuality * 10) : null;
+  const factorScoreHtml = factorScore !== null
+    ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.15);border-radius:8px">
+        <span style="font-size:11px;color:var(--text-dim);letter-spacing:1px">V3-15 FACTOR SCORE</span>
+        <div style="flex:1;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${factorScore}%;background:${factorScore>=70?'var(--gold)':factorScore>=50?'#ff9800':'#ff5252'};border-radius:3px"></div>
+        </div>
+        <span style="font-size:13px;font-weight:800;color:${factorScore>=70?'var(--gold)':factorScore>=50?'#ff9800':'#ff5252'}">${factorScore}/100</span>
+      </div>` : '';
 
   return `<div style="background:var(--bg3);border:1px solid ${borderColor};border-radius:14px;padding:24px;margin-bottom:16px">
     ${statusLabel}
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">${tierBadge} ${srcBadge}</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">${tierBadge} ${srcBadge} ${v3VerifiedBadge}</div>
     <div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:6px">${game.homeTeam} vs ${game.awayTeam}</div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
       <span style="font-size:13px">🗓️</span>
@@ -2510,11 +2538,10 @@ function v3RenderGameCard(game) {
       <div style="height:100%;width:${barPct}%;background:${barColor};border-radius:5px;transition:width .5s"></div>
       <div style="position:absolute;top:-4px;left:${thresholdPct}%;width:2px;height:18px;background:rgba(255,255,255,0.4)"></div>
     </div>
-    <div style="text-align:right;font-size:11px;color:var(--text-dim);margin-bottom:16px">68% threshold</div>
-
+     <div style="text-align:right;font-size:11px;color:var(--text-dim);margin-bottom:16px">68% featured / 65% tab threshold</div>
+    ${factorScoreHtml}
     ${mqHtml}
-
-    <!-- All Outcomes -->
+    <!-- All Outcomes -->>
     <div style="font-size:10px;letter-spacing:2px;color:var(--text-dim);margin-bottom:12px">ALL ${outcomes.length} OUTCOMES</div>
     ${outcomesHtml}
 
@@ -2522,8 +2549,85 @@ function v3RenderGameCard(game) {
     <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
       <button onclick="v3FeatureGame('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,'')}','${(game.bestPick||'').replace(/'/g,'')}',${conf})" style="padding:8px 16px;background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3);border-radius:8px;color:var(--green);font-size:12px;font-weight:700;cursor:pointer">⭐ Feature on Site</button>
       ${aboveThreshold ? `<button onclick="v3PushToSite('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,'')}','${(game.bestPick||'').replace(/'/g,'')}',${conf},'${game.sport||'soccer'}','${game.league}')" style="padding:8px 16px;background:rgba(255,215,0,0.15);border:1px solid var(--gold-border);border-radius:8px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer">🚀 Push to Live Picks</button>` : ''}
+      <button onclick="v3ForcePublish('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,'')}','${(game.bestPick||'').replace(/'/g,'')}',${conf},'${game.sport||'soccer'}','${game.league}')" style="padding:8px 16px;background:rgba(255,80,80,0.12);border:1px solid rgba(255,80,80,0.35);border-radius:8px;color:#ff6b6b;font-size:12px;font-weight:700;cursor:pointer" title="Admin Master Key — bypasses all validator gates">⚡ Force Publish</button>
     </div>
   </div>`;
+}
+
+// ── Force Publish (Admin Master Key) ────────────────────────────────────────
+async function v3ForcePublish(gameId, matchup, pick, conf, sport, league) {
+  const confStr = typeof conf === 'number' ? conf.toFixed(1) : conf;
+  if (!confirm('⚡ FORCE PUBLISH — Admin Master Key\n\n"' + matchup + '"\nPick: ' + pick + ' @ ' + confStr + '%\n\nThis bypasses ALL validator gates (65%/68% threshold, V3-15 audit, safety anchors, value gate).\n\nAre you sure?')) return;
+  try {
+    await api('/api/admin/v3-push', {
+      method: 'POST',
+      body: JSON.stringify({ gameId, matchup, pick, confidence: conf, sport, league, forcePublish: true })
+    });
+    notify('⚡ Force Published: ' + matchup + ' — Admin Master Key used');
+  } catch(e) {
+    notify('Force publish error: ' + e.message, 'error');
+  }
+}
+
+// ── Validator Mode Toggle ─────────────────────────────────────────────────────
+async function toggleValidatorMode() {
+  const btn = document.getElementById('validator-mode-btn');
+  const statusEl = document.getElementById('validator-mode-status');
+  if (!btn) return;
+  const currentMode = btn.dataset.mode || 'shadow';
+  const newMode = currentMode === 'shadow' ? 'active' : 'shadow';
+  if (newMode === 'active') {
+    if (!confirm('Switch to ACTIVE MODE?\n\nThe V2 Validator will now BLOCK picks that fail the 65%/68% threshold, V3-15 audit, safety anchors, or value gate.\n\nShadow Mode logs were verified. Confirm switch to Active Mode?')) return;
+  }
+  try {
+    await api('/api/admin/validator/mode', { method: 'POST', body: JSON.stringify({ mode: newMode }) });
+    btn.dataset.mode = newMode;
+    if (newMode === 'active') {
+      btn.textContent = '🔴 Switch to Shadow Mode';
+      btn.style.background = 'rgba(255,80,80,0.15)';
+      btn.style.borderColor = 'rgba(255,80,80,0.4)';
+      btn.style.color = '#ff6b6b';
+      if (statusEl) statusEl.innerHTML = '<span style="color:#ff6b6b;font-weight:800">🔴 ACTIVE MODE — Validator is BLOCKING low-quality picks</span>';
+    } else {
+      btn.textContent = '🟡 Switch to Active Mode';
+      btn.style.background = 'rgba(255,215,0,0.1)';
+      btn.style.borderColor = 'rgba(255,215,0,0.3)';
+      btn.style.color = 'var(--gold)';
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold);font-weight:800">🟡 SHADOW MODE — Validator is logging only (not blocking)</span>';
+    }
+    notify('Validator switched to ' + newMode.toUpperCase() + ' MODE');
+  } catch(e) {
+    notify('Mode switch error: ' + e.message, 'error');
+  }
+}
+
+// ── Dry Run Simulation ────────────────────────────────────────────────────────────
+async function runValidatorDryRun() {
+  try {
+    notify('🔬 Running V2 Validator dry run against 10 recent picks...');
+    const result = await api('/api/admin/validator/dry-run', { method: 'POST', body: JSON.stringify({}) });
+    const lines = [
+      `V2 Validator Dry Run Results`,
+      `Mode: ${result.mode?.toUpperCase() || 'SHADOW'}`,
+      `Total picks tested: ${result.total}`,
+      `Would PASS: ${result.passed} picks`,
+      `Would BLOCK: ${result.blocked} picks`,
+      ``,
+      `Discrepancies (picks that would be blocked by new logic):`,
+      ...(result.discrepancies || []).map((d) =>
+        `  ❌ ${d.homeTeam} vs ${d.awayTeam} | ${d.confidence?.toFixed(1)}% | Reason: ${d.reason}`
+      ),
+      ``,
+      `Passing picks:`,
+      ...(result.passingPicks || []).map((p) =>
+        `  ✅ ${p.homeTeam} vs ${p.awayTeam} | ${p.confidence?.toFixed(1)}%`
+      ),
+    ];
+    alert(lines.join('\n'));
+    notify(`🔬 Dry Run complete: ${result.passed} pass, ${result.blocked} would be blocked`);
+  } catch(e) {
+    notify('Dry run error: ' + e.message, 'error');
+  }
 }
 
 async function v3ValidateGame(gameId) {

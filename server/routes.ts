@@ -3466,6 +3466,64 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // ── V2 Validator Mode Control ────────────────────────────────────────────────
+  // POST /api/admin/validator/mode — switch between shadow and active mode
+  app.post('/api/admin/validator/mode', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { mode } = req.body as { mode: string };
+      if (mode !== 'shadow' && mode !== 'active') {
+        return res.status(400).json({ error: 'mode must be "shadow" or "active"' });
+      }
+      const { setValidatorMode } = await import('./v2Validator.js');
+      setValidatorMode(mode as 'shadow' | 'active');
+      console.log(`[V2Validator] Admin switched validator to ${mode.toUpperCase()} MODE`);
+      return res.json({ success: true, mode, message: `V2 Validator switched to ${mode.toUpperCase()} MODE` });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/admin/validator/status — get current validator mode and thresholds
+  app.get('/api/admin/validator/status', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { getValidatorMode, VALIDATOR_THRESHOLDS } = await import('./v2Validator.js');
+      return res.json({
+        success: true,
+        mode: getValidatorMode(),
+        thresholds: VALIDATOR_THRESHOLDS,
+        description: getValidatorMode() === 'shadow'
+          ? 'SHADOW MODE: Validator logs what would be blocked WITHOUT blocking anything'
+          : 'ACTIVE MODE: Validator is BLOCKING picks that fail the 65%/68% threshold, V3-15 audit, safety anchors, or value gate',
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/admin/validator/dry-run — run dry-run simulation against 10 recent picks
+  app.post('/api/admin/validator/dry-run', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { Pool: DryPool } = await import('pg');
+      const dPool = new DryPool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const rows = await dPool.query(`SELECT id, home_team, away_team, confidence, tier, is_power_pick, metadata FROM picks ORDER BY created_at DESC LIMIT 10`);
+      await dPool.end();
+      const { runDryRun } = await import('./v2Validator.js');
+      const picks = rows.rows.map((p: any) => {
+        const meta = typeof p.metadata === 'string' ? JSON.parse(p.metadata || '{}') : (p.metadata || {});
+        return {
+          homeTeam: p.home_team, awayTeam: p.away_team,
+          prediction: '', confidence: parseFloat(p.confidence),
+          pickType: (p.is_power_pick || p.tier === 'lifetime') ? 'featured' as const : 'tab' as const,
+          factors: meta.factors || meta.v3_factors || {},
+        };
+      });
+      const result = runDryRun(picks);
+      return res.json({ success: true, ...result });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   // ── Register Hardened Tier Architecture routes (gold_tiers table) ──────────
   try {
     const { registerGoldTierRoutes } = await import('./goldTierRoutes.js');
@@ -3475,3 +3533,8 @@ export async function registerRoutes(app: Express) {
     console.error('[Routes] Failed to register gold tier routes:', err.message);
   }
 }
+
+// ── V2 Validator Mode Control (appended) ──────────────────────────────────────
+// These routes are registered via the registerRoutes function above.
+// They are appended here to avoid modifying the closing brace of registerRoutes.
+// The actual registration is handled by the goldTierRoutes dynamic import above.
