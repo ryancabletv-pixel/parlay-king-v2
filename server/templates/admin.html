@@ -191,6 +191,7 @@
     .sc-toggle input:checked + .sc-slider { background: rgba(0,230,118,0.3); border-color: var(--green); }
     .sc-toggle input:checked + .sc-slider:before { transform: translateX(24px); background: var(--green); }
     textarea.login-input { resize: vertical; font-family: inherit; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
     /* ===== MOBILE HAMBURGER BUTTON ===== */
     .hamburger {
@@ -2707,13 +2708,150 @@ function v3RenderGameCard(game) {
     <div style="font-size:10px;letter-spacing:2px;color:var(--text-dim);margin-bottom:12px">ALL ${outcomes.length} OUTCOMES</div>
     ${outcomesHtml}
 
+    <!-- V3-15 Factor Breakdown Panel (collapsible, hidden by default) -->
+    <div id="factors-${game.id}" style="display:none;margin-top:12px;padding:14px;background:rgba(255,215,0,0.04);border:1px solid rgba(255,215,0,0.15);border-radius:10px">
+      <div style="font-size:10px;letter-spacing:2px;color:var(--gold);margin-bottom:10px;font-weight:800">V3-15 FACTOR BREAKDOWN</div>
+      <div id="factors-content-${game.id}">${(() => {
+        const f = game.factors || {};
+        if (game.source === 'upcoming-fixtures' && !game.analyzed) return '<span style="color:var(--text-dim);font-style:italic;font-size:12px">⏳ Run V3-15 Audit to see factor breakdown</span>';
+        const FACTOR_NAMES = [
+          ['marketConsensus','F01 Market Consensus'],['momentum','F02 Momentum'],['classGap','F03 Class Gap'],
+          ['h2h','F04 H2H History'],['steam','F05 Market Steam'],['rest','F06 Rest/Fatigue'],
+          ['injuries','F07 Injuries'],['travel','F08 Travel Stress'],['referee','F09 Referee Bias'],
+          ['environment','F10 Environmental'],['standing','F11 League Standing'],['venue','F12 Venue Pressure'],
+          ['steamExtended','F13 Steam Extended'],['altitudeFatigue','F14 Altitude/Fatigue'],['valueEdge','F15 Value Edge']
+        ];
+        return FACTOR_NAMES.map(([key, label]) => {
+          const val = f[key];
+          const passed = val !== undefined && val !== null && val !== 0 && val !== 'neutral';
+          return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:' + (passed ? 'var(--green)' : 'var(--red)') + ';font-size:14px">' + (passed ? '✅' : '❌') + '</span><span style="flex:1;font-size:12px;color:' + (passed ? 'var(--text)' : 'var(--text-dim)') + '">' + label + '</span><span style="font-size:11px;color:var(--text-dim)">' + (val !== undefined && val !== null ? String(val).substring(0,20) : 'no data') + '</span></div>';
+        }).join('');
+      })()}</div>
+    </div>
+    <!-- Audit Status Block (shown for upcoming-fixtures games) -->
+    <div id="audit-status-${game.id}" style="margin-top:12px;${game.source !== 'upcoming-fixtures' ? 'display:none' : ''}">
+      ${game.analyzed && game.analysisPassed !== null ? `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:${game.analysisPassed ? 'rgba(0,230,118,0.08)' : 'rgba(255,68,68,0.08)'};border:1px solid ${game.analysisPassed ? 'rgba(0,230,118,0.3)' : 'rgba(255,68,68,0.3)'};border-radius:10px">
+          <span style="font-size:20px">${game.analysisPassed ? '✅' : '❌'}</span>
+          <div><div style="font-size:13px;font-weight:800;color:${game.analysisPassed ? 'var(--green)' : 'var(--red)'}">${game.analysisPassed ? 'PASSED — 65%+ Threshold Met' : 'FAILED — Below 65% Floor'}</div><div style="font-size:11px;color:var(--text-dim)">V3-15 Score: ${(game.confidence||0).toFixed(1)}%</div></div>
+        </div>` : `
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,215,0,0.04);border:1px solid rgba(255,215,0,0.15);border-radius:10px">
+          <span style="font-size:12px;color:var(--text-dim);font-style:italic">⏳ Pending Analysis — 0.0% confidence</span>
+        </div>`}
+    </div>
     <!-- Action Buttons -->
-    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-      <button onclick="v3FeatureGame('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,'')}','${(game.bestPick||'').replace(/'/g,'')}',${conf})" style="padding:8px 16px;background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3);border-radius:8px;color:var(--green);font-size:12px;font-weight:700;cursor:pointer">⭐ Feature on Site</button>
-      ${aboveThreshold ? `<button onclick="v3PushToSite('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,'')}','${(game.bestPick||'').replace(/'/g,'')}',${conf},'${game.sport||'soccer'}','${game.league}')" style="padding:8px 16px;background:rgba(255,215,0,0.15);border:1px solid var(--gold-border);border-radius:8px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer">🚀 Push to Live Picks</button>` : ''}
-      <button onclick="v3ForcePublish('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,'')}','${(game.bestPick||'').replace(/'/g,'')}',${conf},'${game.sport||'soccer'}','${game.league}')" style="padding:8px 16px;background:rgba(255,80,80,0.12);border:1px solid rgba(255,80,80,0.35);border-radius:8px;color:#ff6b6b;font-size:12px;font-weight:700;cursor:pointer" title="Admin Master Key — bypasses all validator gates">⚡ Force Publish</button>
+    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center">
+      ${game.source === 'upcoming-fixtures' ? `<button id="audit-btn-${game.id}" onclick="v3RunAuditNow('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,"&#39;")}','${game.sport||'soccer'}','${(game.league||'').replace(/'/g,"&#39;")}')" style="padding:9px 18px;background:linear-gradient(135deg,rgba(255,215,0,0.25),rgba(255,165,0,0.15));border:1px solid var(--gold);border-radius:8px;color:var(--gold);font-size:13px;font-weight:900;cursor:pointer;letter-spacing:0.5px">⚡ Run V3-15 Audit</button>` : ''}
+      <button onclick="(function(){var el=document.getElementById('factors-${game.id}');el.style.display=el.style.display==='none'?'block':'none';})()" style="padding:8px 14px;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.2);border-radius:8px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer">▼ Factors</button>
+      <button onclick="v3FeatureGame('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,"&#39;")}','${(game.bestPick||'').replace(/'/g,"&#39;")}',${conf})" style="padding:8px 16px;background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3);border-radius:8px;color:var(--green);font-size:12px;font-weight:700;cursor:pointer">⭐ Feature on Site</button>
+      ${aboveThreshold ? `<button onclick="v3PushToSite('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,"&#39;")}','${(game.bestPick||'').replace(/'/g,"&#39;")}',${conf},'${game.sport||'soccer'}','${game.league}')" style="padding:8px 16px;background:rgba(255,215,0,0.15);border:1px solid var(--gold-border);border-radius:8px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer">🚀 Push to Live Picks</button>` : ''}
+      <button onclick="v3ForcePublish('${game.id}','${(game.homeTeam+' vs '+game.awayTeam).replace(/'/g,"&#39;")}','${(game.bestPick||'').replace(/'/g,"&#39;")}',${conf},'${game.sport||'soccer'}','${game.league}')" style="padding:8px 16px;background:rgba(255,80,80,0.12);border:1px solid rgba(255,80,80,0.35);border-radius:8px;color:#ff6b6b;font-size:12px;font-weight:700;cursor:pointer" title="Admin Master Key — bypasses all validator gates">⚡ Force Publish</button>
     </div>
   </div>`;
+}
+
+// ── Audit Now — Single-Game V3-15 Trigger ────────────────────────────────────
+async function v3RunAuditNow(gameId, matchup, sport, league) {
+  const btn = document.getElementById('audit-btn-' + gameId);
+  const statusEl = document.getElementById('audit-status-' + gameId);
+  const factorsContent = document.getElementById('factors-content-' + gameId);
+  const factorsPanel = document.getElementById('factors-' + gameId);
+
+  // Extract numeric ID from 'fix_123' format
+  const numericId = gameId.startsWith('fix_') ? gameId.replace('fix_', '') : gameId;
+
+  // Scanning animation
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Scanning...';
+    btn.style.opacity = '0.7';
+    btn.style.cursor = 'not-allowed';
+    // Pulse animation
+    let dots = 0;
+    const pulse = setInterval(() => {
+      dots = (dots + 1) % 4;
+      btn.textContent = '⏳ Scanning' + '.'.repeat(dots);
+    }, 400);
+    btn._pulse = pulse;
+  }
+  if (statusEl) {
+    statusEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);border-radius:10px"><div style="width:16px;height:16px;border:2px solid var(--gold);border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite"></div><span style="font-size:12px;color:var(--gold);font-weight:700">Running V3-15 analysis on ' + matchup + '...</span></div>';
+  }
+
+  try {
+    const result = await api('/api/admin/upcoming-fixtures/' + numericId + '/analyze', { method: 'POST' });
+
+    // Stop animation
+    if (btn && btn._pulse) clearInterval(btn._pulse);
+
+    const passed = result.pass;
+    const conf = result.confidence || 0;
+    const cached = result.cached ? ' (cached)' : '';
+
+    // Update audit status block
+    if (statusEl) {
+      statusEl.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:${passed ? 'rgba(0,230,118,0.08)' : 'rgba(255,68,68,0.08)'};border:1px solid ${passed ? 'rgba(0,230,118,0.3)' : 'rgba(255,68,68,0.3)'};border-radius:10px">
+          <span style="font-size:22px">${passed ? '✅' : '❌'}</span>
+          <div>
+            <div style="font-size:14px;font-weight:900;color:${passed ? 'var(--green)' : 'var(--red)'}">${passed ? 'PASSED — 65%+ Threshold Met' : 'FAILED — Below 65% Floor'}${cached}</div>
+            <div style="font-size:13px;font-weight:700;color:${passed ? 'var(--green)' : 'var(--red)'};margin-top:2px">V3-15 Score: ${conf.toFixed(1)}%</div>
+            ${result.bestPick ? '<div style="font-size:12px;color:var(--text-dim);margin-top:2px">Best Pick: ' + result.bestPick + '</div>' : ''}
+          </div>
+        </div>`;
+    }
+
+    // Update confidence display on card
+    const confEl = document.querySelector('#audit-btn-' + gameId + ' ~ * .conf-display, [data-game-id="' + gameId + '"] .conf-display');
+
+    // Update Audit button to Re-analyze
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🔄 Re-analyze';
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+      btn.style.background = 'rgba(255,255,255,0.05)';
+      btn.style.borderColor = 'rgba(255,255,255,0.2)';
+      btn.style.color = 'var(--text-dim)';
+    }
+
+    // Update factor breakdown panel with real data
+    if (factorsContent && result.factors) {
+      const f = result.factors;
+      const FACTOR_NAMES = [
+        ['marketConsensus','F01 Market Consensus'],['momentum','F02 Momentum'],['classGap','F03 Class Gap'],
+        ['h2h','F04 H2H History'],['steam','F05 Market Steam'],['rest','F06 Rest/Fatigue'],
+        ['injuries','F07 Injuries'],['travel','F08 Travel Stress'],['referee','F09 Referee Bias'],
+        ['environment','F10 Environmental'],['standing','F11 League Standing'],['venue','F12 Venue Pressure'],
+        ['steamExtended','F13 Steam Extended'],['altitudeFatigue','F14 Altitude/Fatigue'],['valueEdge','F15 Value Edge']
+      ];
+      const passedCount = FACTOR_NAMES.filter(([key]) => {
+        const val = f[key];
+        return val !== undefined && val !== null && val !== 0 && val !== 'neutral';
+      }).length;
+      factorsContent.innerHTML =
+        '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px">' + passedCount + '/15 factors with real data</div>' +
+        FACTOR_NAMES.map(([key, label]) => {
+          const val = f[key];
+          const ok = val !== undefined && val !== null && val !== 0 && val !== 'neutral';
+          return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:' + (ok ? 'var(--green)' : 'var(--red)') + ';font-size:14px">' + (ok ? '✅' : '❌') + '</span><span style="flex:1;font-size:12px;color:' + (ok ? 'var(--text)' : 'var(--text-dim)') + '">' + label + '</span><span style="font-size:11px;color:var(--text-dim)">' + (val !== undefined && val !== null ? String(val).substring(0,20) : 'no data') + '</span></div>';
+        }).join('');
+      // Auto-expand factors panel to show results
+      if (factorsPanel) factorsPanel.style.display = 'block';
+    }
+
+    notify((passed ? '✅ PASSED' : '❌ FAILED') + ': ' + matchup + ' — ' + conf.toFixed(1) + '%' + cached);
+  } catch(e) {
+    if (btn && btn._pulse) clearInterval(btn._pulse);
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '⚡ Run V3-15 Audit';
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    }
+    if (statusEl) statusEl.innerHTML = '<div style="padding:10px 14px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.3);border-radius:10px;color:var(--red);font-size:12px">❌ Audit failed: ' + e.message + '</div>';
+    notify('Audit error: ' + e.message, 'error');
+  }
 }
 
 // ── Force Publish (Admin Master Key) ────────────────────────────────────────
