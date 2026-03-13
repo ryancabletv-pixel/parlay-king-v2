@@ -211,11 +211,32 @@ async function fetchOdds(sportKey: string, isManual?: boolean): Promise<OddsGame
     recordCall(sportKey, '/odds', remaining, used);
 
     if (!resp.ok) {
+      // ── HTTP 401/429 = Quota Exhausted or Key Invalid ────────────────────────────────
+      if (resp.status === 401 || resp.status === 429) {
+        console.error(`[OddsAPI] ❌ ${resp.status === 401 ? 'UNAUTHORIZED (key invalid or quota exhausted)' : 'RATE LIMITED (429)'} for ${sportKey} — blocking all further auto-calls`);
+        budgetUsedToday = BUDGET_CEILING; // Block all further auto-calls this cycle
+        return [];
+      }
       console.error(`[OddsAPI] HTTP ${resp.status} for ${sportKey}`);
       return [];  // GUARDRAIL 1: return empty, never mock
     }
 
-    const raw: any[] = await resp.json();
+    const raw: any = await resp.json();
+    // ── Quota-Exhausted Detection ───────────────────────────────────────────────
+    // The Odds API returns {message, error_code} when quota is exhausted
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+      const errCode = raw.error_code || '';
+      const errMsg  = raw.message || '';
+      if (errCode === 'OUT_OF_USAGE_CREDITS' || errMsg.includes('quota') || errMsg.includes('Usage quota')) {
+        console.error(`[OddsAPI] ❌ QUOTA EXHAUSTED: ${errMsg} — All Odds API calls blocked until next billing cycle.`);
+        console.error(`[OddsAPI] See https://the-odds-api.com for usage plans.`);
+        // Set budgetUsedToday to ceiling to block all further auto-calls
+        budgetUsedToday = BUDGET_CEILING;
+        return [];
+      }
+      console.error(`[OddsAPI] Unexpected response for ${sportKey}:`, raw);
+      return [];
+    }
     if (!Array.isArray(raw)) {
       console.error(`[OddsAPI] Unexpected response for ${sportKey}:`, raw);
       return [];

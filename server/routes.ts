@@ -250,12 +250,24 @@ export async function generateDailyPicks(date: string): Promise<{
   try {
     const { fetchSoccerFixtures, fetchNBAFixtures } = await import('./apis/apiFootball.js');
     [soccerFixtures, nbaFixtures] = await Promise.all([
-      fetchSoccerFixtures(date).catch(err => {
-        console.error('[Engine] CRITICAL: Soccer API fetch failed:', err.message);
+      fetchSoccerFixtures(date).catch(async (err: any) => {
+        if (err.name === 'ApiSuspendedError') {
+          const msg = `❌ API-Football SUSPENDED: ${err.message.substring(0, 120)}`;
+          console.error('[Engine] CRITICAL:', msg);
+          try { await createAlert('critical', `FAIL-SAFE TRIGGERED: API-Football key suspended — falling back to The Odds API for soccer. Action required: renew API-Football subscription at dashboard.api-football.com`); } catch (_) {}
+        } else {
+          console.error('[Engine] CRITICAL: Soccer API fetch failed:', err.message);
+        }
         return [] as FixtureData[];
       }),
-      fetchNBAFixtures(date).catch(err => {
-        console.error('[Engine] CRITICAL: NBA API fetch failed:', err.message);
+      fetchNBAFixtures(date).catch(async (err: any) => {
+        if (err.name === 'ApiSuspendedError') {
+          const msg = `❌ API-Basketball SUSPENDED: ${err.message.substring(0, 120)}`;
+          console.error('[Engine] CRITICAL:', msg);
+          try { await createAlert('critical', `FAIL-SAFE TRIGGERED: API-Basketball key suspended — falling back to The Odds API for NBA. Action required: renew API-Basketball subscription at dashboard.api-football.com`); } catch (_) {}
+        } else {
+          console.error('[Engine] CRITICAL: NBA API fetch failed:', err.message);
+        }
         return [] as FixtureData[];
       }),
     ]);
@@ -922,6 +934,91 @@ export async function registerRoutes(app: Express) {
         power:  '1 pick (highest confidence ≥68%)',
       },
     });
+  });
+
+  // ── Data Source Health Endpoint ───────────────────────────────────────────
+  // Returns real-time health status of all API data sources.
+  // Used by the admin dashboard health indicator.
+  app.get('/api/admin/data-source-health', requireAuth, async (req, res) => {
+    try {
+      const { getBudgetStatus } = await import('./apis/oddsApi.js');
+      const budget = getBudgetStatus();
+
+      // Check API-Football key status (read from system_config.json)
+      let sysConfig: any = {};
+      try {
+        const { SYS_CONFIG } = await import('./scheduler.js');
+        sysConfig = SYS_CONFIG;
+      } catch (_) {}
+
+      // Read last_update.json for scheduler state
+      let lastUpdate: any = {};
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const luPath = path.join(process.cwd(), 'last_update.json');
+        if (fs.existsSync(luPath)) lastUpdate = JSON.parse(fs.readFileSync(luPath, 'utf8'));
+      } catch (_) {}
+
+      // Determine health status for each source
+      const oddsApiQuotaHit = budget.used_today >= budget.ceiling;
+      const oddsApiDegraded = budget.used_today >= budget.auto_ceiling;
+
+      res.json({
+        timestamp: new Date().toISOString(),
+        sources: {
+          api_football: {
+            name: 'API-Football (Primary Soccer)',
+            url: 'v3.football.api-sports.io',
+            status: 'unknown',  // Checked live only on generation run to save credits
+            note: 'Status verified at each generation run. Check Railway logs for SUSPENDED alerts.',
+            action_required: 'If suspended: renew at dashboard.api-football.com'
+          },
+          api_basketball: {
+            name: 'API-Basketball (Primary NBA)',
+            url: 'v1.basketball.api-sports.io',
+            status: 'unknown',
+            note: 'Same key as API-Football. Status verified at each generation run.',
+            action_required: 'If suspended: renew at dashboard.api-football.com'
+          },
+          odds_api: {
+            name: 'The Odds API (Fallback)',
+            url: 'api.the-odds-api.com',
+            status: oddsApiQuotaHit ? 'red' : oddsApiDegraded ? 'yellow' : 'green',
+            used_today: budget.used_today,
+            ceiling: budget.ceiling,
+            auto_ceiling: budget.auto_ceiling,
+            remaining: budget.remaining,
+            throttle_active: budget.throttle_active,
+            note: oddsApiQuotaHit
+              ? 'QUOTA EXHAUSTED — All calls blocked until next billing cycle. Renew at the-odds-api.com'
+              : oddsApiDegraded
+              ? 'AUTO CEILING HIT (90/100) — 10 calls reserved for manual dashboard actions'
+              : 'Active — ' + budget.remaining + ' calls remaining today'
+          },
+          espn_scraper: {
+            name: 'ESPN Free API (Last Resort)',
+            url: 'site.api.espn.com',
+            status: 'green',  // ESPN free API has no key requirement
+            note: 'No API key required. Always available as last resort.'
+          }
+        },
+        system_config: {
+          loaded: Object.keys(sysConfig).length > 0,
+          min_threshold: sysConfig.thresholds?.MIN_THRESHOLD ?? 0.65,
+          high_val_threshold: sysConfig.thresholds?.HIGH_VAL_THRESHOLD ?? 0.68,
+          no_dark_policy: sysConfig.fail_safe_rules?.no_dark_policy ?? 'active'
+        },
+        last_run: {
+          date: lastUpdate.date,
+          picks_live: lastUpdate.picksLive,
+          kill_switch: lastUpdate.killSwitchTriggered,
+          attempt_count: lastUpdate.attemptCount
+        }
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // ── Public Tab Endpoints ────────────────────────────────────────────────────

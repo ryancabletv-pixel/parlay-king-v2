@@ -1,0 +1,100 @@
+{
+  "_comment": "V3-15 Gold Standard Engine — HARDCODED SYSTEM CONFIG. This file is the single source of truth for all threshold rules. It survives container restarts, Railway redeploys, and context flushes. The code reads this file at startup and REFUSES to publish any pick that does not meet these standards.",
+  "_version": "V3 Titan XII — Safety Valve Edition",
+  "_last_updated": "2026-03-13",
+
+  "thresholds": {
+    "MIN_THRESHOLD": 0.65,
+    "HIGH_VAL_THRESHOLD": 0.68,
+    "LIFETIME_THRESHOLD": 0.70,
+    "POWER_PICK_THRESHOLD": 0.80,
+    "FREE_MIN": 0.64,
+    "FREE_MAX": 0.67,
+    "FEATURED_THRESHOLD": 0.68,
+    "TAB_THRESHOLD": 0.65,
+    "_rule": "NO pick may be published below MIN_THRESHOLD (0.65). This is absolute. No exceptions."
+  },
+
+  "pick_counts": {
+    "free": 2,
+    "pro": 6,
+    "lifetime": 10,
+    "power_pick": 1,
+    "soccer_legs": 3,
+    "nba_legs": 3,
+    "mls_legs": 2
+  },
+
+  "api_sources": {
+    "primary": {
+      "soccer": "API-Football (v3.football.api-sports.io)",
+      "nba": "API-Basketball (v1.basketball.api-sports.io)",
+      "status_endpoint": "/status",
+      "suspended_error": "Your account is suspended"
+    },
+    "fallback": {
+      "soccer": "The Odds API (api.the-odds-api.com) — soccer_epl, soccer_spain_la_liga, etc.",
+      "nba": "The Odds API (api.the-odds-api.com) — basketball_nba",
+      "quota_error_code": "OUT_OF_USAGE_CREDITS",
+      "quota_http_codes": [401, 429]
+    },
+    "last_resort": {
+      "soccer": "ESPN free fixtures API (no credits required)",
+      "nba": "ESPN free fixtures API (no credits required)",
+      "url_template": "https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/scoreboard?dates={date}"
+    }
+  },
+
+  "api_budget": {
+    "daily_ceiling": 100,
+    "auto_ceiling": 90,
+    "manual_reserve": 10,
+    "_rule": "Automated tasks stop at 90 calls/day. 10 calls always reserved for manual admin dashboard actions."
+  },
+
+  "fail_safe_rules": {
+    "suspended_key": "On ApiSuspendedError: log CRITICAL alert, immediately switch to fallback source, do NOT retry suspended key",
+    "quota_exhausted": "On HTTP 401/429 or OUT_OF_USAGE_CREDITS: log CRITICAL alert, block all further auto-calls, switch to ESPN last-resort",
+    "timeout": "15-second AbortController timeout per API call. Exponential backoff: 2s, 4s, 8s on transient failures",
+    "zero_picks": "On 0 picks generated: log CRITICAL, mark run as EMPTY, do NOT publish empty page",
+    "no_dark_policy": "NEVER show 0 picks on the live site. If primary threshold (68%) fails, use 65% floor with High Volatility label",
+    "kill_switch": "After 3 consecutive GlobalMonitor failures: halt all auto-tasks, send critical alert to admin dashboard",
+    "startup_catchup": "On Railway restart after 1 AM: check for missing picks, trigger generation once with full failover chain"
+  },
+
+  "data_source_health": {
+    "check_interval_minutes": 60,
+    "alert_on_suspended": true,
+    "alert_on_quota_exhausted": true,
+    "dashboard_indicator": true,
+    "_ui_rule": "Admin dashboard must show a colored health dot for each API source: GREEN=active, YELLOW=degraded, RED=suspended/quota"
+  },
+
+  "scheduler": {
+    "primary_cron": "0 0 1 * * *",
+    "timezone": "America/Moncton",
+    "retry_cascade": ["1:00 AM", "1:30 AM", "2:00 AM", "2:30 AM", "3:00 AM"],
+    "max_retries": 4
+  },
+
+  "v3_15_factors": {
+    "F01": "Recent Form (last 5 games) — HIGH weight",
+    "F02": "Squad Depth & Injuries — HIGH weight",
+    "F03": "Head-to-Head Record — MEDIUM weight",
+    "F04": "Home/Away Advantage — MEDIUM weight",
+    "F05": "Rest Days & Fixture Congestion — MEDIUM weight",
+    "F06": "Motivation & Stakes — MEDIUM weight",
+    "F07": "European/Continental Pedigree — MEDIUM weight",
+    "F08": "Tactical Setup & Style Match — MEDIUM weight",
+    "F09": "Weather & Pitch Conditions — LOW weight",
+    "F10": "Referee Tendencies — LOW weight",
+    "F11": "Travel Distance & Time Zone — LOW weight",
+    "F12": "Line Movement & Opening Odds — HIGH weight",
+    "F13": "Sharp Money / Market Steam — HIGH weight",
+    "F14": "Public Betting % vs Sharp % — MEDIUM weight",
+    "F15": "V3 Model Historical Accuracy — HIGH weight",
+    "_minimum_factors_required": 8,
+    "_neutral_score_when_missing": 0.5,
+    "_offline_status": "N/A - Source Offline"
+  }
+}

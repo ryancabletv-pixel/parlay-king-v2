@@ -11,6 +11,51 @@ import { runGlobalDataMonitor, getMonitorState, resetMonitorState } from './glob
 // America/Moncton = AST (UTC-4) / ADT (UTC-3 during DST) — New Brunswick, Canada
 const TZ = 'America/Moncton';
 
+// ─── V3-15 Persistent Memory Config ─────────────────────────────────────────
+// This file is the hardcoded memory for all V3-15 threshold rules.
+// It survives container restarts, Railway redeploys, and context flushes.
+import * as fs from 'fs';
+import * as path from 'path';
+let V3_CONFIG: any = {};
+try {
+  const configPath = path.join(process.cwd(), 'v3_config.json');
+  if (fs.existsSync(configPath)) {
+    V3_CONFIG = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    console.log('[V3-Config] ✅ Persistent memory loaded from v3_config.json');
+    console.log(`[V3-Config] Thresholds: Pro=${V3_CONFIG.confidence_thresholds?.pro_min}% | Floor=${V3_CONFIG.confidence_thresholds?.leg_hard_floor}% | Budget=${V3_CONFIG.api_budget?.auto_ceiling}/${V3_CONFIG.api_budget?.daily_ceiling}`);
+  } else {
+    console.warn('[V3-Config] ⚠️  v3_config.json not found — using hardcoded defaults');
+  }
+} catch (e: any) {
+  console.error('[V3-Config] Failed to load v3_config.json:', e.message);
+}
+
+// ─── System Config (Safety Valve — hardcoded thresholds) ─────────────────────
+// system_config.json is the SINGLE SOURCE OF TRUTH for all V3-15 threshold rules.
+// The engine reads MIN_THRESHOLD and HIGH_VAL_THRESHOLD from this file.
+// If the file is missing, hardcoded defaults are used — never 0 or undefined.
+let SYS_CONFIG: any = {
+  thresholds: { MIN_THRESHOLD: 0.65, HIGH_VAL_THRESHOLD: 0.68 },
+  api_sources: {},
+  fail_safe_rules: {},
+  data_source_health: { check_interval_minutes: 60, alert_on_suspended: true, alert_on_quota_exhausted: true, dashboard_indicator: true },
+};
+try {
+  const sysPath = path.join(process.cwd(), 'system_config.json');
+  if (fs.existsSync(sysPath)) {
+    SYS_CONFIG = JSON.parse(fs.readFileSync(sysPath, 'utf8'));
+    const t = SYS_CONFIG.thresholds;
+    console.log('[SysConfig] ✅ Safety Valve config loaded from system_config.json');
+    console.log(`[SysConfig] MIN_THRESHOLD=${t?.MIN_THRESHOLD} | HIGH_VAL_THRESHOLD=${t?.HIGH_VAL_THRESHOLD} | LIFETIME=${t?.LIFETIME_THRESHOLD}`);
+    console.log('[SysConfig] NO pick will be published below ' + (t?.MIN_THRESHOLD * 100).toFixed(0) + '% — ABSOLUTE RULE');
+  } else {
+    console.warn('[SysConfig] ⚠️  system_config.json not found — using hardcoded Safety Valve defaults (MIN=0.65, HIGH_VAL=0.68)');
+  }
+} catch (e: any) {
+  console.error('[SysConfig] Failed to load system_config.json:', e.message);
+}
+export { V3_CONFIG, SYS_CONFIG };
+
 let schedulerStarted = false;
 let keepAliveInterval: NodeJS.Timeout | null = null;
 

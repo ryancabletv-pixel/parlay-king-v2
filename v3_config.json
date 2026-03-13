@@ -1,0 +1,89 @@
+{
+  "_comment": "V3-15 Gold Standard Engine — Hardcoded Config. This file is the persistent memory for all V3-15 threshold rules. It survives container restarts, Railway redeploys, and context flushes. NEVER modify without explicit admin instruction.",
+  "_version": "V3 Titan XII",
+  "_last_updated": "2026-03-13",
+
+  "confidence_thresholds": {
+    "free_min": 64,
+    "free_max": 67,
+    "pro_min": 68,
+    "lifetime_min": 70,
+    "power_pick": 80,
+    "leg_hard_floor": 65,
+    "featured_threshold": 68,
+    "tab_threshold": 65
+  },
+
+  "tier_pick_counts": {
+    "free": 2,
+    "pro": 6,
+    "lifetime": 10,
+    "power_pick": 1
+  },
+
+  "api_budget": {
+    "daily_ceiling": 100,
+    "auto_ceiling": 90,
+    "manual_reserve": 10,
+    "comment": "10 calls always reserved for manual admin dashboard actions"
+  },
+
+  "scheduler": {
+    "primary_cron": "0 0 1 * * *",
+    "timezone": "America/Moncton",
+    "primary_time": "1:00 AM AST",
+    "retry_1": "1:30 AM AST",
+    "retry_2": "2:00 AM AST",
+    "retry_3": "2:30 AM AST",
+    "final_failsafe": "3:00 AM AST",
+    "max_retries": 4
+  },
+
+  "data_sources": {
+    "primary_soccer": "API-Football (v3.football.api-sports.io)",
+    "primary_nba": "API-Basketball (v1.basketball.api-sports.io)",
+    "fallback_soccer": "The Odds API (api.the-odds-api.com) — activated when API-Football is suspended",
+    "fallback_nba": "The Odds API (api.the-odds-api.com) — activated when API-Basketball is suspended",
+    "fixtures_scraper": "ESPN free API (no credits) — every 6 hours",
+    "results_settler": "The Odds API scores endpoint — every 2 hours"
+  },
+
+  "fail_safe_rules": {
+    "suspended_key": "On ApiSuspendedError: log critical alert, fall back to The Odds API, do NOT retry",
+    "timeout": "15 second AbortController timeout per API call; exponential backoff 2s/4s/8s on failure",
+    "zero_picks": "On 0 picks generated: log warning, mark dailyRunCompleted=true, do NOT retry cascade",
+    "partial_sync": "On partial sync: log warning, mark complete, do NOT retry",
+    "kill_switch": "After 3 failed GlobalMonitor attempts: stop all auto-tasks, send critical alert",
+    "startup_catchup": "On Railway restart after 1 AM: check for missing picks, trigger generation once"
+  },
+
+  "v3_15_factors": {
+    "F01": { "name": "Recent Form (last 5 games)", "weight": "High" },
+    "F02": { "name": "Squad Depth & Injuries", "weight": "High" },
+    "F03": { "name": "Head-to-Head Record", "weight": "Medium" },
+    "F04": { "name": "Home/Away Advantage", "weight": "Medium" },
+    "F05": { "name": "Rest Days & Fixture Congestion", "weight": "Medium" },
+    "F06": { "name": "Motivation & Stakes", "weight": "Medium" },
+    "F07": { "name": "European/Continental Pedigree", "weight": "Medium" },
+    "F08": { "name": "Tactical Setup & Style Match", "weight": "Medium" },
+    "F09": { "name": "Weather & Pitch Conditions", "weight": "Low" },
+    "F10": { "name": "Referee Tendencies", "weight": "Low" },
+    "F11": { "name": "Travel Distance & Time Zone", "weight": "Low" },
+    "F12": { "name": "Line Movement & Opening Odds", "weight": "High" },
+    "F13": { "name": "Sharp Money / Market Steam", "weight": "High" },
+    "F14": { "name": "Public Betting % vs Sharp %", "weight": "Medium" },
+    "F15": { "name": "V3 Model Historical Accuracy", "weight": "High" }
+  },
+
+  "allowed_sports": ["soccer", "nba", "mls"],
+
+  "no_dark_policy": {
+    "enabled": true,
+    "description": "Never show 0 picks. If primary threshold (68%) fails, fall back to 65% hard floor with High Volatility label. Never publish picks below 65%."
+  },
+
+  "multi_sport_sync": {
+    "enabled": true,
+    "description": "Both Soccer AND NBA picks must be present before publishing. If only one sport available, retry up to 3 times with 10-minute gaps."
+  }
+}

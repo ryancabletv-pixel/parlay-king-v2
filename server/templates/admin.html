@@ -750,7 +750,18 @@
           High Probability Only (68%+)
         </label>
         <button onclick="v3LoadGames()" id="v3-load-btn" style="padding:9px 18px;background:linear-gradient(135deg,var(--gold),#FFA500);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer">⚡ Load Games</button>
+        <button onclick="v3CheckSourceHealth()" style="padding:9px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:var(--text-dim);font-size:12px;font-weight:700;cursor:pointer">🟡 Source Health</button>
         <span style="font-size:11px;color:var(--text-dim)" id="v3-last-loaded"></span>
+      </div>
+
+      <!-- DATA SOURCE HEALTH PANEL -->
+      <div id="v3-source-health-panel" style="display:none;margin-bottom:16px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,215,0,0.2);border-radius:10px;padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:1px">🟡 DATA SOURCE HEALTH</div>
+          <div style="font-size:11px;color:var(--text-dim)" id="v3-health-timestamp"></div>
+        </div>
+        <div id="v3-health-sources" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px"></div>
+        <div id="v3-health-config" style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);font-size:11px;color:var(--text-dim)"></div>
       </div>
 
       <!-- TODAY TAB -->
@@ -2548,6 +2559,58 @@ async function analyzeFixture(fixtureId) {
   }
 }
 
+// ── Data Source Health Check ──────────────────────────────────────────────────────────────────────────────────
+async function v3CheckSourceHealth() {
+  const panel = document.getElementById('v3-source-health-panel');
+  const sourcesEl = document.getElementById('v3-health-sources');
+  const configEl = document.getElementById('v3-health-config');
+  const tsEl = document.getElementById('v3-health-timestamp');
+
+  // Toggle panel
+  if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  sourcesEl.innerHTML = '<div style="color:var(--text-dim);font-size:12px">Checking sources...</div>';
+
+  try {
+    const data = await api('/api/admin/data-source-health');
+    tsEl.textContent = 'Checked: ' + new Date(data.timestamp).toLocaleTimeString();
+
+    // Render each source as a health card
+    const statusColor = { green: '#4CAF50', yellow: '#FFD700', red: '#F44336', unknown: '#888' };
+    const statusLabel = { green: '✅ Active', yellow: '⚠️ Degraded', red: '❌ Offline / Quota Exhausted', unknown: '❓ Unknown (checked at run time)' };
+
+    sourcesEl.innerHTML = Object.entries(data.sources).map(([key, src]) => {
+      const color = statusColor[src.status] || '#888';
+      const label = statusLabel[src.status] || src.status;
+      return `<div style="background:rgba(255,255,255,0.04);border:1px solid ${src.status === 'red' ? 'rgba(244,67,54,0.4)' : src.status === 'yellow' ? 'rgba(255,215,0,0.3)' : 'rgba(255,255,255,0.1)'};border-radius:8px;padding:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></div>
+          <div style="font-size:12px;font-weight:800;color:#fff">${src.name}</div>
+        </div>
+        <div style="font-size:11px;color:${color};font-weight:700;margin-bottom:4px">${label}</div>
+        ${src.used_today !== undefined ? `<div style="font-size:11px;color:var(--text-dim)">Calls today: ${src.used_today}/${src.ceiling} (auto limit: ${src.auto_ceiling})</div>` : ''}
+        <div style="font-size:10px;color:var(--text-dim);margin-top:4px;line-height:1.4">${src.note}</div>
+        ${src.action_required && src.status !== 'green' ? `<div style="font-size:10px;color:#FFD700;margin-top:6px;font-weight:700">⚠️ ${src.action_required}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    // Render system config
+    const cfg = data.system_config;
+    const lastRun = data.last_run;
+    configEl.innerHTML = `
+      <div style="display:flex;flex-wrap:wrap;gap:16px">
+        <div><span style="color:var(--gold);font-weight:700">system_config.json:</span> ${cfg.loaded ? '<span style="color:#4CAF50">✅ Loaded</span>' : '<span style="color:#F44336">❌ NOT FOUND</span>'}</div>
+        <div><span style="color:var(--gold);font-weight:700">MIN_THRESHOLD:</span> ${(cfg.min_threshold * 100).toFixed(0)}% (absolute floor)</div>
+        <div><span style="color:var(--gold);font-weight:700">HIGH_VAL:</span> ${(cfg.high_val_threshold * 100).toFixed(0)}% (featured threshold)</div>
+        ${lastRun?.date ? `<div><span style="color:var(--gold);font-weight:700">Last Run:</span> ${lastRun.date} — ${lastRun.picks_live} picks live</div>` : ''}
+        ${lastRun?.kill_switch ? '<div style="color:#F44336;font-weight:700">❌ KILL SWITCH TRIGGERED</div>' : ''}
+      </div>`;
+
+  } catch (err) {
+    sourcesEl.innerHTML = `<div style="color:var(--red);font-size:12px">❌ Failed to load health data: ${err.message}</div>`;
+  }
+}
+
 async function v3LoadGames() {
   const btn = document.getElementById('v3-load-btn');
   btn.textContent = '⏳ Loading...';
@@ -2724,10 +2787,22 @@ function v3RenderGameCard(game) {
           ['environment','F10 Environmental'],['standing','F11 League Standing'],['venue','F12 Venue Pressure'],
           ['steamExtended','F13 Steam Extended'],['altitudeFatigue','F14 Altitude/Fatigue'],['valueEdge','F15 Value Edge']
         ];
+        // ── Source Offline Guard ──────────────────────────────────────────────────────────────────────────────────
+        // If ALL 15 factors are null/missing AND the game has been analyzed, the API was offline.
+        // Show "N/A - Source Offline" instead of 15 red X marks.
+        const factorValues = FACTOR_NAMES.map(([key]) => f[key]).filter(v => v !== undefined && v !== null && v !== 0 && v !== 'neutral');
+        const isSourceOffline = game.analyzed && factorValues.length === 0;
+        if (isSourceOffline) {
+          return `<div style="padding:12px;background:rgba(255,165,0,0.06);border:1px solid rgba(255,165,0,0.25);border-radius:8px;text-align:center">
+            <div style="font-size:20px;margin-bottom:6px">🟠</div>
+            <div style="font-size:13px;font-weight:800;color:#FF9800">N/A — Source Offline</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px">API data source is offline or quota exhausted.<br>Neutral baseline scores (0.5) used for all 15 factors.<br>Click “Source Health” to check API status.</div>
+          </div>`;
+        }
         return FACTOR_NAMES.map(([key, label]) => {
           const val = f[key];
           const passed = val !== undefined && val !== null && val !== 0 && val !== 'neutral';
-          return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:' + (passed ? 'var(--green)' : 'var(--red)') + ';font-size:14px">' + (passed ? '✅' : '❌') + '</span><span style="flex:1;font-size:12px;color:' + (passed ? 'var(--text)' : 'var(--text-dim)') + '">' + label + '</span><span style="font-size:11px;color:var(--text-dim)">' + (val !== undefined && val !== null ? String(val).substring(0,20) : 'no data') + '</span></div>';
+          return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:' + (passed ? 'var(--green)' : 'var(--red)') + ';font-size:14px">' + (passed ? '✅' : '⏳') + '</span><span style="flex:1;font-size:12px;color:' + (passed ? 'var(--text)' : 'var(--text-dim)') + '">' + label + '</span><span style="font-size:11px;color:' + (passed ? 'var(--text-dim)' : '#FF9800') + '">' + (val !== undefined && val !== null ? String(val).substring(0,20) : 'N/A — Source Offline') + '</span></div>';
         }).join('');
       })()}</div>
     </div>

@@ -63,19 +63,62 @@ function writeCache(cacheKey: string, data: any): void {
   } catch { /* non-fatal */ }
 }
 
-async function apiFetch(endpoint: string, baseUrl = BASE_URL, apiKey = API_KEY): Promise<any> {
+// ─── Suspended-Key Error Class ───────────────────────────────────────────────
+export class ApiSuspendedError extends Error {
+  constructor(msg: string) { super(msg); this.name = 'ApiSuspendedError'; }
+}
+
+// ─── Exponential Backoff Helper ───────────────────────────────────────────────
+async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function apiFetch(endpoint: string, baseUrl = BASE_URL, apiKey = API_KEY, retries = 3): Promise<any> {
   if (!apiKey) throw new Error('API key not configured');
   const cacheKey = getCacheKey(baseUrl.replace(/https?:\/\//, '') + endpoint);
   const cached = readCache(cacheKey);
   if (cached !== null) return cached;
-  console.log(`[API] LIVE REQUEST: ${baseUrl}${endpoint}`);
-  const res = await fetch(`${baseUrl}${endpoint}`, {
-    headers: { 'x-apisports-key': apiKey, 'x-rapidapi-key': apiKey },
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
-  const data = await res.json();
-  writeCache(cacheKey, data);
-  return data;
+
+  let lastErr: any;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`[API] LIVE REQUEST (attempt ${attempt}/${retries}): ${baseUrl}${endpoint}`);
+      // ── Timeout Guard: abort after 15 seconds ────────────────────────────────
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const res = await fetch(`${baseUrl}${endpoint}`, {
+        headers: { 'x-apisports-key': apiKey, 'x-rapidapi-key': apiKey },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
+      const data = await res.json();
+
+      // ── Suspended-Key Detection ──────────────────────────────────────────────
+      // API-Sports returns HTTP 200 but with errors.access for suspended accounts
+      const accessErr = data?.errors?.access || data?.errors?.token;
+      if (accessErr) {
+        const msg = `[API-Sports] ACCOUNT SUSPENDED: ${accessErr} — Endpoint: ${endpoint}`;
+        console.error(msg);
+        throw new ApiSuspendedError(msg);
+      }
+
+      writeCache(cacheKey, data);
+      return data;
+    } catch (err: any) {
+      lastErr = err;
+      // Do NOT retry on suspended-key errors — retrying won't fix a suspended account
+      if (err instanceof ApiSuspendedError) throw err;
+      // Do NOT retry on AbortError (timeout) after last attempt
+      if (attempt === retries) break;
+      // Exponential backoff: 2s, 4s, 8s
+      const delay = Math.pow(2, attempt) * 1000;
+      console.warn(`[API] Attempt ${attempt} failed (${err.message}). Retrying in ${delay}ms...`);
+      await sleep(delay);
+    }
+  }
+  throw lastErr;
 }
 
 export function clearApiCache(): void {
@@ -187,7 +230,18 @@ export async function fetchSoccerFixtures(date: string): Promise<FixtureData[]> 
 
   try {
     // Fetch ALL fixtures for the date in one call (no league filter)
-    const data = await apiFetch(`/fixtures?date=${date}&timezone=America/Moncton`);
+    let data: any;
+    try {
+      data = await apiFetch(`/fixtures?date=${date}&timezone=America/Moncton`);
+    } catch (err: any) {
+      if (err.name === 'ApiSuspendedError') {
+        // ── SUSPENDED KEY FALLBACK: Use The Odds API instead ───────────────────────────
+        console.error('[API-Football] ❌ SUSPENDED KEY — Falling back to The Odds API for soccer fixtures');
+        // Return empty array here; generateDailyPicks will use Odds API in the Diversity Check waterfall
+        return [];
+      }
+      throw err;
+    }
     const rawFixtures = data.response || [];
 
     console.log(`[API-Football] Total raw fixtures on ${date}: ${rawFixtures.length}`);
@@ -298,11 +352,21 @@ export async function fetchNBAFixtures(date: string): Promise<FixtureData[]> {
   const fixtures: FixtureData[] = [];
 
   try {
-    const data = await apiFetch(
-      `/games?league=${NBA_LEAGUE_ID}&season=${NBA_SEASON}&date=${date}`,
-      NBA_BASE_URL,
-      NBA_API_KEY
-    );
+    let data: any;
+    try {
+      data = await apiFetch(
+        `/games?league=${NBA_LEAGUE_ID}&season=${NBA_SEASON}&date=${date}`,
+        NBA_BASE_URL,
+        NBA_API_KEY
+      );
+    } catch (err: any) {
+      if (err.name === 'ApiSuspendedError') {
+        // ── SUSPENDED KEY FALLBACK: Use The Odds API instead ───────────────────────────
+        console.error('[API-Basketball] ❌ SUSPENDED KEY — Falling back to The Odds API for NBA fixtures');
+        return [];
+      }
+      throw err;
+    }
     const rawGames = data.response || [];
 
     console.log(`[API-Basketball] Raw NBA games on ${date}: ${rawGames.length}`);
