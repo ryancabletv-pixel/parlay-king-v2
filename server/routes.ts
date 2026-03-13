@@ -1336,7 +1336,7 @@ export async function registerRoutes(app: Express) {
       const publicActive = [...manualSorted, ...v3Sorted];
 
       // Exclude Power Pick rows from sport lists to avoid duplicates
-      const sportOnly   = publicActive.filter(p => !p.isPowerPick);
+      const sportOnly   = publicActive; // include isPowerPick picks in parlay legs — power pick also appears as leg 1
 
       // ── Load admin site-control overrides from engineConfig ──────────────────
       const cfg = await storage.getEngineConfig();
