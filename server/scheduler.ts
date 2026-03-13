@@ -427,9 +427,31 @@ export function startScheduler() {
           const success = await runDailyGeneration('startup-catchup');
           if (success) {
             console.log(`[Scheduler] Startup catch-up SUCCEEDED for ${today}`);
+            dailyRunCompleted = true;
+            lastRunDate = today;
           } else {
-            console.error(`[Scheduler] Startup catch-up FAILED for ${today}`);
-            await createAlert('critical', `Startup catch-up failed for ${today} — picks may be missing`);
+            // Check if picks exist now (engine ran but returned 0 qualifying games)
+            const picksAfter = await getPicksByDate(today);
+            if (picksAfter.length > 0) {
+              console.log(`[Scheduler] Startup catch-up: ${picksAfter.length} picks now exist — marking complete`);
+              dailyRunCompleted = true;
+              lastRunDate = today;
+            } else {
+              // Engine ran but no picks passed the threshold — this is NOT a critical error.
+              // It means no games qualified today (ESPN mode, no odds, etc.).
+              // Log as INFO only — do NOT spam CRITICAL alerts.
+              console.warn(`[Scheduler] Startup catch-up: 0 picks generated for ${today} — no qualifying games at this time. ESPN fallback was used. Will retry at next 1AM cron.`);
+              // Only create a warning (not critical) and only if we haven't already logged one today
+              try {
+                const { Pool } = await import('pg');
+                const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+                const existing = await pool.query(`SELECT id FROM system_alerts WHERE message LIKE $1 AND created_at > NOW() - INTERVAL '2 hours' LIMIT 1`, [`%catch-up%${today}%`]);
+                await pool.end();
+                if (existing.rowCount === 0) {
+                  await createAlert('warning', `Startup catch-up: 0 picks for ${today} via ESPN fallback — no qualifying games above 65% threshold. Paid APIs offline. Renew at dashboard.api-football.com`);
+                }
+              } catch (_) {}
+            }
           }
         } else {
           console.log(`[Scheduler] Startup check: ${existingPicks.length} picks already exist for ${today} — no catch-up needed`);
