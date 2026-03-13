@@ -309,4 +309,129 @@ export function registerGoldTierRoutes(app: Express, requireAuth: any) {
       return res.status(500).json({ error: err.message });
     }
   });
+
+  // ── GET /api/admin/gold-tiers ───────────────────────────────────────────────────────────────────────────────
+  // Admin Master View: returns gold_tiers for a specific tier and date
+  app.get('/api/admin/gold-tiers', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { Pool } = await import('pg');
+      const pool = new Pool(DB_OPTS);
+      const date = (req.query.date as string) || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+      const tier = (req.query.tier as string) || 'pro';
+      const { rows } = await pool.query(
+        `SELECT * FROM gold_tiers WHERE date = $1 AND tier = $2 ORDER BY confidence DESC`,
+        [date, tier]
+      );
+      await pool.end();
+      return res.json(rows);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── GET /api/admin/upcoming-games ─────────────────────────────────────────────────────────────────────────────
+  // V2 Validator: fetch upcoming games from pending_validator or Odds API
+  app.get('/api/admin/upcoming-games', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { Pool } = await import('pg');
+      const pool = new Pool(DB_OPTS);
+      const hours = parseInt((req.query.hours as string) || '48', 10);
+      // First try pending_validator table
+      let games: any[] = [];
+      try {
+        const { rows } = await pool.query(
+          `SELECT * FROM pending_validator WHERE game_date >= NOW() AND game_date <= NOW() + INTERVAL '${hours} hours' ORDER BY game_date ASC LIMIT 50`
+        );
+        games = rows.map((r: any) => ({
+          id: r.id, homeTeam: r.home_team, awayTeam: r.away_team,
+          league: r.league, sport: r.sport, date: r.game_date,
+          confidence: r.confidence, fixtureId: r.fixture_id
+        }));
+      } catch (pvErr) {
+        // pending_validator may not exist yet — fall back to picks table
+        const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+        const { rows } = await pool.query(
+          `SELECT * FROM picks WHERE date = $1 ORDER BY confidence DESC LIMIT 30`,
+          [tomorrow.toLocaleDateString('en-CA')]
+        );
+        games = rows.map((r: any) => ({
+          id: r.id, homeTeam: r.home_team, awayTeam: r.away_team,
+          league: r.league, sport: r.sport, date: r.date,
+          confidence: r.confidence, fixtureId: r.fixture_id
+        }));
+      }
+      await pool.end();
+      return res.json({ games, total: games.length, hours });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── POST /api/admin/v2-audit ────────────────────────────────────────────────────────────────────────────────────
+  // V2 Validator: run V3-15 audit on a specific game
+  app.post('/api/admin/v2-audit', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { homeTeam, awayTeam, league, sport } = req.body;
+      if (!homeTeam || !awayTeam) return res.status(400).json({ error: 'homeTeam and awayTeam required' });
+      // Run the V3-15 engine on this specific fixture
+      const { runBatchPredictions } = await import('./goldStandardV2.js');
+      const fixture = {
+        fixtureId: `v2audit_${Date.now()}`,
+        homeTeam, awayTeam, league: league || 'Unknown', sport: sport || 'soccer',
+        homeOdds: undefined, awayOdds: undefined, drawOdds: undefined,
+        homeWinRate: undefined, awayWinRate: undefined,
+        homeForm: undefined, awayForm: undefined,
+        homeRank: undefined, awayRank: undefined,
+        homeGoalsFor: undefined, awayGoalsFor: undefined,
+        homeGoalsAgainst: undefined, awayGoalsAgainst: undefined,
+        homeInjuries: 0, awayInjuries: 0,
+        isNeutralVenue: false, venueName: undefined,
+        headToHead: undefined,
+      };
+      const results = runBatchPredictions([fixture as any]);
+      const result = results[0];
+      if (!result) return res.status(200).json({ confidence: 0, passed: false, factors: {} });
+      return res.json({
+        confidence: result.topConfidence,
+        pick: result.topPick,
+        passed: result.topConfidence >= 65,
+        tier: result.tier,
+        factors: result.factors || {},
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── POST /api/admin/manual-publish ───────────────────────────────────────────────────────────────────────────────
+  // V2 Validator: manually publish a pick to a specific tier
+  app.post('/api/admin/manual-publish', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { homeTeam, awayTeam, league, sport, confidence, tier, source } = req.body;
+      if (!homeTeam || !awayTeam || !tier) return res.status(400).json({ error: 'homeTeam, awayTeam, and tier required' });
+      const { Pool } = await import('pg');
+      const pool = new Pool(DB_OPTS);
+      const date = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+      const validTiers = ['pro', 'lifetime'];
+      if (!validTiers.includes(tier)) return res.status(400).json({ error: 'tier must be pro or lifetime' });
+      // Insert into gold_tiers
+      await pool.query(
+        `INSERT INTO gold_tiers (date, sport, tier, home_team, away_team, league, prediction, confidence, odds, fixture_id, is_power_pick, is_fallback, v3_audit_passed, sport_slot, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false, false, true, $11, $12)
+         ON CONFLICT (date, home_team, away_team, tier) DO UPDATE SET confidence=EXCLUDED.confidence, updated_at=now()`,
+        [date, sport||'soccer', tier, homeTeam, awayTeam, league||'', `${homeTeam} Win`, confidence||0, '', `manual_${Date.now()}`, `manual_1`, JSON.stringify({ source: source||'v2-validator', publishedAt: new Date().toISOString() })]
+      );
+      // Also insert into picks table
+      await pool.query(
+        `INSERT INTO picks (date, sport, league, home_team, away_team, prediction, confidence, tier, status, is_power_pick, v3_audit_passed, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active', false, true, $9)
+         ON CONFLICT DO NOTHING`,
+        [date, sport||'soccer', league||'', homeTeam, awayTeam, `${homeTeam} Win`, confidence||0, tier, JSON.stringify({ source: source||'v2-validator', publishedAt: new Date().toISOString() })]
+      );
+      await pool.end();
+      return res.json({ success: true, message: `Published ${homeTeam} vs ${awayTeam} to ${tier} tier`, date });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
 }

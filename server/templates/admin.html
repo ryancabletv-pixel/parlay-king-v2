@@ -387,6 +387,8 @@
       <div class="nav-item" onclick="showPage('member-mgmt')"><span class="nav-icon">👥</span>Member Management</div>
       <div class="nav-item" onclick="showPage('pro-tier')" style="color:#00b0ff"><span class="nav-icon">🏆</span>Pro Tier Games</div>
       <div class="nav-item" onclick="showPage('lifetime-tier')" style="color:#ffd700"><span class="nav-icon">♾️</span>Lifetime Tier Games</div>
+      <div class="nav-item" onclick="showPage('tier-master')" style="color:#ff9800"><span class="nav-icon">👁️</span>Tier Master View</div>
+      <div class="nav-item" onclick="showPage('v2validator')" style="color:#e040fb"><span class="nav-icon">🔬</span>V2 Validator</div>
       <div class="nav-item" onclick="showPage('paypal-compliance')" style="color:#00e676"><span class="nav-icon">⚖️</span>PayPal Compliance</div>
       <div class="nav-item" onclick="showPage('test-payment-flow')" style="color:#ff9800"><span class="nav-icon">🧪</span>Test Payment Flow</div>
       <div class="nav-item" onclick="showPage('personal-picks')" style="color:#ff6b6b"><span class="nav-icon">🔒</span>PERSONAL PICKS</div>
@@ -1530,7 +1532,7 @@
     <!-- ===== LIFETIME TIER GAMES ===== -->
     <div class="page" id="page-lifetime-tier">
       <h2 style="color:#ffd700">♾️ Lifetime Tier Games</h2>
-      <p style="color:var(--text-muted)">All games assigned to the Lifetime tier today (68%+ confidence, full access). Basketball and Soccer displayed simultaneously — no toggling required.</p>
+      <p style="color:var(--text-muted)">All games assigned to the Lifetime tier today (<strong>70%+ confidence gate</strong>, 10 slots). Basketball and Soccer displayed simultaneously — no mirroring.</p>
       <!-- Multi-Sport Sync Status Banner -->
       <div id="lifetime-sync-banner" style="display:none;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:.85rem;font-weight:600"></div>
       <!-- Stats Row -->
@@ -1563,6 +1565,45 @@
         <button class="btn btn-gold btn-sm" onclick="loadLifetimeTier()">🔄 Refresh Both Sports</button>
       </div>
     </div><!-- /page-lifetime-tier -->
+
+    <!-- ===== TIER MASTER VIEW ===== -->
+    <div class="page" id="page-tier-master">
+      <h2 style="color:var(--gold)">👁️ Tier Master View</h2>
+      <p style="color:var(--text-muted)">Side-by-side view of exactly what <strong style="color:#00b0ff">Pro members</strong> see vs what <strong style="color:#ffd700">Lifetime members</strong> see. Reads directly from the <code>gold_tiers</code> table.</p>
+      <div id="master-view-banner" style="display:none;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:.85rem;font-weight:600"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <!-- PRO COLUMN -->
+        <div class="card" style="border:1px solid rgba(0,176,255,0.3)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <h3 style="color:#00b0ff;margin:0">🏆 Pro Tier <span id="master-pro-count" style="font-size:.85rem;opacity:.7">(loading...)</span></h3>
+            <span style="font-size:.75rem;color:var(--text-muted);background:rgba(0,176,255,.1);padding:3px 8px;border-radius:4px">68%+ gate · 6 slots</span>
+          </div>
+          <div id="master-pro-table"><div style="color:var(--text-muted);font-size:.85rem">Loading...</div></div>
+        </div>
+        <!-- LIFETIME COLUMN -->
+        <div class="card" style="border:1px solid rgba(255,215,0,0.3)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <h3 style="color:#ffd700;margin:0">♾️ Lifetime Tier <span id="master-lifetime-count" style="font-size:.85rem;opacity:.7">(loading...)</span></h3>
+            <span style="font-size:.75rem;color:var(--text-muted);background:rgba(255,215,0,.1);padding:3px 8px;border-radius:4px">70%+ gate · 10 slots</span>
+          </div>
+          <div id="master-lifetime-table"><div style="color:var(--text-muted);font-size:.85rem">Loading...</div></div>
+        </div>
+      </div>
+      <div style="margin-top:12px;text-align:right">
+        <button class="btn btn-gold btn-sm" onclick="loadTierMasterView()">🔄 Refresh Master View</button>
+      </div>
+    </div><!-- /page-tier-master -->
+
+    <!-- ===== V2 VALIDATOR ===== -->
+    <div class="page" id="page-v2validator">
+      <h2 style="color:var(--gold)">🔬 V2 Validator — Manual Mode</h2>
+      <p style="color:var(--text-muted)">Step A: Scrape upcoming games (next 48h). Step B: Run V3-15 Audit per game. Step C: Manually publish to Pro or Lifetime tier.</p>
+      <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+        <button class="btn btn-gold" onclick="v2ValidatorScrape()" id="v2-scrape-btn">📡 Scrape Next 48h Games</button>
+        <span id="v2-scrape-status" style="font-size:.85rem;color:var(--text-muted)">Click to load upcoming games</span>
+      </div>
+      <div id="v2-games-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px"></div>
+    </div><!-- /page-v2validator -->
 
     <!-- ===== PAYPAL COMPLIANCE ===== -->
     <div class="page" id="page-paypal-compliance">
@@ -1830,6 +1871,8 @@ function showPage(name) {
     'member-mgmt':     loadMemberMgmt,
     'pro-tier':        loadProTier,
     'lifetime-tier':   loadLifetimeTier,
+    'tier-master':     loadTierMasterView,
+    'v2validator':     () => {},  // manual trigger only — no auto-load
     'paypal-compliance': loadPaypalCompliance,
     'test-payment-flow': function() {}, // static page — no data loader needed
     'personal-picks':    loadPersonalPicks,
@@ -4316,23 +4359,23 @@ async function renderTierPage(tier) {
     const today = new Date().toLocaleDateString('en-CA');
     const picks = await api(`/api/admin/picks?date=${today}`);
 
-    // ── HARDENED TIER SEPARATION ──────────────────────────────────────────────
-    // Pro  (6 slots):  picks tagged tier='pro' in DB (68%+ gate, top 6 by confidence)
-    // Lifetime (10 slots): ALL picks at 68%+ (tier='pro' OR tier='lifetime'), top 10 by confidence
-    // This enforces strict separation: Pro sees its 6, Lifetime sees the full board of 10.
+    // ── HARDENED TIER SEPARATION (PERMANENT FIX) ────────────────────────────────
+    // Pro      (6 slots):  tier='pro'      in DB — 68-69.9% gate, top 6 by confidence
+    // Lifetime (10 slots): tier='lifetime' in DB — 70%+ gate, top 10 by confidence
+    // These are DISTINCT lists — NO mirroring, NO overlap.
     let eligible;
     const SLOT_LIMITS = { pro: 6, lifetime: 10 };
     const SLOT_LIMIT = SLOT_LIMITS[tier] || 10;
     if (tier === 'pro') {
-      // Pro: only picks explicitly tagged tier='pro' in the database
+      // Pro: ONLY picks tagged tier='pro' in the database (68-69.9% range)
       eligible = picks
         .filter(p => (p.tier || '').toLowerCase() === 'pro')
         .sort((a, b) => parseFloat(b.confidence) - parseFloat(a.confidence))
         .slice(0, 6);
     } else {
-      // Lifetime: all picks at 68%+ (both pro and lifetime tagged), top 10 by confidence
+      // Lifetime: ONLY picks tagged tier='lifetime' in the database (70%+ range)
       eligible = picks
-        .filter(p => parseFloat(p.confidence) >= 68)
+        .filter(p => (p.tier || '').toLowerCase() === 'lifetime')
         .sort((a, b) => parseFloat(b.confidence) - parseFloat(a.confidence))
         .slice(0, 10);
     }
@@ -4355,7 +4398,7 @@ async function renderTierPage(tier) {
     bballDot.title = bball.length > 0 ? `${bball.length} Basketball picks synced` : 'No Basketball picks yet';
     soccerDot.style.background = soccer.length > 0 ? '#00e676' : '#ff5252';
     soccerDot.title = soccer.length > 0 ? `${soccer.length} Soccer picks synced` : 'No Soccer picks yet';
-    const tierLabel = tier === 'pro' ? 'Pro (6 slots, 68%+ gate)' : 'Lifetime (10 slots, 68%+ gate)';
+    const tierLabel = tier === 'pro' ? 'Pro (6 slots, 68-69.9% gate)' : 'Lifetime (10 slots, 70%+ gate)';
     if (bball.length === 0 || soccer.length === 0) {
       const missing = bball.length === 0 && soccer.length === 0 ? 'Basketball and Soccer' : bball.length === 0 ? 'Basketball' : 'Soccer';
       banner.style.cssText = 'display:block;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:.85rem;font-weight:600;background:rgba(255,82,82,.15);border:1px solid #ff5252;color:#ff5252';
@@ -4375,6 +4418,121 @@ async function renderTierPage(tier) {
 async function loadProTier() { await renderTierPage('pro'); }
 async function loadLifetimeTier() { await renderTierPage('lifetime'); }
 
+// ── Tier Master View (reads gold_tiers table directly) ──────────────────────────────────────────────────
+async function loadTierMasterView() {
+  const proEl = document.getElementById('master-pro-table');
+  const lifetimeEl = document.getElementById('master-lifetime-table');
+  const banner = document.getElementById('master-view-banner');
+  proEl.innerHTML = '<div style="color:var(--text-muted);font-size:.82rem">Loading...</div>';
+  lifetimeEl.innerHTML = '<div style="color:var(--text-muted);font-size:.82rem">Loading...</div>';
+  banner.style.display = 'none';
+  try {
+    const today = new Date().toLocaleDateString('en-CA');
+    // Fetch gold_tiers data for both tiers
+    const [proData, lifetimeData] = await Promise.all([
+      api(`/api/admin/gold-tiers?date=${today}&tier=pro`),
+      api(`/api/admin/gold-tiers?date=${today}&tier=lifetime`)
+    ]);
+    const proPicks = Array.isArray(proData) ? proData : (proData.picks || []);
+    const lifetimePicks = Array.isArray(lifetimeData) ? lifetimeData : (lifetimeData.picks || []);
+    document.getElementById('master-pro-count').textContent = `(${proPicks.length}/6 picks)`;
+    document.getElementById('master-lifetime-count').textContent = `(${lifetimePicks.length}/10 picks)`;
+    function buildMasterTable(picks, color) {
+      if (!picks.length) return '<div style="color:var(--text-muted);font-size:.85rem">No picks found in gold_tiers</div>';
+      return picks.map((p,i) => {
+        const conf = parseFloat(p.confidence||0).toFixed(1);
+        const sport = (p.sport||'').toUpperCase();
+        const sportColor = sport.includes('NBA')||sport.includes('BASKETBALL') ? '#ff6b35' : '#00e676';
+        const overlap = (proPicks.some(x=>x.home_team===p.home_team&&x.away_team===p.away_team) && lifetimePicks.some(x=>x.home_team===p.home_team&&x.away_team===p.away_team));
+        return `<div style="padding:10px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:.85rem;font-weight:700">${i+1}. ${p.home_team} vs ${p.away_team}</div>
+            <div style="font-size:.75rem;color:var(--text-muted)">${p.league||''} · <span style="color:${sportColor}">${sport}</span>${overlap?' <span style="color:#ffd700;font-size:.7rem">♾️ OVERLAP</span>':''}</div>
+            <div style="font-size:.78rem;color:var(--text-muted);margin-top:2px">${p.prediction||''}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:1.1rem;font-weight:800;color:${color}">${conf}%</div>
+            <div style="font-size:.7rem;color:var(--text-muted)">${p.odds||''}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    proEl.innerHTML = buildMasterTable(proPicks, '#00b0ff');
+    lifetimeEl.innerHTML = buildMasterTable(lifetimePicks, '#ffd700');
+    banner.style.cssText = 'display:block;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:.85rem;font-weight:600;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.3);color:#ffd700';
+    banner.innerHTML = `✅ Master View Loaded — Pro: ${proPicks.length}/6 picks | Lifetime: ${lifetimePicks.length}/10 picks | Source: gold_tiers table`;
+  } catch(e) {
+    proEl.innerHTML = `<div class="error-box">Error: ${e.message}</div>`;
+    lifetimeEl.innerHTML = `<div class="error-box">Error: ${e.message}</div>`;
+  }
+}
+
+// ── V2 Validator ───────────────────────────────────────────────────────────────────────────
+async function v2ValidatorScrape() {
+  const grid = document.getElementById('v2-games-grid');
+  const status = document.getElementById('v2-scrape-status');
+  const btn = document.getElementById('v2-scrape-btn');
+  btn.disabled = true;
+  status.textContent = 'Scraping upcoming games...';
+  grid.innerHTML = '<div style="color:var(--text-muted);padding:20px">Loading upcoming games from API...</div>';
+  try {
+    const data = await api('/api/admin/upcoming-games?hours=48');
+    const games = Array.isArray(data) ? data : (data.games || []);
+    status.textContent = `Found ${games.length} games in next 48h`;
+    if (!games.length) {
+      grid.innerHTML = '<div style="color:var(--text-muted);padding:20px">No upcoming games found. Try refreshing.</div>';
+      return;
+    }
+    grid.innerHTML = games.map(g => {
+      const gid = `g_${(g.id||g.fixtureId||Math.random()).toString().replace(/\W/g,'')}`;
+      return `<div class="card" id="card_${gid}" style="border:1px solid rgba(255,255,255,.1)">
+        <div style="font-size:.85rem;font-weight:700;margin-bottom:6px">${g.homeTeam||g.home_team} vs ${g.awayTeam||g.away_team}</div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px">${g.league||''} · ${(g.sport||'').toUpperCase()} · ${g.date||g.gameTime||''}</div>
+        <div id="result_${gid}" style="font-size:.8rem;color:var(--text-muted);margin-bottom:10px">Pending analysis</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="v2RunAudit('${gid}','${(g.homeTeam||g.home_team||'').replace(/'/g,'\\&apos;')}','${(g.awayTeam||g.away_team||'').replace(/'/g,'\\&apos;')}','${g.league||''}','${g.sport||'soccer'}')" style="padding:7px 14px;background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.4);border-radius:8px;color:#ffd700;font-size:.78rem;font-weight:700;cursor:pointer">⚡ Run V3-15 Audit</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = `<div class="error-box">Error scraping games: ${e.message}</div>`;
+    status.textContent = 'Error loading games';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function v2RunAudit(gid, homeTeam, awayTeam, league, sport) {
+  const resultEl = document.getElementById(`result_${gid}`);
+  const card = document.getElementById(`card_${gid}`);
+  resultEl.innerHTML = '<span style="color:#ffd700">🔄 Scanning V3-15 factors...</span>';
+  try {
+    const data = await api('/api/admin/v2-audit', 'POST', { homeTeam, awayTeam, league, sport });
+    const conf = parseFloat(data.confidence||0).toFixed(1);
+    const passed = parseFloat(conf) >= 65;
+    resultEl.innerHTML = `<span style="color:${passed?'#00e676':'#ff5252'};font-weight:700">${passed?'✅':'❌'} Confidence: ${conf}% — ${passed?'PASSED':'FAILED'}</span>`;
+    if (passed) {
+      const btns = card.querySelector('div[style*="display:flex"]');
+      btns.insertAdjacentHTML('beforeend', `
+        <button onclick="v2PublishPick('${gid}','${homeTeam.replace(/'/g,'\\&apos;')}','${awayTeam.replace(/'/g,'\\&apos;')}','${league}','${sport}',${conf},'pro')" style="padding:7px 14px;background:rgba(0,176,255,.12);border:1px solid rgba(0,176,255,.4);border-radius:8px;color:#00b0ff;font-size:.78rem;font-weight:700;cursor:pointer">🏆 Publish to Pro</button>
+        <button onclick="v2PublishPick('${gid}','${homeTeam.replace(/'/g,'\\&apos;')}','${awayTeam.replace(/'/g,'\\&apos;')}','${league}','${sport}',${conf},'lifetime')" style="padding:7px 14px;background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.4);border-radius:8px;color:#ffd700;font-size:.78rem;font-weight:700;cursor:pointer">♾️ Publish to Lifetime</button>
+      `);
+    }
+  } catch(e) {
+    resultEl.innerHTML = `<span style="color:#ff5252">Audit error: ${e.message}</span>`;
+  }
+}
+
+async function v2PublishPick(gid, homeTeam, awayTeam, league, sport, confidence, tier) {
+  if (!confirm(`Publish ${homeTeam} vs ${awayTeam} to ${tier.toUpperCase()} tier?`)) return;
+  try {
+    const data = await api('/api/admin/manual-publish', 'POST', { homeTeam, awayTeam, league, sport, confidence, tier, source: 'v2-validator' });
+    notify(`✅ Published to ${tier.toUpperCase()}: ${homeTeam} vs ${awayTeam}`);
+    document.getElementById(`card_${gid}`).style.border = '1px solid #00e676';
+  } catch(e) {
+    notify(`Error publishing: ${e.message}`, 'error');
+  }
+}
 
 // ── PayPal Compliance ─────────────────────────────────────────────────────────
 function loadPaypalCompliance() {
