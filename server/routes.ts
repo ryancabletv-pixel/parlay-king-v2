@@ -106,6 +106,10 @@ function selectBestLegs(
 // Games are selected for safety, high probability, and high value.
 // Date accuracy is enforced — only fixtures confirmed for `date` are used.
 
+// Module-level cache clear — called by scheduler after generation completes
+let _modulePicksCache: { payload: any; ts: number } | null = null;
+export function clearModulePicksCache() { _modulePicksCache = null; }
+
 export async function generateDailyPicks(date: string): Promise<{
   total: number;
   soccer: number;
@@ -359,13 +363,26 @@ export async function generateDailyPicks(date: string): Promise<{
   console.log(`[Titan XII] Threshold filter: Free=${freePicks.length} (64-67%) | Pro=${proPicks.length} (68%+) | Lifetime=${lifetimePicks.length} (70%+) | Discarded=${totalDiscarded}`);
 
   // ── Delete today's existing picks (fresh generation) ─────────────────────
-  // NOTE: We only delete picks for today's date — never touch other dates
+  // NOTE: We only delete picks for today's date — never touch other dates.
+  // MANUAL PROTECTION: Never delete picks with source_model='manual-admin-push'.
+  // Manual picks are owned by the admin and must survive V3 re-runs.
   try {
     const existingPicks = await storage.getPicksByDate(date);
+    let cleared = 0;
+    let protected_ = 0;
     for (const pick of existingPicks) {
+      const meta = (pick as any).metadata || {};
+      const isManual = meta.source_model === 'manual-admin-push' ||
+                       meta.source === 'admin-manual' ||
+                       meta.bypass_gemini === true;
+      if (isManual) {
+        protected_++;
+        continue; // NEVER delete manual picks
+      }
       await storage.deletePick(pick.id);
+      cleared++;
     }
-    console.log(`[Engine] Cleared ${existingPicks.length} existing picks for ${date}`);
+    console.log(`[Engine] Cleared ${cleared} V3 picks for ${date} | Protected ${protected_} manual picks`);
   } catch (err) {
     console.warn('[Engine] Failed to clear existing picks:', err);
   }
@@ -388,17 +405,18 @@ export async function generateDailyPicks(date: string): Promise<{
       })();
       await storage.createPick({
         date,
-        sport:      overrideSport || pred.sport,
-        tier:       overrideTier  || pred.tier,
-        homeTeam:   pred.homeTeam,
-        awayTeam:   pred.awayTeam,
-        league:     pred.league,
-        prediction: pred.topPick,
-        confidence: pred.topConfidence,
-        odds:       autoOdds,
-        fixtureId:  String(pred.fixtureId),
-        isPowerPick: isPower,
-        metadata:   { ...pred as any, isHighVolatility: highVolatility, volatilityLabel: highVolatility ? 'High Volatility' : null } as any,
+        sport:         overrideSport || pred.sport,
+        tier:          overrideTier  || pred.tier,
+        homeTeam:      pred.homeTeam,
+        awayTeam:      pred.awayTeam,
+        league:        pred.league,
+        prediction:    pred.topPick,
+        confidence:    pred.topConfidence,
+        odds:          autoOdds,
+        fixtureId:     String(pred.fixtureId),
+        isPowerPick:   isPower,
+        v3AuditPassed: pred.topConfidence >= 65, // V3-15 gate: all picks >= 65% pass audit
+        metadata:      { ...pred as any, isHighVolatility: highVolatility, volatilityLabel: highVolatility ? 'High Volatility' : null } as any,
       });
     } catch (err) {
       console.error('[Engine] Failed to save pick:', err);
@@ -544,6 +562,53 @@ export async function generateDailyPicks(date: string): Promise<{
   console.log(`[Engine]   Soccer: ${soccerCount}/3 | NBA: ${nbaCount}/3 | MLS: ${mlsCount}/3 | Power: ${powerCount}/1 | Free: ${freeCount}/2`);
   console.log(`[Engine]   Multi-Sport Sync: ${multiSportSyncStatus} (active=${MULTI_SPORT_SYNC_ACTIVE})`);
   console.log(`[Engine] ═══════════════════════════════════════════════════\n`);
+
+  // ── Auto-write to gold_tiers table after picks are saved ─────────────────
+  // This ensures the hardened tier endpoints always have fresh data after each engine run.
+  try {
+    const { registerGoldTierRoutes, HARDENED_TIER_CONFIG } = await import('./goldTierRoutes.js');
+    const { Pool } = await import('pg');
+    const gtPool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    const { rows: allPicks } = await gtPool.query(
+      `SELECT * FROM picks WHERE date = $1 AND is_disabled = false AND v3_audit_passed = true AND sport IN ('soccer','nba','mls') ORDER BY confidence DESC`,
+      [date]
+    );
+    await gtPool.query(`DELETE FROM gold_tiers WHERE date = $1`, [date]);
+    const nbaPicks    = allPicks.filter((p: any) => p.sport === 'nba');
+    const soccerPicks = allPicks.filter((p: any) => p.sport === 'soccer' || p.sport === 'mls');
+    for (const [tierName, cfg] of Object.entries(HARDENED_TIER_CONFIG) as [string, any][]) {
+      const { primaryThresh, fallbackFloor, nbaSlots, soccerSlots, extraSlots, extraThresh } = cfg;
+      let nbaSelected = nbaPicks.filter((p: any) => p.confidence >= primaryThresh).slice(0, nbaSlots);
+      if (nbaSelected.length < nbaSlots) {
+        const needed = nbaSlots - nbaSelected.length;
+        const ids = new Set(nbaSelected.map((p: any) => p.id));
+        nbaSelected = [...nbaSelected, ...nbaPicks.filter((p: any) => p.confidence >= fallbackFloor && p.confidence < primaryThresh && !ids.has(p.id)).slice(0, needed)];
+      }
+      let soccerSelected = soccerPicks.filter((p: any) => p.confidence >= primaryThresh).slice(0, soccerSlots);
+      if (soccerSelected.length < soccerSlots) {
+        const needed = soccerSlots - soccerSelected.length;
+        const ids = new Set(soccerSelected.map((p: any) => p.id));
+        soccerSelected = [...soccerSelected, ...soccerPicks.filter((p: any) => p.confidence >= fallbackFloor && p.confidence < primaryThresh && !ids.has(p.id)).slice(0, needed)];
+      }
+      const alreadyIds = new Set([...nbaSelected, ...soccerSelected].map((p: any) => p.id));
+      const extraSelected = extraSlots > 0 ? allPicks.filter((p: any) => p.confidence >= extraThresh && !alreadyIds.has(p.id)).slice(0, extraSlots) : [];
+      const allSelected = [...nbaSelected, ...soccerSelected, ...extraSelected];
+      for (const p of allSelected) {
+        const nbaIdx = nbaSelected.indexOf(p); const soccerIdx = soccerSelected.indexOf(p); const extraIdx = extraSelected.indexOf(p);
+        const sportSlot = nbaIdx >= 0 ? `nba_${nbaIdx+1}` : soccerIdx >= 0 ? `soccer_${soccerIdx+1}` : `extra_${extraIdx+1}`;
+        const isFallback = p.confidence < primaryThresh;
+        await gtPool.query(
+          `INSERT INTO gold_tiers (date,sport,tier,home_team,away_team,league,prediction,confidence,odds,fixture_id,is_power_pick,is_fallback,fallback_floor,v3_audit_passed,sport_slot,metadata) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,true,$14,$15) ON CONFLICT (date,home_team,away_team,tier) DO UPDATE SET confidence=EXCLUDED.confidence,prediction=EXCLUDED.prediction,is_fallback=EXCLUDED.is_fallback,sport_slot=EXCLUDED.sport_slot,updated_at=now()`,
+          [date,p.sport,tierName,p.home_team,p.away_team,p.league||'',p.prediction,p.confidence,p.odds||'',p.fixture_id,p.is_power_pick||false,isFallback,isFallback?fallbackFloor:null,sportSlot,p.metadata||null]
+        );
+      }
+      console.log(`[GoldTiers] Auto-write ${tierName.toUpperCase()}: ${allSelected.length}/${cfg.totalPicks} picks | NBA=${nbaSelected.length}/${nbaSlots} Soccer=${soccerSelected.length}/${soccerSlots} Extra=${extraSelected.length}/${extraSlots}`);
+    }
+    await gtPool.end();
+  } catch (gtErr: any) {
+    console.error('[GoldTiers] Auto-write failed (non-fatal):', gtErr.message);
+  }
+
   return { total, soccer: soccerCount, nba: nbaCount, mls: mlsCount, powerPick: powerCount, ftpUploaded, multiSportSyncStatus };
 }
 
@@ -844,9 +909,9 @@ export async function registerRoutes(app: Express) {
       const sportPicks = publicActive.filter(p => !p.isPowerPick);
       res.json({
         date,
-        nba:    sportPicks.filter(p => p.sport === 'nba').slice(0, 3),
-        mls:    sportPicks.filter(p => p.sport === 'mls').slice(0, 3),
-        soccer: sportPicks.filter(p => p.sport === 'soccer').slice(0, 3),
+        nba:    sportPicks.filter(p => p.sport === 'nba'),    // Hybrid: no limit
+        mls:    sportPicks.filter(p => p.sport === 'mls'),    // Hybrid: no limit
+        soccer: sportPicks.filter(p => p.sport === 'soccer'), // Hybrid: no limit
         power:  publicActive.filter(p => p.isPowerPick).slice(0, 1),
         total:  publicActive.length,
       });
@@ -863,9 +928,28 @@ export async function registerRoutes(app: Express) {
       const date = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
        const picks = await storage.getPicksByDate(date);
       const active = picks.filter(p => !p.isDisabled);
-      // Public site only shows picks at 68%+ confidence (Pro tier and above)
-      // Free tier picks (64-67%) are filtered out from the main site display
-      const publicActive = active.filter(p => (p.confidence ?? 0) >= 68 && p.tier !== 'free');
+
+      // ── HYBRID LOGIC: Manual picks bypass confidence gate and tier filter ──────
+      // A pick is "manual" if source_model = 'manual-admin-push' or source = 'admin-manual'
+      const isManualPick = (p: any) => {
+        const meta = p.metadata || {};
+        return meta.source_model === 'manual-admin-push' ||
+               meta.source === 'admin-manual' ||
+               meta.bypass_gemini === true;
+      };
+
+      // Manual picks: always shown regardless of confidence or tier
+      const manualActive = active.filter(p => isManualPick(p));
+
+      // V3 automated picks: 68%+ confidence gate (any tier including free)
+      // 429-safe: if V3 picks are unavailable, manualActive still shows
+      const v3Active = active.filter(p => !isManualPick(p) && (p.confidence ?? 0) >= 68);
+
+      // Merge: manual first, then V3 by confidence descending
+      const manualSorted = [...manualActive].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+      const v3Sorted     = [...v3Active].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+      const publicActive = [...manualSorted, ...v3Sorted];
+
       // Exclude Power Pick rows from sport lists to avoid duplicates
       const sportOnly   = publicActive.filter(p => !p.isPowerPick);
 
@@ -902,14 +986,17 @@ export async function registerRoutes(app: Express) {
 
       // ── SOP: DATABASE FIRST — all picks come directly from NeonDB picks table ──
       // engine_config overrides are DISABLED per SOP. Only DB data is used.
+      // ── HYBRID LOGIC: No slice limits — show ALL manual + V3 picks ────────────
+      // Manual picks appear first within each sport group.
+      // If AI hits 429 or fails, manual picks are still served (manualActive fallback).
       const nbaAdminEnabled = true;
-      const nbaPicks = sportOnly.filter(p => p.sport === 'nba').slice(0, 3);
+      const nbaPicks = sportOnly.filter(p => p.sport === 'nba');    // NO slice limit
 
       const socAdminEnabled = true;
-      const soccerPicks = sportOnly.filter(p => p.sport === 'soccer').slice(0, 3);
+      const soccerPicks = sportOnly.filter(p => p.sport === 'soccer'); // NO slice limit
 
       const mlsAdminEnabled = true;
-      const mlsPicks = sportOnly.filter(p => p.sport === 'mls').slice(0, 3);
+      const mlsPicks = sportOnly.filter(p => p.sport === 'mls');    // NO slice limit
 
       // ── Power Pick: always highest-confidence active pick from DB ─────────────
       const ppAdminEnabled = true;
@@ -987,7 +1074,42 @@ export async function registerRoutes(app: Express) {
         generated_at: now,
         last_generated: now,
         last_updated_display: dateDisplay,
-        tiers: { power_pick: 'free', soccer_picks: 'free', mls_parlay: 'free', nba_parlay: 'free', nba_picks: 'free' },
+        // ── Tier Dashboard Mapping — NeonDB rows → tiers.pro / tiers.lifetime ──
+        // Pro: top 6 picks by confidence (68%+, soccer+nba+mls only)
+        // Lifetime: top 10 picks by confidence (includes the Pro 6)
+        // Both tiers read from the same publicActive NeonDB array — no schema changes
+        tiers: (() => {
+          const V3_SPORTS = ['soccer', 'nba', 'mls'];
+          const eligible = publicActive
+            .filter(p => V3_SPORTS.includes(p.sport))
+            .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+          const proTier      = eligible.slice(0, 6).map(fmtLeg);
+          const lifetimeTier = eligible.slice(0, 10).map(fmtLeg);
+          return {
+            pro: {
+              picks:       proTier,
+              count:       proTier.length,
+              quota:       6,
+              sport_breakdown: {
+                soccer: proTier.filter(p => p.sport === 'soccer').length,
+                nba:    proTier.filter(p => p.sport === 'nba').length,
+                mls:    proTier.filter(p => p.sport === 'mls').length,
+              },
+            },
+            lifetime: {
+              picks:       lifetimeTier,
+              count:       lifetimeTier.length,
+              quota:       10,
+              sport_breakdown: {
+                soccer: lifetimeTier.filter(p => p.sport === 'soccer').length,
+                nba:    lifetimeTier.filter(p => p.sport === 'nba').length,
+                mls:    lifetimeTier.filter(p => p.sport === 'mls').length,
+              },
+            },
+            // Legacy string labels preserved for backward compatibility
+            power_pick: 'free', soccer_picks: 'free', mls_parlay: 'free', nba_parlay: 'free', nba_picks: 'free',
+          };
+        })(),
         parlay: { legs: parlayLegs, legs_count: parlayLegs.length, combined_probability: combinedProb(soccerPicks) },
         three_leg_conservative: { legs: parlayLegs, legs_count: parlayLegs.length, combined_probability: combinedProb(soccerPicks) },
         soccer_picks: parlayLegs,
@@ -1388,8 +1510,13 @@ export async function registerRoutes(app: Express) {
     try {
       const date = req.body.date || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
       res.json({ success: true, message: `Generation triggered for ${date}`, date });
-      // Run async after response
-      generateDailyPicks(date).catch(err => console.error('[Admin] Manual trigger failed:', err));
+      // Run async after response — clear picks.json cache immediately after so site updates within seconds
+      generateDailyPicks(date)
+        .then(() => {
+          (app as any)._clearPicksCache?.();
+          (app as any)._pingSearchEngines?.(); // Ping Google + Bing immediately after engine run
+        })
+        .catch(err => console.error('[Admin] Manual trigger failed:', err));
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -1836,11 +1963,17 @@ export async function registerRoutes(app: Express) {
   // GET /api/admin/v3-games — serve validated picks from NeonDB (48-hour window, 68%+ gate)
   // Efficiency Veto: NO Odds API calls. Reads from picks table only. One DB query.
   app.get('/api/admin/v3-games', requireAuth, async (req: Request, res: Response) => {
+    // FIX 2: Zero cache — always fetch fresh data, never serve stale cached response
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
     try {
       const { Pool: V3Pool } = await import('pg');
       const pool = new V3Pool({ connectionString: process.env.DATABASE_URL });
-      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
-      const in48h = new Date(Date.now() + 48 * 60 * 60 * 1000).toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+      // FIX 1: Time Anchor — use server ISO datetime (America/Moncton), not browser date
+      const serverNow = new Date();
+      const serverNowISO = serverNow.toISOString(); // passed to client for stale-game check
+      const today = serverNow.toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+      const in48h = new Date(serverNow.getTime() + 48 * 60 * 60 * 1000).toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
 
       const result = await pool.query(`
         SELECT id, date, sport, league, home_team, away_team, prediction, confidence,
@@ -1853,28 +1986,43 @@ export async function registerRoutes(app: Express) {
       `, [today, in48h]);
       await pool.end();
 
-      const games = result.rows.map((r: any) => ({
-        id:           String(r.id),
-        sportKey:     r.sport === 'nba' ? 'basketball_nba' : 'soccer_global',
-        sport:        r.sport,
-        league:       r.league || '',
-        homeTeam:     r.home_team,
-        awayTeam:     r.away_team,
-        commenceTime: r.date + 'T00:00:00Z',
-        date:         r.date,
-        confidence:   parseFloat(r.confidence) || 0,
-        bestPick:     r.prediction || 'N/A',
-        odds:         r.odds || '',
-        tier:         r.tier || 'pro',
-        is_power_pick: r.is_power_pick || false,
-        momentum:     r.momentum || null,
-        quality:      r.quality || null,
-        mq_composite: r.mq_composite || null,
-        analysis:     r.metadata?.analysis || '',
-        outcomes:     [{ label: r.prediction, conf: parseFloat(r.confidence) || 0 }],
-        validated:    true,
-        source:       'neondb-v3',
-      }));
+      // FIX 1+3: Build commenceTime from metadata if available, else use date at noon ADT
+      // FIX 3: Discard any game whose commenceTime is older than server DateTime
+      const games = result.rows.map((r: any) => {
+        // Use actual game time from metadata if stored, otherwise default to noon ADT
+        const metaTime = r.metadata?.commence_time || r.metadata?.commenceTime || r.metadata?.game_time || null;
+        const commenceTime = metaTime ? new Date(metaTime).toISOString() : (r.date + 'T17:00:00Z'); // 17:00 UTC = noon ADT
+        return {
+          id:           String(r.id),
+          sportKey:     r.sport === 'nba' ? 'basketball_nba' : 'soccer_global',
+          sport:        r.sport,
+          league:       r.league || '',
+          homeTeam:     r.home_team,
+          awayTeam:     r.away_team,
+          commenceTime,
+          date:         r.date,
+          confidence:   parseFloat(r.confidence) || 0,
+          bestPick:     r.prediction || 'N/A',
+          odds:         r.odds || '',
+          tier:         r.tier || 'pro',
+          is_power_pick: r.is_power_pick || false,
+          momentum:     r.momentum || null,
+          quality:      r.quality || null,
+          mq_composite: r.mq_composite || null,
+          analysis:     r.metadata?.analysis || '',
+          outcomes:     [{ label: r.prediction, conf: parseFloat(r.confidence) || 0 }],
+          validated:    true,
+          source:       'neondb-v3',
+        };
+      }).filter((g: any) => {
+        // FIX 3: Discard stale games — if commenceTime is in the past vs server time, skip
+        // Exception: same-day games are kept even if time is past (in case of time data gaps)
+        const gameDate = g.commenceTime.substring(0, 10); // YYYY-MM-DD
+        if (gameDate > today) return true; // future date — always keep
+        if (gameDate === today) return true; // today — keep (may still be upcoming)
+        // gameDate < today — strictly yesterday or older — discard
+        return false;
+      });
 
       if (games.length === 0) {
         return res.json({ success: true, games: [], total: 0, message: 'No High-Probability Games Found', budget: { used: 0, remaining: 100, resetTime: today } });
@@ -1884,6 +2032,7 @@ export async function registerRoutes(app: Express) {
         success: true,
         games,
         total: games.length,
+        serverNow: serverNowISO,  // FIX 1: server ISO timestamp for client stale-game check
         budget: { used: 0, remaining: 100, resetTime: today },
       });
     } catch (err: any) {
@@ -2004,11 +2153,30 @@ export async function registerRoutes(app: Express) {
   // Any write to the 6 control tabs calls clearPicksCache() so /picks.json
   // rebuilds on the very next request.
   let _picksCache: { payload: any; ts: number } | null = null;
-  function clearPicksCache() { _picksCache = null; }
-  // Expose so picks.json can use it
+  function clearPicksCache() {
+    _picksCache = null;
+    _modulePicksCache = null; // also clear module-level ref so scheduler can trigger this
+  }
+  // Expose so picks.json can use it and so scheduler can call it via clearModulePicksCache()
   (app as any)._clearPicksCache = clearPicksCache;
+  // Wire module-level export to in-scope function
+  (clearModulePicksCache as any)._impl = clearPicksCache;
   (app as any)._getPicksCache  = () => _picksCache;
   (app as any)._setPicksCache  = (v: any) => { _picksCache = v; };
+
+  // ── Google + Bing Ping ─────────────────────────────────────────────────────
+  // Called after every pick write (manual or automated) so search engines
+  // index fresh picks immediately. Fire-and-forget — never blocks a response.
+  function pingSearchEngines() {
+    const sitemap = 'https://soccernbaparlayking.vip/sitemap.xml';
+    fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(sitemap)}`)
+      .then(() => console.log('[Ping] Google sitemap ping sent'))
+      .catch(() => {});
+    fetch(`https://www.bing.com/ping?sitemap=${encodeURIComponent(sitemap)}`)
+      .then(() => console.log('[Ping] Bing sitemap ping sent'))
+      .catch(() => {});
+  }
+  (app as any)._pingSearchEngines = pingSearchEngines;
 
   // ── TAB 1: FEATURED GAME ─────────────────────────────────────────────────────
   // GET  /api/admin/featured-game  — load current featured game config
@@ -2055,7 +2223,7 @@ export async function registerRoutes(app: Express) {
         storage.setEngineConfig('fg_image_url',   imageUrl   || ''),
         storage.setEngineConfig('fg_live',        liveOnSite ? 'true' : 'false'),
       ]);
-      clearPicksCache();
+      clearPicksCache(); pingSearchEngines();
       res.json({ success: true, message: liveOnSite ? 'Featured game is LIVE on site' : 'Featured game saved (not live)' });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
@@ -2103,7 +2271,7 @@ export async function registerRoutes(app: Express) {
         storage.setEngineConfig('ea_body',    body    || ''),
         storage.setEngineConfig('ea_visible', visible !== false ? 'true' : 'false'),
       ]);
-      clearPicksCache();
+      clearPicksCache(); pingSearchEngines();
       res.json({ success: true, message: visible !== false ? 'Expert analysis visible on site' : 'Expert analysis hidden' });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
@@ -2131,6 +2299,44 @@ export async function registerRoutes(app: Express) {
     try {
       const { legs, enabled } = req.body;
       const saves: Promise<void>[] = [];
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+
+      // ── Write each leg to NeonDB picks table as a manual pick ──────────────────
+      for (const leg of (legs || []).slice(0, 10)) {
+        const conf = parseFloat(leg.confidence) || 75;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
+        const homeTeam = (leg.homeTeam || '').trim();
+        const awayTeam = (leg.awayTeam || '').trim();
+        if (!homeTeam || !awayTeam) continue;
+        const fixtureId = `manual-nba-${homeTeam.replace(/\s+/g,'-').toLowerCase()}-${awayTeam.replace(/\s+/g,'-').toLowerCase()}-${today}`;
+        const meta = JSON.stringify({
+          source_model: 'manual-admin-push', source: 'admin-manual', bypass_gemini: true,
+          original_pick_label: leg.pick || '', pushed_at: new Date().toISOString(),
+          audit_log: { note: 'Admin 3-Leg NBA Parlay form — manual push' }
+        });
+        await pool.query(
+          `UPDATE picks SET is_disabled=TRUE, updated_at=NOW()
+           WHERE date=$1 AND home_team=$2 AND away_team=$3
+             AND metadata->>'source_model'='manual-admin-push'`,
+          [today, homeTeam, awayTeam]
+        );
+        await pool.query(
+          `INSERT INTO picks
+             (date, sport, tier, home_team, away_team, league, prediction,
+              confidence, odds, fixture_id, status, is_power_pick, is_featured,
+              is_disabled, metadata, is_personal, momentum, quality, mq_composite,
+              created_at, updated_at)
+           VALUES ($1,'nba','free',$2,$3,$4,$5,$6,$7,$8,'active',
+                   FALSE,TRUE,FALSE,$9::jsonb,FALSE,8,7,7.5,NOW(),NOW())`,
+          [today, homeTeam, awayTeam,
+           leg.league || 'NBA', leg.pick || `${homeTeam} Win`,
+           conf, autoOdds, fixtureId, meta]
+        );
+      }
+      await pool.end();
+
       (legs || []).slice(0,3).forEach((leg: any, i: number) => {
         const n = i + 1;
         const conf = parseFloat(leg.confidence) || 0;
@@ -2145,8 +2351,8 @@ export async function registerRoutes(app: Express) {
       });
       saves.push(storage.setEngineConfig('nba_parlay_enabled', enabled !== false ? 'true' : 'false'));
       await Promise.all(saves);
-      clearPicksCache();
-      res.json({ success: true, message: enabled !== false ? 'NBA parlay enabled on site' : 'NBA parlay disabled — placeholder shown' });
+      clearPicksCache(); pingSearchEngines();
+      res.json({ success: true, message: enabled !== false ? 'NBA parlay saved to NeonDB and enabled on site' : 'NBA parlay disabled' });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
 
@@ -2170,6 +2376,50 @@ export async function registerRoutes(app: Express) {
     try {
       const { legs, enabled } = req.body;
       const saves: Promise<void>[] = [];
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+
+      // ── Write each leg to NeonDB picks table as a manual pick ──────────────────
+      for (const leg of (legs || []).slice(0, 10)) {
+        const conf = parseFloat(leg.confidence) || 75;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
+        const homeTeam = (leg.homeTeam || '').trim();
+        const awayTeam = (leg.awayTeam || '').trim();
+        if (!homeTeam || !awayTeam) continue; // skip empty legs
+        const fixtureId = `manual-soc-${homeTeam.replace(/\s+/g,'-').toLowerCase()}-${awayTeam.replace(/\s+/g,'-').toLowerCase()}-${today}`;
+        const meta = JSON.stringify({
+          source_model: 'manual-admin-push',
+          source: 'admin-manual',
+          bypass_gemini: true,
+          original_pick_label: leg.pick || '',
+          pushed_at: new Date().toISOString(),
+          audit_log: { note: 'Admin 3-Leg Soccer Parlay form — manual push' }
+        });
+        // Disable any previous manual pick for same fixture today
+        await pool.query(
+          `UPDATE picks SET is_disabled=TRUE, updated_at=NOW()
+           WHERE date=$1 AND home_team=$2 AND away_team=$3
+             AND metadata->>'source_model'='manual-admin-push'`,
+          [today, homeTeam, awayTeam]
+        );
+        // Insert fresh manual pick
+        await pool.query(
+          `INSERT INTO picks
+             (date, sport, tier, home_team, away_team, league, prediction,
+              confidence, odds, fixture_id, status, is_power_pick, is_featured,
+              is_disabled, metadata, is_personal, momentum, quality, mq_composite,
+              created_at, updated_at)
+           VALUES ($1,'soccer','free',$2,$3,$4,$5,$6,$7,$8,'active',
+                   FALSE,TRUE,FALSE,$9::jsonb,FALSE,8,7,7.5,NOW(),NOW())`,
+          [today, homeTeam, awayTeam,
+           leg.league || 'Soccer', leg.pick || `${homeTeam} Win`,
+           conf, autoOdds, fixtureId, meta]
+        );
+      }
+      await pool.end();
+
+      // ── Also persist to engine_config for admin panel reload ───────────────────
       (legs || []).slice(0,3).forEach((leg: any, i: number) => {
         const n = i + 1;
         const conf = parseFloat(leg.confidence) || 0;
@@ -2183,8 +2433,8 @@ export async function registerRoutes(app: Express) {
       });
       saves.push(storage.setEngineConfig('soc_parlay_enabled', enabled !== false ? 'true' : 'false'));
       await Promise.all(saves);
-      clearPicksCache();
-      res.json({ success: true, message: enabled !== false ? 'Soccer parlay enabled on site' : 'Soccer parlay disabled — placeholder shown' });
+      clearPicksCache(); pingSearchEngines();
+      res.json({ success: true, message: enabled !== false ? 'Soccer parlay saved to NeonDB and enabled on site' : 'Soccer parlay disabled' });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
 
@@ -2207,6 +2457,44 @@ export async function registerRoutes(app: Express) {
     try {
       const { legs, enabled } = req.body;
       const saves: Promise<void>[] = [];
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+      const { Pool } = await import('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+
+      // ── Write each leg to NeonDB picks table as a manual pick ──────────────────
+      for (const leg of (legs || []).slice(0, 10)) {
+        const conf = parseFloat(leg.confidence) || 75;
+        const autoOdds = leg.odds || confidenceToAmericanOdds(conf);
+        const homeTeam = (leg.homeTeam || '').trim();
+        const awayTeam = (leg.awayTeam || '').trim();
+        if (!homeTeam || !awayTeam) continue;
+        const fixtureId = `manual-mls-${homeTeam.replace(/\s+/g,'-').toLowerCase()}-${awayTeam.replace(/\s+/g,'-').toLowerCase()}-${today}`;
+        const meta = JSON.stringify({
+          source_model: 'manual-admin-push', source: 'admin-manual', bypass_gemini: true,
+          original_pick_label: leg.pick || '', pushed_at: new Date().toISOString(),
+          audit_log: { note: 'Admin 3-Leg MLS Parlay form — manual push' }
+        });
+        await pool.query(
+          `UPDATE picks SET is_disabled=TRUE, updated_at=NOW()
+           WHERE date=$1 AND home_team=$2 AND away_team=$3
+             AND metadata->>'source_model'='manual-admin-push'`,
+          [today, homeTeam, awayTeam]
+        );
+        await pool.query(
+          `INSERT INTO picks
+             (date, sport, tier, home_team, away_team, league, prediction,
+              confidence, odds, fixture_id, status, is_power_pick, is_featured,
+              is_disabled, metadata, is_personal, momentum, quality, mq_composite,
+              created_at, updated_at)
+           VALUES ($1,'mls','free',$2,$3,$4,$5,$6,$7,$8,'active',
+                   FALSE,TRUE,FALSE,$9::jsonb,FALSE,8,7,7.5,NOW(),NOW())`,
+          [today, homeTeam, awayTeam,
+           leg.league || 'MLS', leg.pick || `${homeTeam} Win`,
+           conf, autoOdds, fixtureId, meta]
+        );
+      }
+      await pool.end();
+
       (legs || []).slice(0,3).forEach((leg: any, i: number) => {
         const n = i + 1;
         const conf = parseFloat(leg.confidence) || 0;
@@ -2219,8 +2507,8 @@ export async function registerRoutes(app: Express) {
       });
       saves.push(storage.setEngineConfig('mls_parlay_enabled', enabled !== false ? 'true' : 'false'));
       await Promise.all(saves);
-      clearPicksCache();
-      res.json({ success: true, message: enabled !== false ? 'MLS parlay enabled on site' : 'MLS parlay disabled — placeholder shown' });
+      clearPicksCache(); pingSearchEngines();
+      res.json({ success: true, message: enabled !== false ? 'MLS parlay saved to NeonDB and enabled on site' : 'MLS parlay disabled' });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
 
@@ -2258,7 +2546,7 @@ export async function registerRoutes(app: Express) {
         storage.setEngineConfig('pp_analysis',   analysis   || ''),
         storage.setEngineConfig('pp_enabled',    enabled !== false ? 'true' : 'false'),
       ]);
-      clearPicksCache();
+      clearPicksCache(); pingSearchEngines();
       res.json({ success: true, message: enabled !== false ? 'Power Pick is LIVE on site' : 'Power Pick disabled — placeholder shown' });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
@@ -3058,4 +3346,13 @@ export async function registerRoutes(app: Express) {
       return res.status(500).json({ error: err.message });
     }
   });
+
+  // ── Register Hardened Tier Architecture routes (gold_tiers table) ──────────
+  try {
+    const { registerGoldTierRoutes } = await import('./goldTierRoutes.js');
+    registerGoldTierRoutes(app, requireAuth);
+    console.log('[Routes] ✅ Gold Tier Architecture routes registered (Pro/Lifetime hardened endpoints)');
+  } catch (err: any) {
+    console.error('[Routes] Failed to register gold tier routes:', err.message);
+  }
 }

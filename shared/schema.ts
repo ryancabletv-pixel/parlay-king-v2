@@ -31,6 +31,7 @@ export const picks = pgTable('picks', {
   mqComposite: real('mq_composite'),
   isPersonal: boolean('is_personal').default(false),
   confidenceScore: real('confidence_score'),
+  v3AuditPassed: boolean('v3_audit_passed').default(false), // true = passed V3-15 threshold gate
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
