@@ -1460,16 +1460,23 @@ export async function registerRoutes(app: Express) {
         last_generated: now,
         last_updated_display: dateDisplay,
         // ── Tier Dashboard Mapping — NeonDB rows → tiers.pro / tiers.lifetime ──
-        // Pro: top 6 picks by confidence (68%+, soccer+nba+mls only)
-        // Lifetime: top 10 picks by confidence (includes the Pro 6)
-        // Both tiers read from the same publicActive NeonDB array — no schema changes
+        // HARDENED TIER GATES:
+        // Pro:      confidence >= 68%, max 6 picks (soccer+nba+mls)
+        // Lifetime: confidence >= 70%, max 10 picks (unique exclusive picks beyond Pro)
+        // A 66% pick stays on Public only — never in Pro or Lifetime
         tiers: (() => {
           const V3_SPORTS = ['soccer', 'nba', 'mls'];
-          const eligible = publicActive
+          const allEligible = publicActive
             .filter(p => V3_SPORTS.includes(p.sport))
             .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
-          const proTier      = eligible.slice(0, 6).map(fmtLeg);
-          const lifetimeTier = eligible.slice(0, 10).map(fmtLeg);
+          // Pro: 68%+ threshold, max 6 — includes picks with tier='pro' OR tier='lifetime'
+          const proTier = allEligible
+            .filter(p => (p.confidence ?? 0) >= 68 && ['pro','lifetime'].includes(p.tier))
+            .slice(0, 6).map(fmtLeg);
+          // Lifetime: 70%+ threshold, max 10 — only tier='lifetime' picks
+          const lifetimeTier = allEligible
+            .filter(p => (p.confidence ?? 0) >= 70 && p.tier === 'lifetime')
+            .slice(0, 10).map(fmtLeg);
           return {
             pro: {
               picks:       proTier,
