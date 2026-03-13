@@ -401,4 +401,17 @@ export function startScheduler() {
   }, 15000); // 15 second delay to allow DB connection to stabilize
 }
 
+// ── Fixture Scraper Cron: Every 6 hours (0:00, 6:00, 12:00, 18:00 AST) ──────────────
+// Free ESPN scraper — no paid API credits used
+cron.schedule('0 0 0,6,12,18 * * *', async () => {
+  console.log('[FixtureScraper] ⏰ Starting scheduled fixture scrape (free ESPN API)...');
+  try {
+    const { scrapeUpcomingFixtures } = await import('./fixtureScraper.js');
+    const result = await scrapeUpcomingFixtures();
+    console.log(`[FixtureScraper] ✅ Scheduled scrape complete: ${result.total} fixtures (${result.nba} NBA, ${result.soccer} Soccer) — 0 API credits`);
+  } catch (err: any) {
+    console.error('[FixtureScraper] Scheduled scrape failed:', err.message);
+  }
+}, { timezone: TZ });
+
 export { runDailyGeneration };

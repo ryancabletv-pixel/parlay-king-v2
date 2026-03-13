@@ -3524,6 +3524,124 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // ── Upcoming Fixtures (Free ESPN Scraper) ────────────────────────────────────
+
+  // GET /api/admin/upcoming-fixtures?from=YYYY-MM-DD&to=YYYY-MM-DD&sport=nba|soccer|all
+  app.get('/api/admin/upcoming-fixtures', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { getUpcomingFixtures } = await import('./fixtureScraper.js');
+      const today = new Date().toISOString().slice(0, 10);
+      const from = (req.query.from as string) || today;
+      const to   = (req.query.to   as string) || new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+      const sport = (req.query.sport as string) || 'all';
+      const fixtures = await getUpcomingFixtures(from, to, sport);
+      return res.json({ success: true, fixtures, count: fixtures.length, from, to });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/admin/upcoming-fixtures/scrape — manually trigger fixture scrape
+  app.post('/api/admin/upcoming-fixtures/scrape', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { scrapeUpcomingFixtures } = await import('./fixtureScraper.js');
+      const result = await scrapeUpcomingFixtures();
+      return res.json({ success: true, ...result, message: `Scraped ${result.total} fixtures (${result.nba} NBA, ${result.soccer} Soccer) — 0 API credits used` });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/admin/upcoming-fixtures/:id/analyze — run V3-15 analysis on a fixture
+  app.post('/api/admin/upcoming-fixtures/:id/analyze', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const fixtureId = parseInt(req.params.id);
+      if (isNaN(fixtureId)) return res.status(400).json({ error: 'Invalid fixture ID' });
+
+      // Get fixture from DB
+      const { Pool: APool } = await import('pg');
+      const aPool = new APool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      const row = await aPool.query(`SELECT * FROM upcoming_fixtures WHERE id = $1`, [fixtureId]);
+      await aPool.end();
+      if (!row.rows.length) return res.status(404).json({ error: 'Fixture not found' });
+
+      const fixture = row.rows[0];
+
+      // Check cache first — if already analyzed, return cached result
+      if (fixture.analyzed && fixture.analysis_result) {
+        console.log(`[FixtureAnalyze] Cache hit for fixture ${fixtureId}: ${fixture.home_team} vs ${fixture.away_team}`);
+        return res.json({
+          success: true,
+          cached: true,
+          fixtureId,
+          homeTeam: fixture.home_team,
+          awayTeam: fixture.away_team,
+          ...fixture.analysis_result,
+          analyzedAt: fixture.analyzed_at,
+        });
+      }
+
+      // Run V3-15 analysis via Gemini (uses existing engine)
+      // Build a minimal fixture object for the engine
+      const { runBatchPredictionsV15 } = await import('./services/geminiV3Engine.js');
+      const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+      if (!GEMINI_API_KEY) return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
+
+      const fixtureData = [{
+        id: `upcoming_${fixtureId}`,
+        homeTeam: fixture.home_team,
+        awayTeam: fixture.away_team,
+        league: fixture.league,
+        sport: fixture.sport === 'nba' ? 'basketball' : 'soccer',
+        commenceTime: fixture.game_datetime || new Date().toISOString(),
+        bookmakers: [], // No odds data — engine will use historical defaults
+      }];
+
+      console.log(`[FixtureAnalyze] Running V3-15 on: ${fixture.home_team} vs ${fixture.away_team} (${fixture.league})`);
+      const predictions = await runBatchPredictionsV15(fixtureData, GEMINI_API_KEY, 'flash');
+
+      if (!predictions || predictions.length === 0) {
+        return res.status(500).json({ error: 'V3-15 engine returned no predictions' });
+      }
+
+      const pred = predictions[0];
+      const confidence = pred.topConfidence;
+      const pass = confidence >= 65;
+
+      // Determine blockedBy reasons
+      const blockedBy: string[] = [];
+      if (confidence < 65) blockedBy.push(`Confidence ${confidence.toFixed(1)}% < 65% floor`);
+
+      const analysisResult = {
+        confidence,
+        pass,
+        bestPick: pred.topPick,
+        reasoning: pred.reasoning || '',
+        factors: pred.factors || {},
+        blockedBy,
+        allOutcomes: pred.outcomes || [],
+      };
+
+      // Cache the result in the DB
+      const { cacheAnalysisResult } = await import('./fixtureScraper.js');
+      await cacheAnalysisResult(fixtureId, analysisResult);
+
+      console.log(`[FixtureAnalyze] ${pass ? '✅ PASS' : '❌ FAIL'} | ${fixture.home_team} vs ${fixture.away_team} | ${confidence.toFixed(1)}%`);
+
+      return res.json({
+        success: true,
+        cached: false,
+        fixtureId,
+        homeTeam: fixture.home_team,
+        awayTeam: fixture.away_team,
+        ...analysisResult,
+      });
+    } catch (err: any) {
+      console.error('[FixtureAnalyze] Error:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   // ── Register Hardened Tier Architecture routes (gold_tiers table) ──────────
   try {
     const { registerGoldTierRoutes } = await import('./goldTierRoutes.js');

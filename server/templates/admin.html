@@ -725,6 +725,7 @@
         <button id="v3tab-today" onclick="v3SwitchTab('today')" style="padding:10px 20px;background:transparent;border:none;border-bottom:2px solid var(--gold);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:-2px">📅 Today</button>
         <button id="v3tab-future" onclick="v3SwitchTab('future')" style="padding:10px 20px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-dim);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:-2px">📅 Tomorrow</button>
         <button id="v3tab-settled" onclick="v3SwitchTab('settled')" style="padding:10px 20px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-dim);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:-2px">✅ Settled / Audit</button>
+        <button id="v3tab-upcoming" onclick="v3SwitchTab('upcoming')" style="padding:10px 20px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-dim);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:-2px">📅 Upcoming</button>
       </div>
 
       <!-- Controls Row -->
@@ -768,8 +769,26 @@
           <div id="v3-settled-table" class="table-scroll"><div style="color:var(--text-dim);text-align:center;padding:40px">Loading settled picks audit...</div></div>
         </div>
       </div>
-
-    </div><!-- /page-v3validator -->
+      <!-- UPCOMING TAB — Free ESPN Scraper, no API credits -->
+      <div id="v3-tab-upcoming" style="display:none">
+        <div style="background:rgba(79,195,247,0.06);border:1px solid rgba(79,195,247,0.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-size:12px;font-weight:800;color:var(--blue);letter-spacing:1px">📅 UPCOMING FIXTURES — 72 HOUR WINDOW</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:2px">Source: ESPN public API — <b style="color:var(--green)">0 API credits used</b> — auto-refreshes every 6 hours</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <select id="upcoming-sport-filter" style="padding:6px 10px;background:var(--bg3);border:1px solid var(--gold-border);border-radius:6px;color:var(--text);font-size:12px">
+              <option value="all">All Sports</option>
+              <option value="nba">🏀 NBA Only</option>
+              <option value="soccer">⚽ Soccer Only</option>
+            </select>
+            <button onclick="loadUpcomingFixtures()" style="padding:7px 14px;background:rgba(79,195,247,0.15);border:1px solid rgba(79,195,247,0.3);border-radius:8px;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer">🔄 Load Fixtures</button>
+            <button onclick="scrapeUpcomingFixtures()" style="padding:7px 14px;background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3);border-radius:8px;color:var(--green);font-size:12px;font-weight:700;cursor:pointer">⚡ Scrape Now</button>
+          </div>
+        </div>
+        <div id="upcoming-fixtures-list"><div style="color:var(--text-dim);text-align:center;padding:60px;font-size:14px">Click "Load Fixtures" to view upcoming NBA &amp; Soccer games<br><span style="font-size:12px;opacity:0.6">Data sourced from ESPN — no API credits required</span></div></div>
+      </div>
+    </div><!-- /page-v3validator -->>
 
     <!-- ===== TOMORROW VALIDATOR ===== -->
     <div class="page" id="page-tomorrow-validator">
@@ -2372,7 +2391,7 @@ let v3CurrentTab = 'today';
 
 function v3SwitchTab(tab) {
   v3CurrentTab = tab;
-  ['today','future','settled'].forEach(t => {
+  ['today','future','settled','upcoming'].forEach(t => {
     const btn = document.getElementById('v3tab-' + t);
     const pane = document.getElementById('v3-tab-' + t);
     if (btn) {
@@ -2382,7 +2401,150 @@ function v3SwitchTab(tab) {
     if (pane) pane.style.display = t === tab ? 'block' : 'none';
   });
   if (tab === 'settled') v3LoadSettled();
+  else if (tab === 'upcoming') loadUpcomingFixtures();
   else v3FilterGames();
+}
+
+// ── Upcoming Fixtures (Free ESPN Scraper) ─────────────────────────────────────────────────────
+let upcomingFixturesCache = null; // in-memory cache
+let upcomingCacheTime = 0;
+const UPCOMING_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function loadUpcomingFixtures() {
+  const container = document.getElementById('upcoming-fixtures-list');
+  if (!container) return;
+
+  // Use in-memory cache if fresh
+  const now = Date.now();
+  const sport = document.getElementById('upcoming-sport-filter')?.value || 'all';
+  if (upcomingFixturesCache && (now - upcomingCacheTime) < UPCOMING_CACHE_TTL) {
+    renderUpcomingFixtures(upcomingFixturesCache, sport);
+    return;
+  }
+
+  container.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:40px">⏳ Loading fixtures from ESPN...</div>';
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const to = new Date(Date.now() + 3*86400000).toISOString().slice(0,10);
+    const data = await api(`/api/admin/upcoming-fixtures?from=${today}&to=${to}&sport=${sport}`);
+    upcomingFixturesCache = data.fixtures || [];
+    upcomingCacheTime = now;
+    renderUpcomingFixtures(upcomingFixturesCache, sport);
+    notify(`📅 Loaded ${data.count} upcoming fixtures (0 API credits)`);
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--red);text-align:center;padding:40px">❌ Error: ${e.message}<br><span style="font-size:12px;opacity:0.7">Click ⋯ Scrape Now to fetch fresh fixtures from ESPN</span></div>`;
+  }
+}
+
+async function scrapeUpcomingFixtures() {
+  notify('⚡ Scraping fixtures from ESPN (0 API credits)...');
+  try {
+    const result = await api('/api/admin/upcoming-fixtures/scrape', { method: 'POST', body: JSON.stringify({}) });
+    upcomingFixturesCache = null; // Clear cache
+    notify(`✅ ${result.message}`);
+    await loadUpcomingFixtures();
+  } catch(e) {
+    notify('Scrape error: ' + e.message, 'error');
+  }
+}
+
+function renderUpcomingFixtures(fixtures, sportFilter) {
+  const container = document.getElementById('upcoming-fixtures-list');
+  if (!container) return;
+
+  const filtered = sportFilter === 'all' ? fixtures : fixtures.filter(f => f.sport === sportFilter);
+
+  if (!filtered.length) {
+    container.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:60px">No upcoming fixtures found.<br><span style="font-size:12px;opacity:0.6">Click ⋯ Scrape Now to fetch from ESPN</span></div>';
+    return;
+  }
+
+  // Group by date
+  const byDate = {};
+  for (const f of filtered) {
+    const d = f.game_date?.slice(0,10) || 'Unknown';
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(f);
+  }
+
+  let html = '';
+  for (const [date, games] of Object.entries(byDate)) {
+    const label = date === new Date().toISOString().slice(0,10) ? '📅 Today'
+      : date === new Date(Date.now()+86400000).toISOString().slice(0,10) ? '📅 Tomorrow'
+      : `📅 ${new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}`;
+    html += `<div style="font-size:11px;letter-spacing:2px;color:var(--text-dim);margin:16px 0 8px;text-transform:uppercase">${label} — ${games.length} games</div>`;
+    for (const f of games) {
+      const sportIcon = f.sport === 'nba' ? '🏀' : '⚽';
+      const statusColor = f.analyzed ? (f.analysis_pass ? 'var(--green)' : 'var(--red)') : 'var(--text-dim)';
+      const statusBadge = f.analyzed
+        ? (f.analysis_pass
+          ? `<span style="background:rgba(0,230,118,0.15);color:var(--green);border:1px solid rgba(0,230,118,0.3);padding:2px 8px;border-radius:12px;font-size:10px;font-weight:800">✅ PASS ${parseFloat(f.analysis_score).toFixed(1)}%</span>`
+          : `<span style="background:rgba(255,68,68,0.15);color:var(--red);border:1px solid rgba(255,68,68,0.3);padding:2px 8px;border-radius:12px;font-size:10px;font-weight:800">❌ FAIL ${parseFloat(f.analysis_score).toFixed(1)}%</span>`)
+        : `<span style="background:rgba(255,255,255,0.05);color:var(--text-dim);border:1px solid rgba(255,255,255,0.1);padding:2px 8px;border-radius:12px;font-size:10px">⏳ Not analyzed</span>`;
+      const analyzeBtn = f.analyzed
+        ? `<button onclick="analyzeFixture(${f.id})" style="padding:5px 10px;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.2);border-radius:6px;color:var(--text-dim);font-size:11px;cursor:pointer" title="Re-run analysis">🔄 Re-analyze</button>`
+        : `<button onclick="analyzeFixture(${f.id})" style="padding:5px 12px;background:rgba(255,215,0,0.15);border:1px solid var(--gold-border);border-radius:6px;color:var(--gold);font-size:11px;font-weight:700;cursor:pointer">🧠 Analyze Game</button>`;
+      html += `
+        <div id="fixture-card-${f.id}" style="background:var(--bg3);border:1px solid rgba(255,215,0,0.12);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:14px;font-weight:700;color:var(--text)">${sportIcon} ${f.home_team} vs ${f.away_team}</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:2px">${f.league} • ${f.game_time || 'TBD'}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            ${statusBadge}
+            ${analyzeBtn}
+          </div>
+        </div>`;
+    }
+  }
+  container.innerHTML = html;
+}
+
+const analyzingFixtures = new Set(); // prevent double-click
+async function analyzeFixture(fixtureId) {
+  if (analyzingFixtures.has(fixtureId)) return;
+  analyzingFixtures.add(fixtureId);
+  const card = document.getElementById('fixture-card-' + fixtureId);
+  const btn = card?.querySelector('button[onclick*="analyzeFixture"]');
+  if (btn) { btn.textContent = '⏳ Analyzing...'; btn.disabled = true; }
+
+  try {
+    const result = await api(`/api/admin/upcoming-fixtures/${fixtureId}/analyze`, { method: 'POST', body: JSON.stringify({}) });
+    const cached = result.cached ? ' (cached)' : '';
+    const pass = result.pass;
+    const conf = typeof result.confidence === 'number' ? result.confidence.toFixed(1) : result.confidence;
+
+    // Update the fixture in the cache
+    if (upcomingFixturesCache) {
+      const idx = upcomingFixturesCache.findIndex(f => f.id === fixtureId);
+      if (idx >= 0) {
+        upcomingFixturesCache[idx].analyzed = true;
+        upcomingFixturesCache[idx].analysis_pass = pass;
+        upcomingFixturesCache[idx].analysis_score = result.confidence;
+        upcomingFixturesCache[idx].analysis_result = result;
+      }
+    }
+
+    // Update the card in place
+    if (card) {
+      const badgeHtml = pass
+        ? `<span style="background:rgba(0,230,118,0.15);color:var(--green);border:1px solid rgba(0,230,118,0.3);padding:2px 8px;border-radius:12px;font-size:10px;font-weight:800">✅ PASS ${conf}%${cached}</span>`
+        : `<span style="background:rgba(255,68,68,0.15);color:var(--red);border:1px solid rgba(255,68,68,0.3);padding:2px 8px;border-radius:12px;font-size:10px;font-weight:800">❌ FAIL ${conf}%${cached}</span>`;
+      const btnHtml = `<button onclick="analyzeFixture(${fixtureId})" style="padding:5px 10px;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.2);border-radius:6px;color:var(--text-dim);font-size:11px;cursor:pointer" title="Re-run analysis">🔄 Re-analyze</button>`;
+      const actionDiv = card.querySelector('div:last-child');
+      if (actionDiv) actionDiv.innerHTML = badgeHtml + ' ' + btnHtml;
+    }
+
+    const msg = pass
+      ? `✅ PASS: ${result.homeTeam} vs ${result.awayTeam} — ${conf}% (Best pick: ${result.bestPick})${cached}`
+      : `❌ FAIL: ${result.homeTeam} vs ${result.awayTeam} — ${conf}% (below 65% floor)${cached}`;
+    notify(msg, pass ? 'success' : 'error');
+  } catch(e) {
+    notify('Analysis error: ' + e.message, 'error');
+    if (btn) { btn.textContent = '🧠 Analyze Game'; btn.disabled = false; }
+  } finally {
+    analyzingFixtures.delete(fixtureId);
+  }
 }
 
 async function v3LoadGames() {
