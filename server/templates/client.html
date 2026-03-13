@@ -980,7 +980,7 @@
 <a href="#" onclick="showPage('home'); toggleMenu(); return false;">Home</a>
 <a href="#" onclick="showPage('results'); toggleMenu(); return false;">Results</a>
 <a href="#" onclick="showPage('analytics'); toggleMenu(); return false;">Analytics</a>
-<a href="#" onclick="showPage('pricing'); toggleMenu(); return false;">💎 Pricing</a>
+<!-- PRICING HIDDEN UNTIL APR 20 2026 -->
 <a href="#" onclick="showPage('home'); toggleMenu(); setTimeout(function(){ switchTab('nba'); var t=document.querySelector('.tabs'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); },100); return false;">🏀 3-Leg NBA</a>
 <a href="#" onclick="showPage('faq'); toggleMenu(); return false;">❓ FAQ</a>
 <a href="#" id="nav-account-link" onclick="showPage(localStorage.getItem('pk_jwt') ? 'account' : 'login'); toggleMenu(); return false;">👤 <span id="nav-account-label">Account</span></a>
@@ -1033,7 +1033,7 @@
             <div id="fg-banner-away-label" style="font-size:9px;color:#888;"></div>
           </div>
         </div>
-        <a href="#" onclick="showPage('pricing');return false;" style="background:linear-gradient(135deg,#d4af37,#b8860b);color:#0a0a14;font-size:11px;font-weight:900;padding:8px 18px;border-radius:20px;text-decoration:none;letter-spacing:1px;text-transform:uppercase;">&#128081; Get Full Pick</a>
+        <!-- GET FULL PICK HIDDEN UNTIL APR 20 2026 -->
       </div>
     </div>
   </div>
@@ -2181,13 +2181,8 @@
 
     </div><!-- /pro-dashboard-section -->
 
-    <!-- Free tier upgrade prompt (shown when tier=free) -->
-    <div id="free-tier-upgrade" style="display:none;text-align:center;padding:30px;background:#0d1117;border:1px solid rgba(212,175,55,0.2);border-radius:12px;margin-top:10px;">
-      <div style="font-size:2.5rem;margin-bottom:12px;">&#128081;</div>
-      <h2 style="color:#d4af37;margin:0 0 8px;">Upgrade to Pro</h2>
-      <p style="color:#aaa;margin:0 0 20px;font-size:0.9rem;">Unlock today's Pro tier picks (70%+ confidence), NBA, MLS, Power Pick, and the full Parlay Builder with sportsbook links.</p>
-      <button onclick="showPage('pricing')" style="padding:12px 28px;background:#d4af37;border:none;color:#0f1419;border-radius:8px;font-weight:700;cursor:pointer;font-size:1rem;">&#128081; View Plans</button>
-    </div>
+    <!-- Free tier upgrade prompt HIDDEN UNTIL APR 20 2026 -->
+    <div id="free-tier-upgrade" style="display:none!important;"></div>
 
     <!-- Support -->
     <div style="background:#0d1117;border:1px solid rgba(212,175,55,0.12);border-radius:10px;padding:16px;margin-top:20px;">
@@ -2446,7 +2441,8 @@ document.addEventListener('DOMContentLoaded', function() {
     <div style="font-size:3rem;margin-bottom:16px;">&#128172;</div>
     <h2 style="color:#d4af37;margin-bottom:12px;">VIP Chat Access</h2>
     <p style="color:#ccc;line-height:1.7;margin-bottom:20px;">Community chat is available to Pro and Lifetime Royalty members. Upgrade your membership to join the conversation, share picks, and get early analysis from our team.</p>
-    <button onclick="showPage('pricing')" style="padding:12px 28px;background:#d4af37;border:none;color:#0f1419;border-radius:8px;font-weight:700;cursor:pointer;font-size:1rem;">&#128081; Upgrade to Access Chat</button>
+    <!-- UPGRADE TO CHAT HIDDEN UNTIL APR 20 2026 -->
+    <p style="color:#888;font-size:0.9rem;">Chat access re-opens April 20, 2026. Stay tuned!</p>
     <div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(212,175,55,0.1);">
       <p style="color:#888;font-size:0.85rem;">Have a question? Email us at <a href="mailto:soccernbaparlayking@gmail.com" style="color:#d4af37;">soccernbaparlayking@gmail.com</a></p>
     </div>

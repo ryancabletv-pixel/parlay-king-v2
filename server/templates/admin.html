@@ -372,6 +372,7 @@
       <div class="nav-label" style="color:#00e676">Site Control</div>
       <div class="nav-item" onclick="showPage('featured-game')" style="color:#00e676"><span class="nav-icon">⭐</span>Featured Game</div>
       <div class="nav-item" onclick="showPage('expert-analysis')"><span class="nav-icon">📝</span>Expert Analysis</div>
+      <div class="nav-item" onclick="showPage('quick-post')" style="color:#00e676"><span class="nav-icon">⚡</span>Quick Post Live</div>
       <div class="nav-item" onclick="showPage('parlay-nba')"><span class="nav-icon">🏀</span>3-Leg NBA</div>
       <div class="nav-item" onclick="showPage('parlay-soccer')"><span class="nav-icon">⚽</span>3-Leg Soccer</div>
       <div class="nav-item" onclick="showPage('parlay-mls')"><span class="nav-icon">🇺🇸</span>3-Leg MLS</div>
@@ -1605,6 +1606,56 @@
       <div id="v2-games-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px"></div>
     </div><!-- /page-v2validator -->
 
+    <!-- ===== QUICK POST LIVE ===== -->
+    <div class="page" id="page-quick-post">
+      <h2 style="color:#00e676">⚡ Quick Post Live</h2>
+      <p style="color:var(--text-muted);margin-bottom:20px">Bypass automation — manually post a single pick directly to the public site. <strong style="color:#00e676">Max 3 picks per tab.</strong> All picks go live immediately.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px">
+        <!-- NBA Quick Post -->
+        <div class="card" style="border:1px solid #00b0ff">
+          <h3 style="color:#00b0ff;margin:0 0 16px">🏀 NBA Quick Post</h3>
+          <div id="qp-nba-count" style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px">Loading slot count...</div>
+          <label class="login-label">MATCHUP</label>
+          <input class="login-input" id="qp-nba-matchup" placeholder="e.g. Warriors vs Lakers" style="margin-bottom:10px">
+          <label class="login-label">PICK</label>
+          <input class="login-input" id="qp-nba-pick" placeholder="e.g. Warriors ML (-115)" style="margin-bottom:10px">
+          <label class="login-label">CONFIDENCE %</label>
+          <input class="login-input" id="qp-nba-conf" type="number" min="60" max="100" placeholder="e.g. 72.5" style="margin-bottom:16px;max-width:160px">
+          <button class="btn btn-gold" onclick="quickPost('nba')" id="qp-nba-btn">⚡ Post Live to NBA Tab</button>
+          <div id="qp-nba-msg" style="margin-top:10px;font-size:0.85rem"></div>
+        </div>
+        <!-- Soccer Quick Post -->
+        <div class="card" style="border:1px solid #00cc66">
+          <h3 style="color:#00cc66;margin:0 0 16px">⚽ Soccer Quick Post</h3>
+          <div id="qp-soc-count" style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px">Loading slot count...</div>
+          <label class="login-label">MATCHUP</label>
+          <input class="login-input" id="qp-soc-matchup" placeholder="e.g. Arsenal vs Chelsea" style="margin-bottom:10px">
+          <label class="login-label">PICK</label>
+          <input class="login-input" id="qp-soc-pick" placeholder="e.g. Arsenal ML (+120)" style="margin-bottom:10px">
+          <label class="login-label">CONFIDENCE %</label>
+          <input class="login-input" id="qp-soc-conf" type="number" min="60" max="100" placeholder="e.g. 71.0" style="margin-bottom:16px;max-width:160px">
+          <button class="btn btn-gold" onclick="quickPost('soccer')" id="qp-soc-btn">⚡ Post Live to Soccer Tab</button>
+          <div id="qp-soc-msg" style="margin-top:10px;font-size:0.85rem"></div>
+        </div>
+        <!-- MLS Quick Post -->
+        <div class="card" style="border:1px solid #ff9800">
+          <h3 style="color:#ff9800;margin:0 0 16px">🇺🇸 MLS Quick Post</h3>
+          <div id="qp-mls-count" style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px">Loading slot count...</div>
+          <label class="login-label">MATCHUP</label>
+          <input class="login-input" id="qp-mls-matchup" placeholder="e.g. LAFC vs Portland" style="margin-bottom:10px">
+          <label class="login-label">PICK</label>
+          <input class="login-input" id="qp-mls-pick" placeholder="e.g. LAFC ML (-130)" style="margin-bottom:10px">
+          <label class="login-label">CONFIDENCE %</label>
+          <input class="login-input" id="qp-mls-conf" type="number" min="60" max="100" placeholder="e.g. 69.5" style="margin-bottom:16px;max-width:160px">
+          <button class="btn btn-gold" onclick="quickPost('mls')" id="qp-mls-btn">⚡ Post Live to MLS Tab</button>
+          <div id="qp-mls-msg" style="margin-top:10px;font-size:0.85rem"></div>
+        </div>
+      </div>
+      <div style="margin-top:20px;padding:14px;background:rgba(255,152,0,0.08);border:1px solid rgba(255,152,0,0.3);border-radius:8px">
+        <p style="color:#ff9800;font-size:0.85rem;margin:0">⚠️ <strong>Max 3 picks per tab.</strong> If a tab already has 3 picks, the Post Live button will be disabled. Use the 3-Leg NBA/Soccer/MLS tabs to replace all 3 picks at once.</p>
+      </div>
+    </div><!-- /page-quick-post -->
+
     <!-- ===== PAYPAL COMPLIANCE ===== -->
     <div class="page" id="page-paypal-compliance">
       <h2 style="color:#00e676">⚖️ PayPal Compliance</h2>
@@ -1873,6 +1924,7 @@ function showPage(name) {
     'lifetime-tier':   loadLifetimeTier,
     'tier-master':     loadTierMasterView,
     'v2validator':     () => {},  // manual trigger only — no auto-load
+    'quick-post':      loadQuickPost,
     'paypal-compliance': loadPaypalCompliance,
     'test-payment-flow': function() {}, // static page — no data loader needed
     'personal-picks':    loadPersonalPicks,
@@ -3898,6 +3950,72 @@ async function saveMlsParlay() {
     msg.textContent = '❌ ' + e.message;
     msg.style.color = 'var(--red)';
     notify(e.message, 'error');
+  }
+}
+
+// ── QUICK POST LIVE ─────────────────────────────────────────────────────────
+async function loadQuickPost() {
+  const tabs = [
+    { sport: 'nba', countEl: 'qp-nba-count', btnEl: 'qp-nba-btn', endpoint: '/api/admin/parlay-nba' },
+    { sport: 'soccer', countEl: 'qp-soc-count', btnEl: 'qp-soc-btn', endpoint: '/api/admin/parlay-soccer' },
+    { sport: 'mls', countEl: 'qp-mls-count', btnEl: 'qp-mls-btn', endpoint: '/api/admin/parlay-mls' },
+  ];
+  for (const t of tabs) {
+    try {
+      const d = await api(t.endpoint);
+      const count = (d.legs || []).filter(l => l && l.pick).length;
+      const el = document.getElementById(t.countEl);
+      const btn = document.getElementById(t.btnEl);
+      if (count >= 3) {
+        el.innerHTML = `<span style="color:#ff6b35">&#128274; ${count}/3 slots filled — tab is full. Clear via 3-Leg tab first.</span>`;
+        btn.disabled = true;
+        btn.style.opacity = '0.4';
+      } else {
+        el.innerHTML = `<span style="color:#00cc66">&#9989; ${count}/3 slots filled — ${3-count} slot(s) available</span>`;
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    } catch(e) {
+      document.getElementById(t.countEl).textContent = 'Error loading count';
+    }
+  }
+}
+
+async function quickPost(sport) {
+  const map = {
+    nba:    { matchupEl:'qp-nba-matchup', pickEl:'qp-nba-pick', confEl:'qp-nba-conf', msgEl:'qp-nba-msg', endpoint:'/api/admin/parlay-nba', getLegs: async () => (await api('/api/admin/parlay-nba')).legs || [] },
+    soccer: { matchupEl:'qp-soc-matchup', pickEl:'qp-soc-pick', confEl:'qp-soc-conf', msgEl:'qp-soc-msg', endpoint:'/api/admin/parlay-soccer', getLegs: async () => (await api('/api/admin/parlay-soccer')).legs || [] },
+    mls:    { matchupEl:'qp-mls-matchup', pickEl:'qp-mls-pick', confEl:'qp-mls-conf', msgEl:'qp-mls-msg', endpoint:'/api/admin/parlay-mls', getLegs: async () => (await api('/api/admin/parlay-mls')).legs || [] },
+  };
+  const cfg = map[sport];
+  const msg = document.getElementById(cfg.msgEl);
+  const matchup = document.getElementById(cfg.matchupEl).value.trim();
+  const pick    = document.getElementById(cfg.pickEl).value.trim();
+  const conf    = document.getElementById(cfg.confEl).value.trim();
+  if (!matchup || !pick || !conf) { msg.textContent = '\u274c Fill in all 3 fields first.'; msg.style.color='var(--red)'; return; }
+  const confNum = parseFloat(conf);
+  if (confNum < 60 || confNum > 100) { msg.textContent = '\u274c Confidence must be 60-100.'; msg.style.color='var(--red)'; return; }
+  msg.textContent = 'Posting...';
+  try {
+    const existingLegs = await cfg.getLegs();
+    const filled = existingLegs.filter(l => l && l.pick);
+    if (filled.length >= 3) { msg.textContent = '\u274c Tab is full (3/3 slots). Clear via 3-Leg tab first.'; msg.style.color='var(--red)'; loadQuickPost(); return; }
+    // Build new leg
+    const parts = matchup.split(' vs ');
+    const newLeg = { homeTeam: parts[0]||matchup, awayTeam: parts[1]||'', pick, confidence: conf, odds: '', league: sport.toUpperCase() };
+    // Merge into existing legs (fill next empty slot)
+    const allLegs = [1,2,3].map((n,i) => filled[i] || (i === filled.length ? newLeg : { homeTeam:'', awayTeam:'', pick:'', confidence:'', odds:'', league:'' }));
+    const d = await api(cfg.endpoint, { method:'POST', body: JSON.stringify({ legs: allLegs, enabled: true }) });
+    msg.textContent = '\u2705 Posted live! ' + matchup + ' — ' + pick;
+    msg.style.color = 'var(--green)';
+    notify('Quick Post live: ' + matchup);
+    document.getElementById(cfg.matchupEl).value = '';
+    document.getElementById(cfg.pickEl).value = '';
+    document.getElementById(cfg.confEl).value = '';
+    loadQuickPost();
+  } catch(e) {
+    msg.textContent = '\u274c ' + e.message;
+    msg.style.color = 'var(--red)';
   }
 }
 
