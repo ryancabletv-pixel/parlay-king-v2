@@ -283,6 +283,104 @@ export async function generateDailyPicks(date: string): Promise<{
     console.error('[Engine] WARNING: No live NBA fixtures returned by API-Basketball for', date);
   }
 
+  // ── TIER-3 ESPN FREE SCRAPER FALLBACK ──────────────────────────────────────────────────────────────────────────────────
+  // If BOTH primary sources returned 0 fixtures, activate the ESPN free scraper.
+  // ESPN requires NO API key and has NO rate limits — it is always available.
+  // Fixtures from ESPN are converted to the same FixtureData format so the V3-15
+  // engine can process them without any modification.
+  let espnActivated = false;
+  if (soccerFixtures.length === 0 && nbaFixtures.length === 0) {
+    console.log('[Engine] 🚨 TIER-3 ACTIVATED: Both primary APIs returned 0 fixtures. Switching to ESPN Free Scraper...');
+    try {
+      const { fetchEspnFixtures, convertEspnToV3Format, loadPermanentCache } = await import('./apis/espnScraper.js');
+      let espnResult = await fetchEspnFixtures(date);
+
+      // If ESPN also returned 0 (e.g., no games scheduled), try the permanent cache
+      if (espnResult.totalCount === 0) {
+        console.log('[Engine] ESPN returned 0 fixtures for', date, '— trying permanent_fixtures.json cache...');
+        const cached = loadPermanentCache();
+        if (cached && cached.fixtures.length > 0) {
+          espnResult = { ...cached, cached: true };
+          console.log(`[Engine] 📂 Loaded ${cached.fixtures.length} fixtures from permanent_fixtures.json (last updated: ${cached.lastUpdated})`);
+        }
+      }
+
+      if (espnResult.totalCount > 0) {
+        espnActivated = true;
+        console.log(`[Engine] ✅ ESPN Scraper: ${espnResult.totalCount} fixtures loaded (cached: ${espnResult.cached})`);
+        for (const [league, count] of Object.entries(espnResult.leagueBreakdown)) {
+          console.log(`[Engine]   ${league}: ${count} games`);
+        }
+        // Convert ESPN fixtures to FixtureData format
+        for (const espnFix of espnResult.fixtures) {
+          const v3Fixture = convertEspnToV3Format(espnFix);
+          const fd: FixtureData = {
+            fixtureId: parseInt(espnFix.id.replace(/\D/g,'').slice(0,8) || '0', 10),
+            homeTeam: espnFix.homeTeam,
+            awayTeam: espnFix.awayTeam,
+            league: espnFix.league,
+            sport: espnFix.sport === 'nba' ? 'nba' : espnFix.league === 'MLS' ? 'mls' : 'soccer',
+            homeOdds: undefined, awayOdds: undefined, drawOdds: undefined,
+            homeWinRate: undefined, awayWinRate: undefined,
+            homeForm: undefined, awayForm: undefined,
+            homeRank: undefined, awayRank: undefined,
+            homeGoalsFor: undefined, awayGoalsFor: undefined,
+            homeGoalsAgainst: undefined, awayGoalsAgainst: undefined,
+            homeInjuries: 0, awayInjuries: 0,
+            isNeutralVenue: false, venueName: espnFix.venue,
+            headToHead: undefined,
+          };
+          if (espnFix.sport === 'nba') {
+            nbaFixtures.push(fd);
+          } else if (espnFix.league === 'MLS') {
+            soccerFixtures.push({ ...fd, sport: 'mls' });
+          } else {
+            soccerFixtures.push(fd);
+          }
+        }
+        console.log(`[Engine] ESPN fixtures injected: ${soccerFixtures.length} soccer/MLS, ${nbaFixtures.length} NBA`);
+        // Alert admin that ESPN scraper was activated
+        try { await createAlert('warning', `🚨 ESPN Emergency Scraper activated for ${date}: ${espnResult.totalCount} fixtures loaded (${espnResult.cached ? 'from cache' : 'live'}). Primary APIs are offline. Action required: renew API-Football and/or The Odds API.`); } catch (_) {}
+      } else {
+        console.error('[Engine] CRITICAL: ESPN scraper also returned 0 fixtures. All data sources exhausted.');
+        try { await createAlert('critical', `❌ ALL DATA SOURCES EXHAUSTED for ${date}: API-Football suspended, Odds API quota hit, ESPN returned 0 fixtures, permanent cache empty. Site will show 0 picks.`); } catch (_) {}
+      }
+    } catch (espnErr: any) {
+      console.error('[Engine] ESPN scraper error:', espnErr.message);
+    }
+  } else if (soccerFixtures.length === 0 || nbaFixtures.length === 0) {
+    // Partial failure: one sport has data, the other doesn't. Try ESPN for the missing sport.
+    console.log('[Engine] Partial API failure detected. Attempting ESPN supplemental fetch...');
+    try {
+      const { fetchEspnFixtures, convertEspnToV3Format } = await import('./apis/espnScraper.js');
+      const espnResult = await fetchEspnFixtures(date);
+      if (espnResult.totalCount > 0) {
+        espnActivated = true;
+        for (const espnFix of espnResult.fixtures) {
+          const fd: FixtureData = {
+            fixtureId: parseInt(espnFix.id.replace(/\D/g,'').slice(0,8) || '0', 10),
+            homeTeam: espnFix.homeTeam, awayTeam: espnFix.awayTeam,
+            league: espnFix.league,
+            sport: espnFix.sport === 'nba' ? 'nba' : espnFix.league === 'MLS' ? 'mls' : 'soccer',
+            homeOdds: undefined, awayOdds: undefined, drawOdds: undefined,
+            homeWinRate: undefined, awayWinRate: undefined,
+            homeForm: undefined, awayForm: undefined,
+            homeRank: undefined, awayRank: undefined,
+            homeGoalsFor: undefined, awayGoalsFor: undefined,
+            homeGoalsAgainst: undefined, awayGoalsAgainst: undefined,
+            homeInjuries: 0, awayInjuries: 0,
+            isNeutralVenue: false, venueName: espnFix.venue,
+            headToHead: undefined,
+          };
+          // Only inject for the missing sport
+          if (espnFix.sport === 'nba' && nbaFixtures.length === 0) nbaFixtures.push(fd);
+          else if (espnFix.sport !== 'nba' && soccerFixtures.length === 0) soccerFixtures.push(fd);
+        }
+        console.log(`[Engine] ESPN supplemental: ${soccerFixtures.length} soccer/MLS, ${nbaFixtures.length} NBA`);
+      }
+    } catch (_) {}
+  }
+
   // Separate MLS from soccer
   const mlsFixtures    = soccerFixtures.filter(f => f.sport === 'mls');
   const pureSOccer     = soccerFixtures.filter(f => f.sport === 'soccer');
@@ -1018,6 +1116,42 @@ export async function registerRoutes(app: Express) {
       });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── ESPN Scraper Test Endpoint ─────────────────────────────────────────────
+  // Manually trigger the ESPN free scraper and return results without touching
+  // the V3 engine or NeonDB. Used to verify the emergency fallback is working.
+  app.post('/api/admin/scraper-test', requireAuth, async (req, res) => {
+    try {
+      const date = (req.body?.date as string) || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+      console.log(`[ScraperTest] Admin triggered ESPN scraper test for ${date}`);
+      const { fetchEspnFixtures, getCooldownStatus } = await import('./apis/espnScraper.js');
+      const result = await fetchEspnFixtures(date);
+      const cooldowns = getCooldownStatus();
+      res.json({
+        success: true,
+        source: 'espn-free-scraper',
+        date,
+        totalFixtures: result.totalCount,
+        leagueBreakdown: result.leagueBreakdown,
+        cached: result.cached,
+        sampleFixtures: result.fixtures.slice(0, 10).map(f => ({
+          id: f.id,
+          homeTeam: f.homeTeam,
+          awayTeam: f.awayTeam,
+          league: f.league,
+          sport: f.sport,
+          date: f.dateLocal,
+          status: f.status,
+        })),
+        cooldowns,
+        message: result.totalCount > 0
+          ? `✅ ESPN Emergency Scraper is ACTIVE — ${result.totalCount} fixtures available for ${date}`
+          : `⚠️ ESPN returned 0 fixtures for ${date} (no games scheduled or ESPN API unreachable)`,
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
     }
   });
 

@@ -92,6 +92,16 @@ async function apiFetch(endpoint: string, baseUrl = BASE_URL, apiKey = API_KEY, 
       });
       clearTimeout(timeoutId);
 
+      // ── 429 Rate-Limit / 401 Unauthorized → Cooldown ───────────────────────
+      if (res.status === 429 || res.status === 401) {
+        const reason = res.status === 429 ? 'RATE_LIMITED_429' : 'UNAUTHORIZED_401';
+        console.error(`[API-Football] ${reason} — putting in 60-minute cooldown`);
+        try {
+          const { setCooldown } = await import('./espnScraper.js');
+          setCooldown('api-football', 60, reason);
+        } catch (_) {}
+        throw new Error(`API error: ${res.status} ${res.statusText}`);
+      }
       if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
       const data = await res.json();
 

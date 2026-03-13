@@ -751,6 +751,7 @@
         </label>
         <button onclick="v3LoadGames()" id="v3-load-btn" style="padding:9px 18px;background:linear-gradient(135deg,var(--gold),#FFA500);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer">⚡ Load Games</button>
         <button onclick="v3CheckSourceHealth()" style="padding:9px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:var(--text-dim);font-size:12px;font-weight:700;cursor:pointer">🟡 Source Health</button>
+        <button onclick="v3TestEspnScraper()" id="v3-espn-test-btn" style="padding:9px 14px;background:rgba(0,180,0,0.1);border:1px solid rgba(0,255,0,0.3);border-radius:8px;color:#00ff88;font-size:12px;font-weight:700;cursor:pointer">🌐 Test ESPN Scraper</button>
         <span style="font-size:11px;color:var(--text-dim)" id="v3-last-loaded"></span>
       </div>
 
@@ -2608,6 +2609,68 @@ async function v3CheckSourceHealth() {
 
   } catch (err) {
     sourcesEl.innerHTML = `<div style="color:var(--red);font-size:12px">❌ Failed to load health data: ${err.message}</div>`;
+  }
+}
+
+async function v3TestEspnScraper() {
+  const btn = document.getElementById('v3-espn-test-btn');
+  btn.textContent = '⏳ Testing...';
+  btn.disabled = true;
+
+  // Show a results panel below the buttons
+  let panel = document.getElementById('v3-espn-test-panel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'v3-espn-test-panel';
+    panel.style.cssText = 'margin-bottom:16px;background:rgba(0,50,0,0.3);border:1px solid rgba(0,255,136,0.3);border-radius:10px;padding:16px;font-size:12px';
+    document.getElementById('v3-source-health-panel').insertAdjacentElement('afterend', panel);
+  }
+  panel.style.display = 'block';
+  panel.innerHTML = '<div style="color:#00ff88">Contacting ESPN Free API... (no API key required)</div>';
+
+  try {
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Moncton' });
+    const data = await api('/api/admin/scraper-test', { method: 'POST', body: JSON.stringify({ date: today }) });
+
+    const statusColor = data.totalFixtures > 0 ? '#00ff88' : '#FFD700';
+    const leagueRows = Object.entries(data.leagueBreakdown || {})
+      .sort((a, b) => b[1] - a[1])
+      .map(([league, count]) => `<span style="background:rgba(0,255,136,0.1);border-radius:4px;padding:2px 8px;margin:2px;display:inline-block">${league}: ${count}</span>`)
+      .join('');
+
+    const sampleRows = (data.sampleFixtures || []).map(f =>
+      `<tr><td style="padding:3px 8px;color:#fff">${f.awayTeam} @ ${f.homeTeam}</td><td style="padding:3px 8px;color:var(--text-dim)">${f.league}</td><td style="padding:3px 8px;color:var(--text-dim)">${f.sport}</td><td style="padding:3px 8px;color:var(--text-dim)">${f.date}</td></tr>`
+    ).join('');
+
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:13px;font-weight:800;color:#00ff88">🌐 ESPN EMERGENCY SCRAPER TEST</div>
+        <div style="font-size:11px;color:var(--text-dim)">Date: ${data.date} | Cached: ${data.cached ? 'Yes' : 'No'}</div>
+      </div>
+      <div style="font-size:14px;font-weight:800;color:${statusColor};margin-bottom:10px">${data.message}</div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px">LEAGUES WITH GAMES:</div>
+        <div>${leagueRows || '<span style="color:var(--text-dim)">No leagues found</span>'}</div>
+      </div>
+      ${sampleRows ? `<div style="margin-top:10px">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px">SAMPLE FIXTURES (first 10):</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="color:var(--gold)"><th style="text-align:left;padding:3px 8px">Match</th><th style="text-align:left;padding:3px 8px">League</th><th style="text-align:left;padding:3px 8px">Sport</th><th style="text-align:left;padding:3px 8px">Date</th></tr></thead>
+          <tbody>${sampleRows}</tbody>
+        </table>
+      </div>` : ''}
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);font-size:11px;color:var(--text-dim)">
+        ✅ ESPN Free API requires NO API key. It will ALWAYS be available as the last resort fallback.
+        When both API-Football and The Odds API are offline, the V3 engine automatically uses this source.
+      </div>`;
+
+    notify(`🌐 ESPN Scraper: ${data.totalFixtures} fixtures found for ${data.date}`, data.totalFixtures > 0 ? 'success' : 'warning');
+  } catch (err) {
+    panel.innerHTML = `<div style="color:var(--red)">❌ ESPN Scraper test failed: ${err.message}</div>`;
+    notify('ESPN Scraper test failed: ' + err.message, 'error');
+  } finally {
+    btn.textContent = '🌐 Test ESPN Scraper';
+    btn.disabled = false;
   }
 }
 

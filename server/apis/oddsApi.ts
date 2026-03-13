@@ -213,8 +213,14 @@ async function fetchOdds(sportKey: string, isManual?: boolean): Promise<OddsGame
     if (!resp.ok) {
       // ── HTTP 401/429 = Quota Exhausted or Key Invalid ────────────────────────────────
       if (resp.status === 401 || resp.status === 429) {
-        console.error(`[OddsAPI] ❌ ${resp.status === 401 ? 'UNAUTHORIZED (key invalid or quota exhausted)' : 'RATE LIMITED (429)'} for ${sportKey} — blocking all further auto-calls`);
+        const reason = resp.status === 429 ? 'RATE_LIMITED_429' : 'UNAUTHORIZED_401';
+        console.error(`[OddsAPI] ❌ ${resp.status === 401 ? 'UNAUTHORIZED (key invalid or quota exhausted)' : 'RATE LIMITED (429)'} for ${sportKey} — putting in 60-minute cooldown`);
         budgetUsedToday = BUDGET_CEILING; // Block all further auto-calls this cycle
+        // Put in 60-minute cooldown via espnScraper cooldown manager
+        try {
+          const { setCooldown } = await import('./espnScraper.js');
+          setCooldown('odds-api', 60, reason);
+        } catch (_) {}
         return [];
       }
       console.error(`[OddsAPI] HTTP ${resp.status} for ${sportKey}`);
