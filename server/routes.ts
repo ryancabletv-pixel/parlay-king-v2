@@ -38,6 +38,10 @@ const CONFIDENCE_THRESHOLDS = {
   PRO_MIN:    68,   // Pro tier: 68%+
   LIFETIME_MIN: 70, // Lifetime tier: 70%+
   POWER_PICK: 80,   // Power Pick badge
+  // ── HARDENED THRESHOLD (3-Leg Tabs) ──────────────────────────────────────
+  // All 3-Leg Soccer, MLS, and NBA tab picks must meet this minimum.
+  // Picks below this floor are NEVER pushed to the database.
+  LEG_HARD_FLOOR: 65, // Absolute minimum for any 3-leg tab pick
 } as const;
 
 // Tier pick counts
@@ -47,30 +51,72 @@ const TIER_PICK_COUNTS = {
   lifetime: 10,  // 10 picks at 70%+
 } as const;
 
+// ─── V3-15 Factor Audit Gate ─────────────────────────────────────────────────
+// Every pick pushed to the 3-Leg Soccer, MLS, or NBA tab MUST pass this audit.
+// All 15 proprietary factors are checked for non-default (real data) values.
+// A pick fails the audit if fewer than 8 of 15 factors have real data.
+// This is the HARDENED gate — previously only 2/5 factors were required.
+function passesV3_15FactorAudit(p: PredictionResult): boolean {
+  const f = p.factors;
+  if (!f) return false;
+  // Factor 1: Market Consensus (odds must be non-default)
+  const f01 = f.f01_marketConsensus_home !== 0.44 && f.f01_marketConsensus_home !== 0.30;
+  // Factor 2: Momentum (form data must be non-neutral)
+  const f02 = f.f02_momentum_home !== 0.50 || f.f02_momentum_away !== 0.50;
+  // Factor 3: Class/Quality Gap (win rate / goal diff must be non-neutral)
+  const f03 = f.f03_quality_home !== 0.50 || f.f03_quality_away !== 0.50;
+  // Factor 4: H2H History (must have head-to-head data)
+  const f04 = f.f04_h2h_home !== 0.50 || f.f04_h2h_away !== 0.50;
+  // Factor 5: Market Steam (sharp money signal)
+  const f05 = f.f05_steam_home !== 0.50 || f.f05_steam_away !== 0.50;
+  // Factor 6: Rest/Fatigue (rest days must be non-default)
+  const f06 = f.f06_rest_home !== 0.50 || f.f06_rest_away !== 0.50;
+  // Factor 7: Injuries (injury data must be non-default 0.90)
+  const f07 = f.f07_injuries_home !== 0.90 || f.f07_injuries_away !== 0.90;
+  // Factor 8: Travel Stress (timezone diff must be non-zero)
+  const f08 = f.f08_travel !== 0.50;
+  // Factor 9: Referee Bias (ref stats must be non-neutral)
+  const f09 = f.f09_referee !== 0.50;
+  // Factor 10: Environmental (weather/conditions must be non-neutral)
+  const f10 = f.f10_environment !== 0.50;
+  // Factor 11: League Standing (table rank must be non-neutral)
+  const f11 = f.f11_standing_home !== 0.50 || f.f11_standing_away !== 0.50;
+  // Factor 12: Venue Pressure (stadium capacity/attendance must be non-zero)
+  const f12 = f.f12_venue !== 0.50;
+  // Factor 13: Market Steam Extended (multi-book steam)
+  const f13 = (f as any).f13_steam_home !== undefined && (f as any).f13_steam_home !== 0.50;
+  // Factor 14: Altitude/Environmental Extended
+  const f14 = (f as any).f14_altitude !== undefined && (f as any).f14_altitude !== 0.50;
+  // Factor 15: Referee Officials Extended
+  const f15 = (f as any).f15_referee_boost !== undefined && (f as any).f15_referee_boost !== 0.50;
+  const passed = [f01,f02,f03,f04,f05,f06,f07,f08,f09,f10,f11,f12,f13,f14,f15].filter(Boolean).length;
+  // HARDENED GATE: at least 8 of 15 factors must have real (non-default) data
+  // This is stricter than the old 2/5 gate — ensures picks are data-backed
+  const AUDIT_PASS_THRESHOLD = 8;
+  if (passed < AUDIT_PASS_THRESHOLD) {
+    console.log(`[V3-15 Audit] REJECTED: ${p.homeTeam} vs ${p.awayTeam} — only ${passed}/15 factors have real data (need ${AUDIT_PASS_THRESHOLD})`);
+    return false;
+  }
+  return true;
+}
+
 function selectBestLegs(
   predictions: PredictionResult[],
   count: number,
   minConfidence = CONFIDENCE_THRESHOLDS.PRO_MIN,
   maxConfidence = 100
 ): PredictionResult[] {
-  // GUARDRAIL: Minimum data quality gate
-  // A pick must have at least 2 of 5 real data fields populated (odds, form, win rate, rank, injury)
-  // This prevents picks where the engine only had neutral defaults and no real data.
+  // HARDENED GATE: Enforce 65% absolute floor — no pick below this is ever selected
+  const effectiveMin = Math.max(minConfidence, CONFIDENCE_THRESHOLDS.LEG_HARD_FLOOR);
+
+  // V3-15 FACTOR AUDIT: Every pick must pass the full 15-factor audit
   function hasMinDataQuality(p: PredictionResult): boolean {
-    const f = p.factors;
-    if (!f) return false;
-    const hasOdds    = f.f01_marketConsensus_home !== 0.44 && f.f01_marketConsensus_home !== 0.30; // non-default
-    const hasMomentum = f.f02_momentum_home !== 0.50 || f.f02_momentum_away !== 0.50;
-    const hasQuality  = f.f03_quality_home !== 0.50 || f.f03_quality_away !== 0.50;
-    const hasStanding = f.f11_standing_home !== 0.50 || f.f11_standing_away !== 0.50;
-    const hasInjury   = f.f07_injuries_home !== 0.90 || f.f07_injuries_away !== 0.90;
-    const dataPoints  = [hasOdds, hasMomentum, hasQuality, hasStanding, hasInjury].filter(Boolean).length;
-    return dataPoints >= 2; // At least 2 of 5 data fields must be real (non-default)
+    return passesV3_15FactorAudit(p);
   }
 
-  // Filter: must pass threshold, must not be a draw pick (draws are low-value), must have real data
+  // Filter: must pass threshold (hard floor 65%), must not be a draw pick, must pass V3-15 audit
   const qualified = predictions
-    .filter(p => p.topConfidence >= minConfidence && p.topConfidence <= maxConfidence)
+    .filter(p => p.topConfidence >= effectiveMin && p.topConfidence <= maxConfidence)
     .filter(p => !p.topPick.toLowerCase().includes('draw'))
     .filter(p => hasMinDataQuality(p))
     .sort((a, b) => {

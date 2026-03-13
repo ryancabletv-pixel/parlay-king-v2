@@ -5,6 +5,7 @@ import { pingGoogleAfterUpdate } from './seo.js';
 import { autoSettleResults } from './resultsSettler.js';
 import { getBudgetStatus } from './apis/oddsApi.js';
 import { syncTomorrowGames } from './services/tomorrowSync.js';
+import { runGlobalDataMonitor, getMonitorState, resetMonitorState } from './globalDataMonitor.js';
 
 // ─── Timezone ─────────────────────────────────────────────────────────────────
 // America/Moncton = AST (UTC-4) / ADT (UTC-3 during DST) — New Brunswick, Canada
@@ -109,16 +110,21 @@ async function runDailyGeneration(triggeredBy = 'scheduler'): Promise<boolean> {
     }
 
     // ── MULTI-SPORT SYNC POST-RUN CHECK ────────────────────────────────────
-    // Verify both Basketball and Soccer were published. If either is missing,
-    // schedule a targeted retry within 10 minutes rather than waiting for the
-    // next full retry window. This ensures both sports always appear on the
-    // tier dashboards simultaneously.
+    // FIX: No retry on 0 games or partial sync. Log and wait for next 24h cycle.
+    // Efficiency Veto: do NOT retry every 10 minutes — this burns credits.
     const syncStatus = result.multiSportSyncStatus ?? 'FULL';
-    if (syncStatus !== 'FULL') {
-      console.warn(`[Multi-Sport Sync] Sync status: ${syncStatus}. Scheduling targeted retry in 10 minutes...`);
-      await createAlert('warning', `Multi-Sport Sync ${syncStatus} for ${today}. Targeted retry scheduled in 10 min.`);
-      // Mark run as NOT completed so the 1:10 AM retry slot can re-run
-      dailyRunCompleted = false;
+    if (result.total === 0) {
+      // Zero picks generated — log and STOP. Do not retry.
+      console.warn(`[Multi-Sport Sync] 0 picks generated for ${today}. Logging and waiting for next 24h cycle (no retry).`);
+      await createAlert('warning', `Multi-Sport Sync: 0 picks for ${today}. No retry — waiting for next 24h cycle.`);
+      dailyRunCompleted = true; // Mark complete so retry cascade does NOT fire
+      lastRunDate = today;
+    } else if (syncStatus !== 'FULL') {
+      // Partial sync — log warning but mark complete to prevent retry cascade
+      console.warn(`[Multi-Sport Sync] Partial sync (${syncStatus}) for ${today}. Marking complete — no retry cascade.`);
+      await createAlert('warning', `Multi-Sport Sync partial (${syncStatus}) for ${today}. Picks are live. No retry.`);
+      dailyRunCompleted = true; // FIX: prevent 10-min retry loop
+      lastRunDate = today;
     } else {
       dailyRunCompleted = true;
       lastRunDate = today;
@@ -126,6 +132,15 @@ async function runDailyGeneration(triggeredBy = 'scheduler'): Promise<boolean> {
     }
 
     console.log(`[Scheduler] Daily generation complete: ${result.total} picks in ${duration}ms (sync=${syncStatus})`);
+
+    // ── Clear picks.json cache so live site reflects new picks within seconds ──
+    try {
+      const { clearModulePicksCache } = await import('./routes.js');
+      const impl = (clearModulePicksCache as any)._impl;
+      if (typeof impl === 'function') impl();
+      else clearModulePicksCache(); // fallback: clears module-level ref
+      console.log('[Scheduler] picks.json cache cleared — site will update within 1-2 seconds');
+    } catch (_) { /* non-critical — cache expires naturally after 60s */ }
 
     // ── Ping Google/Bing after every successful pick update ──────────────────
     // This ensures all pages are re-indexed immediately after new picks are live
@@ -316,9 +331,32 @@ export function startScheduler() {
     // Generate performance audit report
   }, { timezone: TZ });
 
+  // ── Every 60 Minutes — Global Data Monitor ──────────────────────────────────
+  // Checks if today's picks are live and meet the 65% hard floor threshold.
+  // Uses last_update.json for state persistence to prevent duplicate API calls.
+  // 3-Attempt Kill-Switch: stops and sends critical alert after 3 failed attempts.
+  // Scans 23 global leagues: European, South American, Asian, and Oceania markets.
+  // NEVER fires if dailyRunCompleted=true (picks already live and healthy).
+  cron.schedule('0 0 * * * *', async () => {
+    const nowHour = parseInt(
+      new Date().toLocaleString('en-US', { timeZone: TZ, hour: 'numeric', hour12: false }), 10
+    );
+    // Only run between 1 AM and 11 PM — before 1 AM the primary cron handles it
+    if (nowHour < 1 || nowHour > 23) return;
+    console.log(`[Scheduler] Hourly global data monitor check (hour=${nowHour} AST)`);
+    await runGlobalDataMonitor(
+      (triggeredBy: string) => runDailyGeneration(triggeredBy),
+      () => dailyRunCompleted
+    ).catch((err: any) => console.error('[Scheduler] Global monitor error:', err.message));
+  }, { timezone: TZ });
+
   console.log('[Scheduler] All cron jobs registered');
   console.log('[Scheduler] Timezone: America/Moncton (AST UTC-4 / ADT UTC-3)');
   console.log('[Scheduler] Primary generation: 1:00 AM AST with 4-layer retry cascade');
+  console.log('[Scheduler] 60-min global data monitor: active (3-attempt kill-switch, last_update.json state)');
+  console.log('[Scheduler] Global leagues: 23 leagues across Europe, South America, Asia, Oceania');
+  console.log('[Scheduler] Hard floor: 65% minimum confidence on all 3-leg tab picks');
+  console.log('[Scheduler] V3-15 factor audit: 8/15 factors required for every pick');
   console.log('[Scheduler] Google/Bing ping: after every pick update');
 
   // ── Startup Catch-Up Check ────────────────────────────────────────────────
