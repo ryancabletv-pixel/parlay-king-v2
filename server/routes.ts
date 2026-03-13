@@ -2480,9 +2480,43 @@ export async function registerRoutes(app: Express) {
         isNeutralVenue: false,
       } as FixtureData;
 
-      const preds = await runBatchPredictionsV15([fixture as FixtureDataV15]);
-      const pred = preds[0];
-      if (!pred) return res.status(422).json({ error: 'Engine returned no prediction for this fixture' });
+      // Run the V3-15 engine — it filters results below FINAL_THRESHOLD (68%)
+      // For the manual validator form, we always want to see the result regardless of threshold
+      // So we use calcDeterministicBase directly as a fallback when the engine returns empty
+      const { calcDeterministicBase } = await import('./services/geminiV3Engine.js');
+      const fixtureV15 = fixture as FixtureDataV15;
+      let preds = await runBatchPredictionsV15([fixtureV15]);
+      let pred = preds[0];
+      let usedFallback = false;
+
+      // If engine returned nothing (below threshold or no Gemini key), use deterministic base directly
+      if (!pred) {
+        usedFallback = true;
+        const base = calcDeterministicBase(fixtureV15);
+        const homeConf = Math.round(base.rawHome * 100 * 10) / 10;
+        const awayConf = Math.round(base.rawAway * 100 * 10) / 10;
+        const drawConf = Math.round(base.rawDraw * 100 * 10) / 10;
+        const topConf  = Math.max(homeConf, awayConf);
+        const topPick  = homeConf >= awayConf ? `${homeTeam.trim()} Win` : `${awayTeam.trim()} Win`;
+        const threshold2 = parseFloat(process.env.V3_HIGH_VAL_THRESHOLD || '68');
+        const tier2 = topConf >= threshold2 ? 'pro' : topConf >= 65 ? 'free' : 'below-threshold';
+        return res.json({
+          success:        true,
+          recommendation: `${topPick} — ${topConf}% (deterministic base, awaiting live odds)`,
+          confidence:     topConf,
+          bestPick:       topPick,
+          tier:           tier2,
+          isPowerPick:    topConf >= threshold2,
+          predictions:    { homeWin: homeConf, awayWin: awayConf, draw: drawConf || undefined },
+          outcomes: [
+            { label: `${homeTeam.trim()} Win`, conf: homeConf },
+            { label: `${awayTeam.trim()} Win`, conf: awayConf },
+            ...(drawConf > 0 ? [{ label: 'Draw', conf: drawConf }] : []),
+          ].sort((a, b) => b.conf - a.conf),
+          factors: null,
+          note: 'Deterministic base scores used — no live odds available yet. Run again closer to tip-off for full V3-15 analysis.',
+        });
+      }
 
       const conf = pred.topConfidence;
       const p = pred.predictions;
